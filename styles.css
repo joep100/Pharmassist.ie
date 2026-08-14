@@ -1,0 +1,308 @@
+/* ==========================================================================
+   PHARMASSIST v2
+   Brand colours sampled from the logo:
+     #2F8F1C  wordmark green    #1A9F4D  the cross    #708090  slate
+   ========================================================================== */
+
+:root{
+  --green:#2F8F1C;
+  --green-dk:#256F16;        /* readable on white: buttons and links */
+  --green-dker:#1D5911;
+  --cross:#1A9F4D;
+  --slate:#708090;
+  --ink:#2A3742;
+  --head:#33414D;
+  --body:#55646F;
+  --label:#5E6D78;
+  --line:#DCE3E7;
+  --line-dk:#C3CED4;
+  --paper:#F4F6F7;
+  --mint:#EDF7EF;
+  --red:#A83232;
+  --red-bg:#FBEFEF;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,sans-serif;
+  --wrap:1080px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#fff;color:var(--body);
+  font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--green-dk)}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+.wrap--narrow{max-width:720px}
+
+/* ---------- type ---------- */
+h1,h2,h3,h4{color:var(--head);margin:0;font-weight:600;letter-spacing:-.02em;line-height:1.18}
+h1{font-size:clamp(31px,4.6vw,50px)}
+h2{font-size:clamp(25px,3.2vw,34px)}
+h3{font-size:19px;letter-spacing:-.012em;line-height:1.32}
+h4{font-size:16.5px;letter-spacing:-.008em}
+p{margin:0}
+.lede{font-size:clamp(17px,1.9vw,19.5px);line-height:1.55}
+.measure{max-width:60ch}
+.tiny{font-size:14.5px}
+.tiny a{color:var(--green-dk);font-weight:500}
+
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--label);margin:0 0 14px}
+.eyebrow--green{color:var(--green-dk)}
+.eyebrow--light{color:rgba(255,255,255,.62)}
+
+/* ---------- buttons ----------
+   .btn carries its own colour, size and padding. Anything that styles links
+   generically must exclude it (see .nav__links) or it will win on specificity
+   and quietly wreck the button. */
+.btn{display:inline-block;font-family:var(--sans);font-size:16px;font-weight:600;
+  text-decoration:none;text-align:center;cursor:pointer;padding:14px 28px;
+  border-radius:4px;border:1.5px solid transparent;
+  transition:background .15s,border-color .15s,color .15s}
+.btn--solid{background:var(--green-dk);border-color:var(--green-dk);color:#fff}
+.btn--solid:hover{background:var(--green-dker);border-color:var(--green-dker)}
+.btn--line{background:transparent;border-color:var(--line-dk);color:var(--head)}
+.btn--line:hover{border-color:var(--slate)}
+.btn--light{background:#fff;border-color:#fff;color:var(--green-dker)}
+.btn--light:hover{background:rgba(255,255,255,.9)}
+.btn--sm{padding:10px 18px;font-size:14.5px}
+.btn:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px}
+
+/* ---------- wordmark, set in type to match the logo ----------
+   All caps via text-transform, not typed in caps, so screen readers say
+   "Pharmassist" rather than spelling out eleven letters. */
+.mark{display:inline-flex;align-items:center;gap:8px;text-decoration:none;flex:none}
+.mark__word{font-size:21px;font-weight:500;text-transform:uppercase;
+  letter-spacing:.012em;line-height:1;white-space:nowrap}
+.mark__word .g{color:var(--green)}
+.mark__word .s{color:var(--slate)}
+.mark__cross{width:17px;height:17px;color:var(--cross);flex:none}
+.mark--light .mark__word .g{color:#7CD466}
+.mark--light .mark__word .s{color:rgba(255,255,255,.72)}
+.mark--light .mark__cross{color:#7CD466}
+.mark-tagline{font-size:10.5px;font-weight:500;letter-spacing:.2em;
+  text-transform:uppercase;color:#000;margin:10px 0 0}
+.foot .mark-tagline{color:rgba(255,255,255,.5)}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.94);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav__in{display:flex;align-items:center;gap:24px;height:70px}
+.nav__links{display:flex;gap:26px;margin-left:auto;align-items:center}
+.nav__links a:not(.btn){font-size:15px;font-weight:500;color:var(--body);
+  text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+.nav__links a:not(.btn):hover{color:var(--head)}
+.nav__links a:not(.btn)[aria-current="page"]{color:var(--head);border-bottom-color:var(--green)}
+.nav__cta{margin-left:6px}
+.nav__toggle{display:none}
+
+/* ---------- sections ---------- */
+.sec{padding:78px 0}
+.sec--tight{padding:56px 0}
+.sec--paper{background:var(--paper)}
+.sec--ink{background:var(--ink);color:rgba(255,255,255,.74)}
+.sec--ink h2,.sec--ink h3,.sec--ink h4{color:#fff}
+.sec--line{border-top:1px solid var(--line)}
+.sec__head{max-width:62ch;margin-bottom:42px}
+.sec__head p{margin-top:14px}
+.sec__head--mid{margin-left:auto;margin-right:auto;text-align:center}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;padding:74px 0 84px}
+.hero__grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.hero__copy p{margin-top:20px}
+.hero__meta{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:30px;
+  font-size:14px;font-weight:500;color:var(--label)}
+.hero__meta span{display:inline-flex;align-items:center;gap:8px}
+.hero__meta svg{width:13px;height:13px;color:var(--cross);flex:none}
+.hero__watermark{position:absolute;top:-90px;right:-150px;width:520px;height:520px;
+  color:var(--green);opacity:.045;pointer-events:none}
+
+/* ---------- address checker ---------- */
+.checker{background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:26px 26px 24px;
+  box-shadow:0 1px 2px rgba(42,55,66,.04),0 14px 34px -16px rgba(42,55,66,.18)}
+.checker__label{display:block;font-size:11px;font-weight:600;letter-spacing:.19em;
+  text-transform:uppercase;color:var(--label);margin-bottom:10px}
+.checker__field{display:flex;gap:8px}
+.checker__field input{flex:1;min-width:0;font-family:var(--sans);font-size:19px;
+  font-weight:600;letter-spacing:.11em;color:var(--head);background:var(--paper);
+  border:1.5px solid var(--line-dk);border-radius:4px;padding:14px 16px;
+  text-transform:uppercase}
+.checker__field input::placeholder{color:#9FADB6;font-weight:400;letter-spacing:.09em}
+.checker__field input:focus{outline:none;border-color:var(--green);background:#fff;
+  box-shadow:0 0 0 3px rgba(47,143,28,.15)}
+.checker__go{font-family:var(--sans);font-size:15.5px;font-weight:600;cursor:pointer;
+  background:var(--green-dk);color:#fff;border:1.5px solid var(--green-dk);
+  border-radius:4px;padding:0 24px;white-space:nowrap;transition:background .15s}
+.checker__go:hover{background:var(--green-dker)}
+.checker__go:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.checker__hint{font-size:13.5px;color:var(--label);margin-top:11px}
+.checker__hint a{color:var(--green-dk);text-decoration:underline;text-underline-offset:2px}
+.checker__out{margin-top:24px}
+.checker__out[hidden]{display:none}
+.checker__rule{border:0;border-top:1px solid var(--line);margin:0 0 20px}
+
+/* the brand cross is the verdict: a yes keeps it whole, anything else
+   loses the upright stroke */
+.verdict{display:flex;align-items:flex-start;gap:15px}
+.verdict__body{min-width:0}
+.verdict h3{margin-bottom:6px}
+.verdict p{margin-bottom:15px;font-size:15.5px}
+.verdict p:last-child{margin-bottom:0}
+.verdict__icon{width:36px;height:36px;flex:none;margin-top:3px}
+.verdict__icon .up{transition:transform .3s ease,opacity .3s ease;transform-origin:32px 32px}
+.is-yes .verdict__icon{color:var(--cross);animation:thud .34s cubic-bezier(.2,1.4,.4,1)}
+.is-yes .verdict h3{color:var(--green)}
+.is-no .verdict__icon,.is-more .verdict__icon{color:var(--slate)}
+.is-err .verdict__icon{color:var(--red)}
+.is-no .verdict__icon .up,.is-more .verdict__icon .up,.is-err .verdict__icon .up{
+  transform:scaleY(0);opacity:0}
+.is-busy .verdict__icon{color:var(--slate);animation:spin 1.1s linear infinite}
+@keyframes thud{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes spin{to{transform:rotate(180deg)}}
+
+.note-good{background:var(--mint);border-radius:4px;padding:13px 16px;
+  font-size:15px;color:#1F5D14;margin-bottom:18px}
+.note-bad{background:var(--red-bg);border-radius:4px;padding:13px 16px;
+  font-size:15px;color:var(--red)}
+.code{font-weight:600;color:var(--head);letter-spacing:.05em}
+.catch{display:flex;gap:8px}
+.catch input{flex:1;min-width:0;font-family:var(--sans);font-size:15.5px;
+  color:var(--head);background:var(--paper);border:1.5px solid var(--line-dk);
+  border-radius:4px;padding:13px 15px}
+.catch input:focus{outline:none;border-color:var(--green);background:#fff;
+  box-shadow:0 0 0 3px rgba(47,143,28,.15)}
+.catch button{font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;
+  background:var(--green-dk);color:#fff;border:1.5px solid var(--green-dk);
+  border-radius:4px;padding:0 20px;white-space:nowrap}
+.catch button:disabled{opacity:.6;cursor:default}
+
+/* ---------- the three ways a pharmacy tells a patient ----------
+   Not cards. The page has card sections already and a third would blur into
+   them. Single top rule, no radius (rounded corners on a one-sided border
+   read as a mistake). */
+.options{display:grid;grid-template-columns:repeat(3,1fr);gap:34px}
+.option{border-top:2px solid var(--cross);border-radius:0;padding-top:18px}
+.option h3{font-size:17.5px;margin-bottom:8px}
+.option p{font-size:15.5px}
+.options__more{margin-top:34px;font-size:15.5px}
+.options__more a{color:var(--green-dk);font-weight:600;text-decoration:none}
+.options__more a:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- steps (a real sequence, so numbers earn their place) ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+  background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.step{background:#fff;padding:30px 26px 28px}
+.step__no{font-size:12.5px;font-weight:600;letter-spacing:.12em;color:var(--cross);
+  margin:0 0 16px}
+.step h3{margin-bottom:9px}
+.step p{font-size:15.5px}
+
+/* ---------- cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.cards--2{grid-template-columns:repeat(2,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px 26px}
+.card--paper{background:var(--paper);border-color:transparent}
+.card__cross{width:22px;height:22px;color:var(--cross);margin-bottom:18px}
+.card h3{margin-bottom:9px}
+.card p{font-size:15.5px}
+
+/* ---------- the "what we don't do" list ---------- */
+.nots{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:36px}
+.not{padding-top:20px;border-top:2px solid rgba(255,255,255,.16);border-radius:0}
+.not h4{margin-bottom:8px}
+.not p{font-size:15px}
+
+/* ---------- plain fact rows ---------- */
+.facts{border-top:1px solid var(--line)}
+.fact{display:grid;grid-template-columns:210px 1fr;gap:24px;padding:20px 0;
+  border-bottom:1px solid var(--line)}
+.fact dt{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--label);padding-top:3px}
+.fact dd{margin:0;font-size:16px;color:var(--head)}
+.fact dd .sub{display:block;font-size:14.5px;color:var(--body);margin-top:4px}
+
+/* ---------- coverage lists ---------- */
+.zones{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px;
+  background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.zone{background:#fff;padding:14px 16px;display:flex;align-items:baseline;gap:10px}
+.zone__key{font-size:14px;font-weight:700;color:var(--green);letter-spacing:.04em;flex:none}
+.zone__name{font-size:14.5px}
+.zone--edge{background:var(--paper)}
+.zone--edge .zone__key{color:var(--slate)}
+
+/* ---------- customer logos ----------
+   Normalised on HEIGHT, never width, so different shapes look deliberate. */
+.clients{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:26px 56px}
+.clients img{height:46px;width:auto;max-width:200px;object-fit:contain;flex:none}
+.clients__note{text-align:center;font-size:13.5px;color:var(--label);margin-top:26px}
+
+/* ---------- certification marks ---------- */
+.certs{display:grid;grid-template-columns:1.1fr .9fr;gap:52px;align-items:center}
+.certs__copy p{margin-top:16px}
+.certs__marks{display:flex;gap:20px;justify-content:flex-end}
+.certs__marks img{height:228px;width:auto;flex:none}
+.certs__note{font-size:13.5px;color:var(--label);margin-top:18px}
+
+/* ---------- form ---------- */
+.form{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.form__row{display:flex;flex-direction:column;gap:7px}
+.form__row--wide{grid-column:1 / -1}
+.form label{font-size:11px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--label)}
+.form input,.form textarea,.form select{font-family:var(--sans);font-size:16px;
+  color:var(--head);background:#fff;border:1.5px solid var(--line-dk);
+  border-radius:4px;padding:13px 15px;width:100%}
+.form textarea{min-height:110px;resize:vertical}
+.form input:focus,.form textarea:focus,.form select:focus{outline:none;
+  border-color:var(--green);box-shadow:0 0 0 3px rgba(47,143,28,.15)}
+.form__note{font-size:14px;color:var(--label);grid-column:1 / -1}
+
+/* ---------- footer ---------- */
+.foot{background:var(--ink);color:rgba(255,255,255,.6);padding:56px 0 34px;font-size:15px}
+.foot a{color:rgba(255,255,255,.82);text-decoration:none}
+.foot a:hover{color:#fff}
+.foot__grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:38px}
+.foot__col h4{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);margin-bottom:14px}
+.foot__col ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.foot__blurb{margin-top:14px;max-width:38ch;font-size:15px}
+.foot__bar{border-top:1px solid rgba(255,255,255,.13);padding-top:24px;
+  display:flex;flex-wrap:wrap;gap:12px 28px;font-size:13.5px;color:rgba(255,255,255,.45)}
+.foot__bar p{margin:0}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .hero__grid{grid-template-columns:1fr;gap:38px}
+  .hero__watermark{right:-190px;width:420px;height:420px}
+  .steps,.cards,.cards--2,.nots,.options{grid-template-columns:1fr}
+  .certs{grid-template-columns:1fr;gap:34px}
+  .certs__marks{justify-content:flex-start}
+  .foot__grid{grid-template-columns:1fr 1fr;gap:32px}
+}
+@media (max-width:680px){
+  .sec{padding:56px 0}
+  /* caps run wider than lowercase; ease it down before it meets the button */
+  .mark__word{font-size:19px}
+  .mark__cross{width:15px;height:15px}
+  .nav__links{display:none}
+  .nav__links.is-open{display:flex;flex-direction:column;position:absolute;top:70px;
+    left:0;right:0;background:#fff;border-bottom:1px solid var(--line);
+    padding:18px 24px 24px;gap:16px;align-items:flex-start}
+  .nav__toggle{display:block;margin-left:auto;background:none;
+    border:1.5px solid var(--line-dk);border-radius:4px;padding:8px 13px;
+    font-family:var(--sans);font-size:14px;font-weight:600;color:var(--head);cursor:pointer}
+  /* stays visible in the open menu; hiding it left phones with no call to action */
+  .nav__cta{margin-left:0;align-self:stretch}
+  .checker__field,.catch{flex-direction:column}
+  .checker__go,.catch button{padding:14px 24px}
+  .form{grid-template-columns:1fr}
+  .fact{grid-template-columns:1fr;gap:6px}
+  .foot__grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+}
