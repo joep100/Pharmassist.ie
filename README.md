@@ -17,7 +17,7 @@ https://your-domain/?p=healthwave
 
 The `?p=` is what identifies the pharmacy. Without it the page shows a picker
 instead, which is handy for testing and harmless in daily use, since the shop
-name stays visible on screen and prints on the docket.
+name stays visible on screen throughout.
 
 Vercel gives you a working URL straight away, something like
 `https://pharmassist-booking.vercel.app/?p=foleys`. That's enough to trial with
@@ -37,10 +37,34 @@ mccauley: {
 }
 ```
 
-The address and Eircode are the collection point, printed on the handover
-docket. The phone is the pharmacy's own, shown on screen so staff can check you
-hold the right details. It is deliberately not on the docket: the driver rings
-the customer, then Pharmassist, and Pharmassist rings the pharmacy.
+The address and Eircode are the collection point, sent with the day's list. The
+phone is the pharmacy's own, shown on screen so staff can check you hold the
+right details. It is deliberately not given to drivers: the driver rings the
+customer, then Pharmassist, and Pharmassist rings the pharmacy.
+
+## Labels: there aren't any
+
+The bag gets a reference written on it with a biro. `FOL-1`, `FOL-2`, and so on.
+No label printer, no sheets of A4 labels to load and align, nothing to jam
+mid-queue.
+
+The bag already carries the pharmacy's own dispensing label with the patient's
+name on it. All the driver needs is to know which bag matches which line on his
+run, and one number does that.
+
+It's also better for confidentiality: no patient name or address is visible on
+the outside of a bag in transit, and only dispatch links the reference to an
+address. Worth saying out loud to a pharmacist, because it's the objection
+underneath most delivery hesitancy.
+
+The prefix comes from `tag` in the pharmacy's record, so two shops on the same
+run never both have a bag 3. Keep it to three letters.
+
+The reference also drops into the `Your Ref (Optional)` column of the import
+file, unless the pharmacy typed their own reference, in which case theirs wins.
+
+If a high-volume pharmacy ever wants printed labels, that's a per-pharmacy
+addition rather than a default. Don't make everyone carry it.
 
 ## Why the form is only two fields
 
@@ -116,9 +140,13 @@ Two column notes:
 - **Company Name (Optional)** carries the delivery instruction, capped at 32
   characters. The tool warns when a note is too long and names which one.
 
-**Print handover docket** is the pharmacy's own record of what left the counter,
-with a line for a signature and time. Optional. It carries no instructions and
-no phone numbers, because that's not what it's for.
+There is no printing and no docket. The driver already knows what he's
+collecting, because the list reached dispatch at 1pm, so a piece of paper at the
+counter served nobody. The delivery instructions ride in the file, so they don't
+need paper either.
+
+One button, and the download only appears as a fallback: when sending isn't set
+up, or when a send has just failed.
 
 ## Quiet days: no list, no collection
 

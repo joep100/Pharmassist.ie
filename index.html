@@ -110,6 +110,8 @@ th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-tra
   color:var(--label);padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
 td{padding:11px 10px 11px 0;border-bottom:1px solid var(--paper);vertical-align:top}
 tr:last-child td{border-bottom:0}
+.bagref{display:inline-block;font-weight:700;font-size:14px;letter-spacing:.04em;
+  background:var(--head);color:#fff;border-radius:4px;padding:3px 9px;white-space:nowrap}
 .mono{font-weight:600;color:var(--head);letter-spacing:.04em;white-space:nowrap}
 .note-cell{color:var(--body);font-size:13.5px}
 .flag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;
@@ -134,11 +136,6 @@ tr:last-child td{border-bottom:0}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
 @media (max-width:640px){ .grid{grid-template-columns:1fr} .top__date{margin-left:0;width:100%} }
-@media print{
-  body{background:#fff}
-  .panel--form,.row,.foot-note,.whoami,.warnbox{display:none!important}
-  .panel{border:0;box-shadow:none;padding:0}
-}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -249,8 +246,8 @@ tr:last-child td{border-bottom:0}
       <span class="count" id="count">nothing yet</span>
     </div>
     <p class="panel__hint" style="margin-top:6px">Ready for us by <strong id="ready"></strong>.
-      Add through the morning, then download the file for us. The docket is your own record of
-      what left the counter, if you want one.</p>
+      Add through the morning, then send it to us. Write the bag reference on each bag with a
+      biro, and that's the only marking we need.</p>
     <div id="list"></div>
 
     <div class="warnbox" id="warn" hidden></div>
@@ -259,9 +256,7 @@ tr:last-child td{border-bottom:0}
 
     <div class="row">
       <button class="b-go" id="send" hidden>Send to Pharmassist</button>
-      <button class="b-go" id="xlsx">Download import file</button>
-      <button class="b-ghost" id="print">Print handover docket</button>
-      <button class="b-ghost" id="copy">Copy as text</button>
+      <button class="b-go" id="xlsx" hidden>Download import file</button>
     </div>
   </div>
 
@@ -269,7 +264,7 @@ tr:last-child td{border-bottom:0}
     <strong>Nothing to send today? Then there's nothing to do.</strong> We call when a list
     comes through, so a quiet day needs no phone call and no message from you.<br><br>
     Held on this page only and <strong>not saved anywhere</strong>. Close or refresh the tab and
-    it's gone, so download and print before you finish up. That's deliberate: patient names and
+    it's gone, so send it before you finish up. That's deliberate: patient names and
     numbers shouldn't sit in a browser overnight.<br>
     Anything wrong, ring us on <strong id="phone"></strong>.
   </p>
@@ -335,12 +330,14 @@ const AUTO_SEND_AFTER_SECS = 90;
 
 const PHARMACIES = {
   foleys: {
+    tag:"FOL",                      /* written on the bag, keep it to 3 letters */
     name:"Foleys Chemist",
     address:"136 Parnell Street, Dublin 1",
     eircode:"D01 A9C7",
     phone:"01 874 6972"
   },
   healthwave: {
+    tag:"HW",
     name:"Healthwave", address:"Dundrum, Dublin 14",                 
     eircode:"D14 XXXX", phone:"01 425 5722"                          
   }
@@ -588,6 +585,7 @@ $("add").onclick = () => {
   if(errs.length) return;
 
   bookings.push({
+    bag: (SHOP.tag || slug.slice(0,3).toUpperCase()) + "-" + (bookings.length + 1),
     eircode: pretty(tidy(eir.value)), area: AREAS[currentKey]||currentKey,
     name:g("rname"), mobile:digits(g("rmobile")),
     prop:g("rprop"), street:g("rstreet"), town:g("rarea"),
@@ -629,10 +627,11 @@ function draw(){
     return;
   }
   $("list").innerHTML =
-    '<table><thead><tr><th>Eircode</th><th>Name</th><th>Address</th><th>Mobile</th>' +
-    '<th>Bags</th><th>Notes</th><th></th></tr></thead><tbody>' +
+    '<table><thead><tr><th>Write on bag</th><th>Eircode</th><th>Name</th><th>Address</th>' +
+    '<th>Mobile</th><th>Bags</th><th>Notes</th><th></th></tr></thead><tbody>' +
     bookings.map((b,i) =>
-      '<tr><td class="mono">'+esc(b.eircode)+'</td>' +
+      '<tr><td><span class="bagref">'+esc(b.bag)+'</span></td>' +
+      '<td class="mono">'+esc(b.eircode)+'</td>' +
       '<td>'+esc(b.name)+'</td>' +
       '<td class="note-cell">'+esc([b.prop,b.street,b.town].filter(Boolean).join(", "))+'</td>' +
       '<td class="mono">'+esc(b.mobile)+'</td>' +
@@ -651,7 +650,7 @@ function rowsForImport(){
   return bookings.map(b => {
     const co = (NOTES_INTO === "company" && b.notes) ? b.notes.slice(0,32) : "";
     return [ co, b.prop.slice(0,32), b.street.slice(0,32), b.town.slice(0,32), COUNTY,
-             b.eircode.slice(0,16), COUNTRY, b.ref, b.name.slice(0,32), b.mobile,
+             b.eircode.slice(0,16), COUNTRY, (b.ref || b.bag), b.name.slice(0,32), b.mobile,
              b.pkgs, b.weight, SERVICE ];
   });
 }
@@ -666,26 +665,6 @@ $("xlsx").onclick = () => {
   const d = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, "import-"+slug+"-"+d+".xlsx");
   toast("Downloaded "+bookings.length+" row(s).");
-};
-
-function asText(){
-  const d = new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"});
-  return "Pharmassist collection, "+d+"\n" +
-    "Collect from: "+SHOP.name+", "+SHOP.address+" ("+SHOP.eircode+")\n" +
-    "Handed to Pharmassist by ......................  at .......... \n" +
-    bookings.length+" booking(s), "+bookings.reduce((s,b)=>s+b.pkgs,0)+" bag(s), "+
-    bookings.reduce((s,b)=>s+b.weight,0).toFixed(1)+"kg total\n\n" +
-    bookings.map((b,i) => (i+1)+". "+b.eircode+"  "+b.name+"  "+b.mobile +
-      "\n   "+[b.prop,b.street,b.town].filter(Boolean).join(", ") +
-      (b.notes ? "\n   Notes: "+b.notes : "") +
-      (b.leave ? "\n   PATIENT AUTHORISED LEAVING IF NOBODY ANSWERS" : "") +
-      (b.ref ? "\n   Ref: "+b.ref : "")).join("\n\n");
-}
-$("print").onclick = () => { bookings.length ? window.print() : toast("Nothing to print yet."); };
-$("copy").onclick = async () => {
-  if(!bookings.length){ toast("Nothing to copy yet."); return; }
-  try{ await navigator.clipboard.writeText(asText()); toast("Copied."); }
-  catch(e){ toast("Copy blocked. Use Print instead."); }
 };
 
 let tt;
@@ -754,7 +733,9 @@ async function push(auto){
     ok = true;
   }catch(e){
     /* leave sentCount alone so it tries again on the next tick */
-    toast("Didn't send. Download the file and email it, then ring us.");
+    /* only now is the download worth offering: it's a fallback, not a step */
+    $("xlsx").hidden = false;
+    toast("Didn't send. Download the file and email it to "+SEND_TO+", then ring us.");
   }
   if(btn){ btn.disabled = false; btn.textContent = "Send to Pharmassist"; }
   nudge();
@@ -781,6 +762,8 @@ $("toggle").onclick = () => {
 };
 ["rprop","rstreet","rarea"].forEach(id =>
   $(id).addEventListener("input", showAddr));
+
+if(!SEND_URL) $("xlsx").hidden = false;
 
 if(SEND_URL){
   $("send").hidden = false;
