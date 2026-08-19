@@ -3,311 +3,768 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pharmassist | Same-day delivery for Dublin pharmacies</title>
-<meta name="description" content="Same-day delivery built for Dublin pharmacies. You dispense as you do now, we collect from your counter and get it to your patient today. Fridge lines carried daily.">
+<title>Pharmassist Booking</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --brand:#2F8F1C; --brand-dk:#256F16; --brand-dker:#1D5911; --mark:#1A9F4D;
+  --slate:#708090; --ink:#2A3742; --head:#33414D; --body:#55646F; --label:#5E6D78;
+  --line:#DCE3E7; --line-dk:#C3CED4; --paper:#F4F6F7; --mint:#EDF7EF;
+  --amber:#8A5A08; --amber-bg:#FDF4E3; --amber-br:#EBD9B4;
+  --red:#A83232; --red-bg:#FBEFEF;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:22px 20px 80px}
+
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.mark{display:inline-flex;align-items:center;gap:7px;flex:none}
+.mark__word{font-size:19px;font-weight:500;text-transform:uppercase;letter-spacing:.012em;line-height:1}
+.mark__word .g{color:var(--brand)} .mark__word .s{color:var(--slate)}
+.mark__cross{width:15px;height:15px;color:var(--mark);flex:none}
+.top__tag{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--label);padding-left:14px;border-left:1px solid var(--line-dk)}
+.top__date{margin-left:auto;font-size:14px;color:var(--label)}
+
+.whoami{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;background:var(--mint);
+  border:1px solid #CFE6D3;border-radius:6px;padding:11px 15px;margin-bottom:16px;font-size:14.5px}
+.whoami__lbl{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--brand-dk)}
+.whoami strong{color:var(--head);font-weight:600}
+.whoami__addr{color:var(--body);font-size:13.5px}
+
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px 22px 20px;
+  margin-bottom:16px;box-shadow:0 1px 2px rgba(42,55,66,.04)}
+.panel[hidden]{display:none}
+.panel__no{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.1em;color:#fff;
+  background:var(--mark);border-radius:3px;padding:2px 7px;margin-right:9px;vertical-align:2px}
+h2{font-size:17px;font-weight:600;color:var(--head);margin:0 0 4px;letter-spacing:-.01em}
+.panel__hint{font-size:13.5px;color:var(--label);margin:0 0 18px}
+
+.addr{background:var(--paper);border-radius:5px;padding:11px 14px;margin-top:14px;
+  font-size:15px;color:var(--head);line-height:1.45}
+.addr[hidden]{display:none}
+.addr em{color:var(--label);font-style:normal;font-size:13.5px;display:block;margin-top:3px}
+.more{margin:14px 0 0}
+.linky{background:none;border:0;padding:0;font-family:var(--sans);font-size:14px;
+  font-weight:500;color:var(--brand-dk);cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px}
+.extra{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.extra[hidden]{display:none}
+.lookup{font-size:13.5px;color:var(--label);margin:0 0 14px;min-height:1px}
+.lookup.ok{color:var(--brand-dk)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f{display:flex;flex-direction:column;gap:6px}
+.f--wide{grid-column:1/-1}
+label{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--label);
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+label .opt{font-weight:500;letter-spacing:0;text-transform:none;color:#9AA7B0;font-size:12px}
+label .cnt{font-weight:500;letter-spacing:0;text-transform:none;font-size:11.5px;color:#9AA7B0}
+label .cnt.warn{color:var(--red);font-weight:600}
+input,textarea{font-family:var(--sans);font-size:16px;color:var(--head);background:#fff;
+  border:1.5px solid var(--line-dk);border-radius:4px;padding:11px 13px;width:100%}
+textarea{min-height:70px;resize:vertical;line-height:1.45}
+input:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(47,143,28,.15)}
+input.bad{border-color:var(--red);background:var(--red-bg)}
+#eircode{font-size:21px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--paper);padding:14px 16px}
+
+.verdict{margin-top:16px;display:flex;gap:13px;align-items:flex-start}
+.verdict[hidden]{display:none}
+.verdict svg{width:30px;height:30px;flex:none;margin-top:1px}
+.verdict h3{font-size:16.5px;font-weight:600;margin:0 0 3px;color:var(--head)}
+.verdict p{margin:0;font-size:14.5px}
+.is-yes svg{color:var(--mark)} .is-yes h3{color:var(--brand)}
+.is-no svg{color:var(--slate)} .is-err svg{color:var(--red)} .is-err h3{color:var(--red)}
+.is-no .up,.is-err .up{display:none}
+
+button{font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;border-radius:4px;
+  padding:12px 20px;border:1.5px solid transparent;transition:.15s}
+.b-go{background:var(--brand-dk);border-color:var(--brand-dk);color:#fff}
+.b-go:hover{background:var(--brand-dker);border-color:var(--brand-dker)}
+.b-ghost{background:#fff;border-color:var(--line-dk);color:var(--head)}
+.b-ghost:hover{border-color:var(--slate)}
+.b-x{background:none;border:0;color:var(--label);padding:4px 8px;font-size:18px;line-height:1}
+.b-x:hover{color:var(--red)}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.err{font-size:13px;color:var(--red);margin-top:10px}
+
+.auth{background:var(--amber-bg);border:1px solid var(--amber-br);border-radius:5px;
+  padding:13px 15px;grid-column:1/-1}
+.auth label{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;font-weight:500;
+  letter-spacing:0;text-transform:none;color:var(--amber);cursor:pointer;line-height:1.45;
+  justify-content:flex-start}
+.auth input[type=checkbox]{width:17px;height:17px;flex:none;margin-top:2px;accent-color:var(--brand-dk)}
+.auth__note{font-size:13px;color:#8A6A2A;margin:9px 0 0 27px}
+
+.count{font-size:13px;font-weight:600;color:var(--label);margin-left:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px}
+th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--label);padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+td{padding:11px 10px 11px 0;border-bottom:1px solid var(--paper);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.mono{font-weight:600;color:var(--head);letter-spacing:.04em;white-space:nowrap}
+.note-cell{color:var(--body);font-size:13.5px}
+.flag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;
+  background:var(--amber-bg);color:var(--amber);white-space:nowrap;margin-top:4px}
+.empty{text-align:center;color:#9AA7B0;font-size:14.5px;padding:26px 0}
+
+.nudge{border-radius:6px;padding:12px 15px;margin-top:14px;font-size:14px}
+.nudge[hidden]{display:none}
+.nudge--soon{background:var(--amber-bg);border:1px solid var(--amber-br);color:var(--amber)}
+.nudge--late{background:var(--red-bg);border:1px solid #E8C4C4;color:var(--red)}
+.nudge--done{background:var(--mint);border:1px solid #CFE6D3;color:#1F5D14}
+.warnbox{background:var(--amber-bg);border:1px solid var(--amber-br);border-radius:6px;
+  padding:14px 16px;margin-top:16px;font-size:14px;color:var(--amber)}
+.warnbox strong{font-weight:700}
+.warnbox ul{margin:8px 0 0;padding-left:20px}
+.warnbox[hidden]{display:none}
+
+.foot-note{font-size:13px;color:var(--label);margin-top:22px;line-height:1.6}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,18px);background:var(--ink);
+  color:#fff;padding:11px 20px;border-radius:6px;font-size:14px;font-weight:500;opacity:0;
+  pointer-events:none;transition:.22s;z-index:50}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:640px){ .grid{grid-template-columns:1fr} .top__date{margin-left:0;width:100%} }
+@media print{
+  body{background:#fff}
+  .panel--form,.row,.foot-note,.whoami,.warnbox{display:none!important}
+  .panel{border:0;box-shadow:none;padding:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
 <body>
+<div class="wrap">
 
-<header class="nav">
-  <div class="wrap nav__in">
-    <a class="mark" href="index.html" aria-label="Pharmassist home">
+  <div class="top">
+    <span class="mark">
       <span class="mark__word"><span class="g">Pharm</span><span class="s">assist</span></span>
       <svg class="mark__cross" viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>
-    </a>
-    <button class="nav__toggle" type="button" aria-label="Menu">Menu</button>
-    <nav class="nav__links">
-      <a href="index.html" aria-current="page">For pharmacies</a>
-      <a href="how-it-works.html">How it works</a>
-      <a href="coverage.html">Coverage</a>
-      <a href="for-patients.html">For patients</a>
-      <a class="btn btn--solid btn--sm nav__cta" href="#partner">Partner with us</a>
-    </nav>
+    </span>
+    <span class="top__tag">Delivery booking</span>
+    <span class="top__date" id="today"></span>
   </div>
-</header>
 
-<!-- ===================== HERO ===================== -->
-<section class="hero">
-  <svg class="hero__watermark" viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>
-  <div class="wrap hero__grid">
-    <div class="hero__copy">
-      <p class="eyebrow eyebrow--green">Same day pharmacy delivery</p>
-      <h1>Your patient gets it today.<br>You never leave the counter.</h1>
-      <p class="lede measure">You dispense exactly as you do now. We collect from your
-        counter and put the bag in the patient's hand the same day, anywhere within 12km of
-        the city centre. It's the one thing the big groups still don't do.</p>
+  <div class="whoami">
+    <span class="whoami__lbl">Booking as</span>
+    <strong id="shop"></strong>
+    <span id="shopaddr" class="whoami__addr"></span>
+    <span id="shopphone" class="whoami__addr"></span>
+  </div>
 
-      <div class="hero__meta">
-        <span><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>Collected from your counter</span>
-        <span><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>Fridge lines carried daily</span>
-        <span><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>Signed for at the door</span>
+  <div class="panel">
+    <h2><span class="panel__no">1</span>Check the address</h2>
+    <p class="panel__hint">Eircode first. If we don't cover it you won't waste time on the rest.</p>
+    <div class="f">
+      <label for="eircode">Patient's Eircode</label>
+      <input id="eircode" type="text" autocomplete="off" spellcheck="false" maxlength="8"
+             placeholder="D02 X285" autofocus>
+    </div>
+    <div class="verdict" id="verdict" hidden aria-live="polite"></div>
+  </div>
+
+  <div class="panel panel--form" id="p2" hidden>
+    <h2><span class="panel__no">2</span>Who's it going to</h2>
+    <p class="panel__hint">Two things. We'll fill in the address from the Eircode.</p>
+    <p class="lookup" id="lookup"></p>
+
+    <div class="grid">
+      <div class="f">
+        <label for="rname">Name <span class="cnt" id="c-rname"></span></label>
+        <input id="rname" type="text" autocomplete="off" maxlength="32">
+      </div>
+      <div class="f">
+        <label for="rmobile">Mobile</label>
+        <input id="rmobile" type="tel" inputmode="tel" autocomplete="off" placeholder="087 123 4567">
       </div>
     </div>
-    <div data-checker data-cta="#partner"></div>
-  </div>
-</section>
 
-<!-- ===================== THREE WAYS ===================== -->
-<section class="sec sec--paper">
-  <div class="wrap">
-    <div class="sec__head">
-      <p class="eyebrow">Whatever you use now</p>
-      <h2>There are only three ways to tell a patient. All three work.</h2>
-      <p class="measure">You don't need new software and your patients don't need to learn
-        anything. Whichever of these is your shop, delivery is one line and a payment link.</p>
-    </div>
-    <div class="options">
-      <article class="option">
-        <h3>They ring you</h3>
-        <p>Offer it on the call. <em>"Will you collect, or will I have it dropped out to
-          you?"</em></p>
-      </article>
-      <article class="option">
-        <h3>You text or email</h3>
-        <p>One line added to the message you already send, so it never gets forgotten.</p>
-      </article>
-      <article class="option">
-        <h3>They order in an app</h3>
-        <p>One more choice beside collection, where they place the order.</p>
-      </article>
-    </div>
-    <p class="options__more"><a href="how-it-works.html">See how each one works &rarr;</a></p>
-  </div>
-</section>
+    <div class="addr" id="addr"></div>
 
-<!-- ===================== THREE STEPS ===================== -->
-<section class="sec">
-  <div class="wrap">
-    <div class="sec__head">
-      <p class="eyebrow">How a delivery runs</p>
-      <h2>Three steps, and two of them are ours</h2>
-      <p class="measure">Nothing about your dispensing changes. The only new thing is a bag
-        going into a different pair of hands.</p>
-    </div>
-    <div class="steps">
-      <article class="step">
-        <p class="step__no">01</p>
-        <h3>You dispense and seal</h3>
-        <p>Exactly as you do today. Your pharmacist checks the bag, seals it and labels it
-          with the patient's name and Eircode. That's your part finished.</p>
-      </article>
-      <article class="step">
-        <p class="step__no">02</p>
-        <h3>We collect</h3>
-        <p>A courier calls to your counter and scans each bag out of your shop. From that
-          moment it's on our record, not in a grey area between the two of you.</p>
-      </article>
-      <article class="step">
-        <p class="step__no">03</p>
-        <h3>The patient has it today</h3>
-        <p>Delivered to the door, handed to a named person, with proof of delivery back to
-          you the same day. Nobody waits until tomorrow.</p>
-      </article>
-    </div>
-  </div>
-</section>
+    <p class="more"><button type="button" class="linky" id="toggle">Anything else? Notes, bag size, your own reference</button></p>
 
-<!-- ===================== WHAT WE CARRY ===================== -->
-<section class="sec sec--paper">
-  <div class="wrap">
-    <div class="sec__head">
-      <p class="eyebrow">Why pharmacies use us</p>
-      <h2>Same day is the gap nobody big has closed</h2>
-      <p class="measure">The large groups have the app, the online doctor and a branch near
-        everyone. What none of them has is a way to put a prescription in a patient's hand
-        today. Closing it means somebody driving a bag to a door, every day, in every town
-        they trade in. You only need that in one shop. They would need it in a hundred.</p>
+    <div class="grid extra" id="extra" hidden>
+      <div class="f f--wide">
+        <label for="rnotes">Notes for the driver <span class="opt">optional</span></label>
+        <textarea id="rnotes" placeholder="Back door. Ring twice, hard of hearing."></textarea>
+      </div>
+      <div class="auth">
+        <label>
+          <input type="checkbox" id="rleave">
+          <span>The patient has asked us to leave it if nobody answers, and has said where.</span>
+        </label>
+        <p class="auth__note">Only tick this if the patient asked themselves. Say exactly where in
+          the notes.</p>
+      </div>
+      <div class="f">
+        <label for="rpkgs">Bags</label>
+        <input id="rpkgs" type="number" min="1" max="20" step="1" inputmode="numeric">
+      </div>
+      <div class="f">
+        <label for="rweight">Total weight <span class="opt">kg, 4 max</span></label>
+        <input id="rweight" type="number" min="0.1" max="4" step="0.1" inputmode="decimal">
+      </div>
+      <div class="f f--wide">
+        <label for="rref">Your reference <span class="opt">optional</span></label>
+        <input id="rref" type="text" autocomplete="off" placeholder="Bag number or till ref">
+      </div>
+      <div class="f f--wide" id="manual" hidden>
+        <p class="panel__hint" style="margin:0 0 8px">Address, if we couldn't find it</p>
+        <div class="grid">
+          <div class="f">
+            <label for="rprop">House name or number <span class="cnt" id="c-rprop"></span></label>
+            <input id="rprop" type="text" autocomplete="off" maxlength="32">
+          </div>
+          <div class="f">
+            <label for="rstreet">Street <span class="cnt" id="c-rstreet"></span></label>
+            <input id="rstreet" type="text" autocomplete="off" maxlength="32">
+          </div>
+          <div class="f f--wide">
+            <label for="rarea">Area <span class="cnt" id="c-rarea"></span></label>
+            <input id="rarea" type="text" autocomplete="off" maxlength="32">
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="cards">
-      <article class="card">
-        <svg class="card__cross" viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>
-        <h3>Fridge lines, not just boxes</h3>
-        <p>Cold chain is where most couriers stop. We carry it every day, GLP-1 included.
-          You pack the cold box as usual, and same-day transit means it never has to hold
-          overnight.</p>
-      </article>
-      <article class="card">
-        <svg class="card__cross" viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>
-        <h3>Clear the collection shelf</h3>
-        <p>Bags sitting waiting are money tied up and stock you can't shift. Delivery turns
-          a shelf of uncollected prescriptions into completed sales.</p>
-      </article>
-      <article class="card">
-        <svg class="card__cross" viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>
-        <h3>Serve the ones who can't come in</h3>
-        <p>Housebound patients, a parent with a sick child, anyone mid-shift. Today that's a
-          staff member in their own car for an hour. It doesn't need to be.</p>
-      </article>
+
+    <div class="err" id="err2"></div>
+    <div class="row">
+      <button class="b-go" id="add">Add to today's collection</button>
+      <button class="b-ghost" id="clear">Clear</button>
     </div>
   </div>
-</section>
 
-<!-- ===================== WHAT WE DON'T DO ===================== -->
-<section class="sec sec--ink">
-  <div class="wrap">
-    <div class="sec__head">
-      <p class="eyebrow eyebrow--light">Where the line sits</p>
-      <h2>Three things we don't do</h2>
-      <p class="measure">Most delivery services want to become the pharmacy. We're the
-        opposite, and we'd rather be blunt about it up front.</p>
+  <div class="panel">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0"><span class="panel__no">3</span>Today's collection</h2>
+      <span class="count" id="count">nothing yet</span>
     </div>
-    <div class="nots">
-      <div class="not">
-        <h4>We don't dispense</h4>
-        <p>You dispense, you check, you seal. We carry a closed bag and we don't open it.
-          Responsibility for what's inside stays with your pharmacist, where it belongs.</p>
-      </div>
-      <div class="not">
-        <h4>We don't advise</h4>
-        <p>No clinical questions, no substitutions, no counselling at the door. If a patient
-          asks a driver something clinical, the answer is your phone number.</p>
-      </div>
-      <div class="not">
-        <h4>We don't take your patient</h4>
-        <p>No competing pharmacy, no marketplace, no app quietly moving them somewhere
-          cheaper. They arrived as your patient and they stay your patient.</p>
-      </div>
+    <p class="panel__hint" style="margin-top:6px">Ready for us by <strong id="ready"></strong>.
+      Add through the morning, then download the file for us. The docket is your own record of
+      what left the counter, if you want one.</p>
+    <div id="list"></div>
+
+    <div class="warnbox" id="warn" hidden></div>
+
+    <div class="nudge" id="nudge" hidden></div>
+
+    <div class="row">
+      <button class="b-go" id="send" hidden>Send to Pharmassist</button>
+      <button class="b-go" id="xlsx">Download import file</button>
+      <button class="b-ghost" id="print">Print handover docket</button>
+      <button class="b-ghost" id="copy">Copy as text</button>
     </div>
   </div>
-</section>
 
-<!-- ===================== ANCHOR CUSTOMER =====================
-     Swap logo-placeholder-1.png for the real Healthwave mark.
-     Foley's: add a second <img> and change the heading to the plural
-     version in README.md once the trial is live. Not before.
-     ========================================================== -->
-<section class="sec sec--tight">
-  <div class="wrap">
-    <div class="sec__head sec__head--mid" style="margin-bottom:30px">
-      <p class="eyebrow">Who we deliver for</p>
-      <h2>Healthwave send with us every day</h2>
-      <p>A digital pharmacy in Dundrum running real volume, which is a harder test of a
-        courier than most shops will ever put us through.</p>
-    </div>
-    <div class="clients">
-      <img src="logo-placeholder-1.png" alt="Healthwave" width="200" height="46">
-    </div>
-    <p class="clients__note">Happy to put you in touch with them for a reference.</p>
-  </div>
-</section>
+  <p class="foot-note">
+    <strong>Nothing to send today? Then there's nothing to do.</strong> We call when a list
+    comes through, so a quiet day needs no phone call and no message from you.<br><br>
+    Held on this page only and <strong>not saved anywhere</strong>. Close or refresh the tab and
+    it's gone, so download and print before you finish up. That's deliberate: patient names and
+    numbers shouldn't sit in a browser overnight.<br>
+    Anything wrong, ring us on <strong id="phone"></strong>.
+  </p>
+</div>
+<div class="toast" id="toast"></div>
 
-<!-- ===================== CERTIFICATION ===================== -->
-<section class="sec sec--paper">
-  <div class="wrap certs">
-    <div class="certs__copy">
-      <p class="eyebrow">Independently certified</p>
-      <h2>Audited, not just promised</h2>
-      <p class="measure">Handing patient medicines to somebody else is a real decision, and
-        it shouldn't have to rest on our word. Our operation is certified by the NSAI to
-        ISO 9001 for quality management and ISO 14001 for environmental management.</p>
-      <p class="measure">In practice that means the way we handle, track and hand over your
-        bags is written down, followed, and checked by an auditor from outside the company.
-        It's also the paperwork your own procedures will want to see.</p>
-      <p class="certs__note">Pharmassist is a trading name of Flexi Logistics Services Ltd.,
-        which holds both certificates. Registration numbers available on request.</p>
-    </div>
-    <div class="certs__marks">
-      <img src="nsai-iso-9001.png" alt="NSAI Certified: I.S. EN ISO 9001:2015, Quality" width="160" height="228">
-      <img src="nsai-iso-14001.png" alt="NSAI Certified: I.S. EN ISO 14001:2015, Environment" width="160" height="228">
-    </div>
-  </div>
-</section>
+<script>
+/* ==========================================================================
+   CONFIG
+   ========================================================================== */
+const PHONE   = "01 425 5722";      
+const READY_BY = "1pm";
 
-<!-- ===================== PARTNER FORM ===================== -->
-<section class="sec" id="partner">
-  <div class="wrap wrap--narrow">
-    <div class="sec__head">
-      <p class="eyebrow eyebrow--green">Partner with us</p>
-      <h2>Start delivering the same day</h2>
-      <p>Tell us a little about your pharmacy and we'll come back within one working day
-        with the rate and how collections would work for your shop.</p>
-    </div>
-    <form class="form" data-partner-form novalidate>
-      <div class="form__row">
-        <label for="p-pharmacy">Pharmacy name</label>
-        <input id="p-pharmacy" name="pharmacy" type="text" required>
-      </div>
-      <div class="form__row">
-        <label for="p-name">Your name</label>
-        <input id="p-name" name="name" type="text" required>
-      </div>
-      <div class="form__row">
-        <label for="p-email">Email</label>
-        <input id="p-email" name="email" type="email" required>
-      </div>
-      <div class="form__row">
-        <label for="p-phone">Phone</label>
-        <input id="p-phone" name="phone" type="tel">
-      </div>
-      <div class="form__row">
-        <label for="p-eircode">Pharmacy Eircode</label>
-        <input id="p-eircode" name="eircode" type="text" placeholder="D02 X285">
-      </div>
-      <div class="form__row">
-        <label for="p-volume">Deliveries a week, roughly</label>
-        <select id="p-volume" name="volume">
-          <option>Not sure yet</option>
-          <option>Under 10</option>
-          <option>10 to 30</option>
-          <option>30 to 75</option>
-          <option>More than 75</option>
-        </select>
-      </div>
-      <div class="form__row form__row--wide">
-        <label for="p-message">Anything we should know</label>
-        <textarea id="p-message" name="message" placeholder="Fridge lines, controlled drugs, opening hours, existing arrangements, whatever matters."></textarea>
-      </div>
-      <p class="form__note">We'll only use this to get back to you about delivery. Please
-        don't include any patient details.</p>
-      <div class="form__row form__row--wide">
-        <button class="btn btn--solid" type="submit" style="justify-self:start">Send enquiry</button>
-      </div>
-    </form>
-  </div>
-</section>
+/* ---- import file defaults ----
+   These land in every row of the download. The header row is reproduced exactly
+   as it appears in blank_multi_import.xlsx, including the "Adreess Line 2"
+   misspelling, in case the importer matches on header text. Don't tidy it. */
+const SERVICE  = "Same Day";        /* default; adjusted in the import tool if needed */
+const COUNTRY  = "Ireland";         /* always Ireland */
+const COUNTY   = "Dublin";          /* conditional field, mandatory for some countries */
+const PACKAGES_DEFAULT = 1;
+const WEIGHT_DEFAULT   = 1;         /* kg, prefilled. Staff can change it. */
+const WEIGHT_MAX       = 4;         /* kg. Our limit, so catch it at the counter rather
+                                       than have the upload rejected at 1pm. */
 
-<footer class="foot">
-  <div class="wrap">
-    <div class="foot__grid">
-      <div class="foot__col">
-        <a class="mark mark--light" href="index.html">
-          <span class="mark__word"><span class="g">Pharm</span><span class="s">assist</span></span>
-          <svg class="mark__cross" viewBox="0 0 64 64" aria-hidden="true"><rect x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/><rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>
-        </a>
-        <p class="mark-tagline">Same day pharmacy delivery</p>
-        <p class="foot__blurb">We carry the bag. Your pharmacist does the rest.</p>
-      </div>
-      <div class="foot__col">
-        <h4>Site</h4>
-        <ul>
-          <li><a href="index.html">For pharmacies</a></li>
-          <li><a href="how-it-works.html">How it works</a></li>
-          <li><a href="coverage.html">Coverage</a></li>
-          <li><a href="for-patients.html">For patients</a></li>
-        </ul>
-      </div>
-      <div class="foot__col">
-        <h4>Get in touch</h4>
-        <ul>
-          <li><a href="tel:+35310000000">01 000 0000</a></li>
-          <li><a href="mailto:hello@pharmassist.ie">hello@pharmassist.ie</a></li>
-          <li><a href="#partner">Partner with us</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="foot__bar">
-      <p>Pharmassist is a delivery service. We do not dispense, supply or advise on
-        medicines. That remains with the partner pharmacy.</p>
-      <p>Pharmassist is a trading name of Flexi Logistics Services Ltd.</p>
-      <p>&copy; 2026 Flexi Logistics Services Ltd.</p>
-    </div>
-  </div>
-</footer>
+/* The import template has no column for delivery instructions, so they ride in
+   "Company Name (Optional)" instead. It's unused for a residential delivery,
+   and the import tool moves them into the proper field on the way in. Capped at
+   32 characters, which is the column limit.
 
-<script src="config.js"></script>
-<script src="checker.js"></script>
+   Set to null if you'd rather they didn't travel in the file at all, in which
+   case they only appear on the handover docket. */
+const NOTES_INTO = "company";
+
+const PHARMACIES = {
+  foleys: {
+    name:"Foleys Chemist",
+    address:"136 Parnell Street, Dublin 1",
+    eircode:"D01 A9C7",
+    phone:"01 874 6972"
+  },
+  healthwave: {
+    name:"Healthwave", address:"Dundrum, Dublin 14",                 
+    eircode:"D14 XXXX", phone:"01 425 5722"                          
+  }
+};
+
+const COVERED = ["D*","A94*","A96*","K67*"];
+const OUTER = {
+  D22:["Newcastle"], D24:["Brittas","Bohernabreena","Glenasmole"],
+  D18:["Glencullen"], D15:["Clonee"], K67:["Lissenhall","Kilsallaghan","Ballyboughal"]
+};
+
+/* first place name is used to prefill the Town field, editable by staff */
+const AREAS = {
+  D01:"Dublin 1", D02:"Dublin 2", D03:"Clontarf", D04:"Dublin 4", D05:"Raheny",
+  D06:"Rathmines", D6W:"Terenure", D07:"Phibsborough", D08:"Dublin 8",
+  D09:"Drumcondra", D10:"Ballyfermot", D11:"Finglas", D12:"Crumlin",
+  D13:"Baldoyle", D14:"Dundrum", D15:"Blanchardstown", D16:"Ballinteer",
+  D17:"Coolock", D18:"Sandyford", D20:"Palmerstown", D22:"Clondalkin",
+  D24:"Tallaght", A94:"Blackrock", A96:"D\u00fan Laoghaire", A98:"Bray",
+  K32:"Balbriggan", K34:"Skerries", K36:"Lusk", K45:"Rush", K56:"Donabate",
+  K67:"Swords", K78:"Lucan"
+};
+
+/* Exact header row from the supplied template. Do not correct the spelling, and
+   note "Town" stays as-is here even though staff see the field labelled "Area":
+   the platform matches on these strings, and most Dublin suburbs aren't towns. */
+const HEADERS = ["Company Name (Optional)","Address Line 1","Adreess Line 2","Town","County",
+                 "PostCode","Country","Your Ref (Optional)","Deliver Contact","Deliver Phone",
+                 "# of Packages","Total Weight","Service"];
+
+const DEMO_ADDRESSES = {
+  "D6WH948": { property:"Flat 2, 14", street:"Ashfield Park", area:"Terenure" },
+  "D02X285": { property:"3",          street:"Dawson Street", area:"Dublin 2" },
+  "D08XR41": { property:"88",         street:"Clanbrassil Street", area:"Dublin 8" }
+};
+
+/* ========================================================================== */
+const LETTERS = "ACDEFHKNPRTVWXY";
+const SWAPS = {O:"0",Q:"0",I:"1",L:"1",J:"1",S:"5",Z:"2",B:"8",G:"6",U:"V"};
+const DUBLIN_KEYS = ["D01","D02","D03","D04","D05","D06","D6W","D07","D08","D09","D10","D11",
+                     "D12","D13","D14","D15","D16","D17","D18","D20","D22","D24"];
+const MARK = '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+  '<rect class="up" x="24.5" y="4" width="15" height="56" rx="2.5" fill="currentColor"/>' +
+  '<rect x="4" y="24.5" width="56" height="15" rx="2.5" fill="currentColor"/></svg>';
+
+const $ = id => document.getElementById(id);
+const covers = rk => COVERED.some(p => p.endsWith("*") ? rk.startsWith(p.slice(0,-1)) : rk === p);
+const listPlaces = a => a.length === 1 ? a[0] : a.slice(0,-1).join(", ")+" or "+a[a.length-1];
+
+$("today").textContent = new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"});
+$("phone").textContent = PHONE;
+$("ready").textContent = READY_BY;
+
+const slug = (new URLSearchParams(location.search).get("p")||"").toLowerCase();
+/* Normally each pharmacy opens their own bookmarked link, so this never shows.
+   Without one, offer a picker rather than a dead end: it still attributes every
+   booking, and the shop name stays visible on screen and on the driver sheet,
+   so a wrong choice is obvious rather than silent. */
+let SHOP = slug ? PHARMACIES[slug] : null;
+
+if(!SHOP){
+  const opts = Object.entries(PHARMACIES).map(([k,v]) =>
+    '<button class="b-ghost pick" data-k="'+k+'" style="display:block;width:100%;text-align:left;'+
+    'margin-bottom:8px;padding:14px 16px">' +
+    '<strong style="color:var(--head);font-weight:600">'+v.name+'</strong>' +
+    '<br><span style="font-size:13.5px;color:var(--label)">'+v.address+'</span></button>').join("");
+  document.querySelector(".wrap").insertAdjacentHTML("afterbegin",
+    '<div class="panel" id="picker"><h2>Which pharmacy?</h2>' +
+    '<p class="panel__hint">Each pharmacy normally has its own link, so you\u2019d skip this. ' +
+    'Pick one to carry on.</p>' + opts + '</div>');
+  document.querySelectorAll(".pick").forEach(b => {
+    b.onclick = () => {
+      const u = new URL(location.href);
+      u.searchParams.set("p", b.dataset.k);
+      location.href = u.toString();
+    };
+  });
+  document.querySelectorAll(".whoami, .panel:not(#picker)").forEach(el => el.style.display = "none");
+  throw new Error("choosing a pharmacy");
+}
+
+$("shop").textContent = SHOP.name;
+$("shopaddr").textContent = SHOP.address + "  \u00b7  " + SHOP.eircode;
+$("shopphone").textContent = SHOP.phone;
+
+const eir = $("eircode"), verdict = $("verdict"), p2 = $("p2");
+let bookings = [], currentKey = null;
+
+const tidy = raw => {
+  const up = String(raw||"").toUpperCase();
+  const m = up.match(/\b(D6W|[ACDEFHKNPRTVWXY][0-9]{2})[ -]?([ACDEFHKNPRTVWXY0-9]{4})\b/);
+  return m ? m[1]+m[2] : up.replace(/[^A-Z0-9]/g,"");
+};
+const keyOf = c => {
+  const rk = c.slice(0,3);
+  if(rk === "D6W") return rk;
+  return (rk.length===3 && LETTERS.includes(rk[0]) && /^[0-9]{2}$/.test(rk.slice(1))) ? rk : null;
+};
+const fixFor = c => { const f=[...c].map(x=>SWAPS[x]||x).join(""); return f!==c?f:null; };
+const pretty = c => c.length>3 ? c.slice(0,3)+" "+c.slice(3) : c;
+const esc = s => String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function show(kind,title,body){
+  verdict.hidden=false; verdict.className="verdict is-"+kind;
+  verdict.innerHTML = MARK+'<div><h3>'+title+'</h3><p>'+body+'</p></div>';
+}
+
+let lookupFor = null;   /* the code we last looked up, so we don't repeat it */
+
+function setIfEmpty(id, val){
+  if(val && !$(id).value){ $(id).value = val; $(id).dispatchEvent(new Event("input")); }
+}
+
+function showAddr(){
+  const bits = [$("rprop").value, $("rstreet").value, $("rarea").value].filter(Boolean);
+  const el = $("addr");
+  if(!bits.length){ el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = esc(bits.join(", ")) +
+    '<em>From the Eircode. Wrong? Open the extras below to change it.</em>';
+}
+
+async function fillAddress(code){
+  if(!LOOKUP_URL || lookupFor === code) return;
+  lookupFor = code;
+  const hint = $("lookup");
+  hint.textContent = "Finding the address\u2026"; hint.className = "lookup";
+  try{
+    let a;
+    if(LOOKUP_URL === "demo"){
+      await new Promise(r => setTimeout(r, 350));
+      a = DEMO_ADDRESSES[code];
+      if(!a) throw new Error("not in the demo set");
+    }else{
+      const res = await fetch(LOOKUP_URL + "?eircode=" + encodeURIComponent(code));
+      if(!res.ok) throw new Error(res.status);
+      a = await res.json();
+    }
+    setIfEmpty("rprop", a.property);
+    setIfEmpty("rstreet", a.street);
+    setIfEmpty("rarea", a.area);
+    hint.textContent = "";
+    $("manual").hidden = true;
+    showAddr();
+  }catch(e){
+    /* never block a booking on a lookup. Open the address fields and say so. */
+    hint.textContent = "We couldn't find that address, so it's in the extras below.";
+    hint.className = "lookup";
+    $("manual").hidden = false;
+    $("extra").hidden = false;
+    $("toggle").textContent = "Hide the extras";
+    showAddr();
+  }
+}
+
+function check(){
+  const code = tidy(eir.value); currentKey = null;
+  if(code.length < 3){ verdict.hidden=true; p2.hidden=true; return; }
+  const rk = keyOf(code);
+  if(!rk){
+    const f = fixFor(code);
+    show("err","That isn't a valid Eircode","Seven characters, like <strong>D02 X285</strong>."+
+      (f?" Did you mean <strong>"+pretty(f)+"</strong>?":""));
+    p2.hidden=true; return;
+  }
+  const area = AREAS[rk] || rk;
+  if(!covers(rk)){
+    show("no","Outside our area","We don't deliver to "+area+" ("+rk+"). The patient will need to "+
+      "collect, or ring us on "+PHONE+" if it's urgent.");
+    p2.hidden=true; return;
+  }
+  const notes = [];
+  if(rk[0]==="D" && !DUBLIN_KEYS.includes(rk))
+    notes.push("There's no Dublin "+rk.slice(1).replace(/^0/,"")+", so that looks mistyped. "+
+               "Carry on if you're sure.");
+  if(OUTER[rk])
+    notes.push("If this is in "+listPlaces(OUTER[rk])+", ring us first. Those are outside the run.");
+  currentKey = rk;
+
+  /* Answer as soon as the routing key is in, because that's the fast yes staff
+     want. But don't open the form until all seven characters are there: the
+     Eircode becomes the PostCode column in the import file, and a three
+     character postcode would sail straight through to the platform. */
+  const complete = code.length === 7;
+  show("yes","We cover "+area,
+    complete ? (notes.length ? notes.join(" ") : "Fill in the details below.")
+             : (notes.length ? notes.join(" ")+" " : "") + "Finish the Eircode to book it.");
+
+  if(!complete){ p2.hidden = true; return; }
+
+  const opening = p2.hidden;
+  p2.hidden = false;
+  /* Order matters. The routing key only gives a rough area, so the lookup gets
+     first refusal and the guess is a fallback if it comes back empty. */
+  fillAddress(code).then(() => {
+    if(!$("rarea").value && AREAS[rk]){
+      $("rarea").value = AREAS[rk];
+      $("rarea").dispatchEvent(new Event("input"));
+    }
+  });
+  /* only move the cursor at the moment the form opens, never mid-typing */
+  if(opening && !$("rname").value) $("rname").focus();
+}
+eir.addEventListener("input", () => {
+  const bare = eir.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
+  eir.value = pretty(bare); check();
+});
+eir.addEventListener("keydown", e => { if(e.key==="Enter") check(); });
+
+/* live character counts, because the platform truncates silently at 32 */
+[["rname",32],["rprop",32],["rstreet",32],["rarea",32]].forEach(([id,max]) => {
+  const el=$(id), c=$("c-"+id);
+  const upd=()=>{ const n=el.value.length; c.textContent=n+"/"+max;
+    c.classList.toggle("warn", n>=max); };
+  el.addEventListener("input",upd); upd();
+});
+
+const digits = v => String(v||"").replace(/[^\d+]/g,"").replace(/^\+353/,"0").replace(/\D/g,"");
+const mobileOk = v => /^08[3-9]\d{7}$/.test(digits(v));
+
+$("add").onclick = () => {
+  const g = id => $(id).value.trim();
+  const errs = [];
+  if(tidy(eir.value).length !== 7){ errs.push("The Eircode isn't complete."); eir.classList.add("bad"); }
+  else eir.classList.remove("bad");
+  ["rname","rmobile","rprop","rarea","rnotes","rpkgs","rweight"].forEach(id=>$(id).classList.remove("bad"));
+  if(g("rname").length < 2){ errs.push("Add the recipient's name."); $("rname").classList.add("bad"); }
+  if(!mobileOk(g("rmobile"))){ errs.push("Irish mobiles start 083 to 089."); $("rmobile").classList.add("bad"); }
+  if(!g("rprop")){ errs.push("House name or number is required by the delivery system."); $("rprop").classList.add("bad"); }
+  if(!g("rarea")){ errs.push("Area is required."); $("rarea").classList.add("bad"); }
+  const pkgs = parseInt(g("rpkgs"),10);
+  const wt   = parseFloat(g("rweight"));
+  if(!(pkgs >= 1)){ errs.push("How many bags?"); $("rpkgs").classList.add("bad"); }
+  if(!(wt > 0)){ errs.push("Weight is required by the delivery system."); $("rweight").classList.add("bad"); }
+  else if(wt > WEIGHT_MAX){
+    errs.push("That's over our "+WEIGHT_MAX+"kg limit, so we can't take it on a standard "+
+              "booking. Ring us on "+PHONE+".");
+    $("rweight").classList.add("bad");
+  }
+  if($("rleave").checked && g("rnotes").length < 3){
+    errs.push("If the patient asked us to leave it, say where in the notes.");
+    $("rnotes").classList.add("bad");
+  }
+  $("err2").textContent = errs.join(" ");
+  if(errs.length) return;
+
+  bookings.push({
+    eircode: pretty(tidy(eir.value)), area: AREAS[currentKey]||currentKey,
+    name:g("rname"), mobile:digits(g("rmobile")),
+    prop:g("rprop"), street:g("rstreet"), town:g("rarea"),
+    notes:g("rnotes"), leave:$("rleave").checked, ref:g("rref"),
+    pkgs:pkgs, weight:wt
+  });
+  reset(); draw();
+  toast("Added. "+bookings.length+" for collection."); eir.focus();
+};
+
+function reset(){
+  ["eircode","rname","rmobile","rprop","rstreet","rarea","rnotes","rref"].forEach(id=>$(id).value="");
+  $("rleave").checked=false; $("err2").textContent="";
+  ["rname","rmobile","rprop","rarea","rnotes","rpkgs","rweight"].forEach(id=>$(id).classList.remove("bad"));
+  ["rname","rprop","rstreet","rarea"].forEach(id=>$("c-"+id).textContent="0/32");
+  $("addr").hidden = true; $("extra").hidden = true; $("manual").hidden = true;
+  $("toggle").textContent = "Anything else? Notes, bag size, your own reference";
+  verdict.hidden=true; p2.hidden=true; currentKey=null; lookupFor=null;
+  $("lookup").textContent=""; $("lookup").className="lookup";
+}
+$("clear").onclick = () => { reset(); eir.focus(); };
+
+function draw(){
+  $("count").textContent = bookings.length
+    ? bookings.length+(bookings.length===1?" booking":" bookings") : "nothing yet";
+  const withNotes = bookings.filter(b => b.notes || b.leave);
+  const tooLong = withNotes.filter(b => (b.notes||"").length > 32);
+  if(tooLong.length){
+    $("warn").hidden = false;
+    $("warn").innerHTML = '<strong>'+tooLong.length+' note'+(tooLong.length>1?'s are':' is')+
+      ' longer than the 32 characters the file allows,</strong> so '+
+      (tooLong.length>1?'they\u2019ll':'it\u2019ll')+' be cut short. Shorten '+
+      (tooLong.length>1?'them':'it')+' or tell us on the phone:<ul>' +
+      tooLong.map(b => '<li>'+esc(b.eircode)+' '+esc(b.name)+'</li>').join("") + '</ul>';
+  } else { $("warn").hidden = true; }
+
+  if(!bookings.length){
+    $("list").innerHTML='<p class="empty">No bookings yet. Check an Eircode above to start.</p>';
+    return;
+  }
+  $("list").innerHTML =
+    '<table><thead><tr><th>Eircode</th><th>Name</th><th>Address</th><th>Mobile</th>' +
+    '<th>Bags</th><th>Notes</th><th></th></tr></thead><tbody>' +
+    bookings.map((b,i) =>
+      '<tr><td class="mono">'+esc(b.eircode)+'</td>' +
+      '<td>'+esc(b.name)+'</td>' +
+      '<td class="note-cell">'+esc([b.prop,b.street,b.town].filter(Boolean).join(", "))+'</td>' +
+      '<td class="mono">'+esc(b.mobile)+'</td>' +
+      '<td class="note-cell">'+b.pkgs+' &times; '+b.weight+'kg</td>' +
+      '<td class="note-cell">'+esc(b.notes) +
+        (b.leave?'<br><span class="flag">Leave authorised by patient</span>':'')+'</td>' +
+      '<td><button class="b-x" data-i="'+i+'" title="Remove">&times;</button></td></tr>').join("") +
+    '</tbody></table>';
+  $("list").querySelectorAll(".b-x").forEach(b => {
+    b.onclick = () => { bookings.splice(+b.dataset.i,1); draw(); };
+  });
+}
+
+/* ---------- the import file ---------- */
+function rowsForImport(){
+  return bookings.map(b => {
+    const co = (NOTES_INTO === "company" && b.notes) ? b.notes.slice(0,32) : "";
+    return [ co, b.prop.slice(0,32), b.street.slice(0,32), b.town.slice(0,32), COUNTY,
+             b.eircode.slice(0,16), COUNTRY, b.ref, b.name.slice(0,32), b.mobile,
+             b.pkgs, b.weight, SERVICE ];
+  });
+}
+$("xlsx").onclick = () => {
+  if(!bookings.length){ toast("Nothing to download yet."); return; }
+  if(typeof XLSX === "undefined"){ toast("Couldn't load the spreadsheet library. Use Copy."); return; }
+  const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rowsForImport()]);
+  ws["!cols"] = [{wch:22},{wch:20},{wch:19},{wch:14},{wch:13},{wch:15},{wch:12},
+                 {wch:17},{wch:20},{wch:13},{wch:16},{wch:13},{wch:13}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Addresses");   /* sheet name must match */
+  const d = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, "import-"+slug+"-"+d+".xlsx");
+  toast("Downloaded "+bookings.length+" row(s).");
+};
+
+function asText(){
+  const d = new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"});
+  return "Pharmassist collection, "+d+"\n" +
+    "Collect from: "+SHOP.name+", "+SHOP.address+" ("+SHOP.eircode+")\n" +
+    "Handed to Pharmassist by ......................  at .......... \n" +
+    bookings.length+" booking(s), "+bookings.reduce((s,b)=>s+b.pkgs,0)+" bag(s), "+
+    bookings.reduce((s,b)=>s+b.weight,0).toFixed(1)+"kg total\n\n" +
+    bookings.map((b,i) => (i+1)+". "+b.eircode+"  "+b.name+"  "+b.mobile +
+      "\n   "+[b.prop,b.street,b.town].filter(Boolean).join(", ") +
+      (b.notes ? "\n   Notes: "+b.notes : "") +
+      (b.leave ? "\n   PATIENT AUTHORISED LEAVING IF NOBODY ANSWERS" : "") +
+      (b.ref ? "\n   Ref: "+b.ref : "")).join("\n\n");
+}
+$("print").onclick = () => { bookings.length ? window.print() : toast("Nothing to print yet."); };
+$("copy").onclick = async () => {
+  if(!bookings.length){ toast("Nothing to copy yet."); return; }
+  try{ await navigator.clipboard.writeText(asText()); toast("Copied."); }
+  catch(e){ toast("Copy blocked. Use Print instead."); }
+};
+
+let tt;
+function toast(m){
+  const el=$("toast"); el.textContent=m; el.classList.add("on");
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove("on"),2100);
+}
+$("rpkgs").value = PACKAGES_DEFAULT;
+$("rweight").value = WEIGHT_DEFAULT;
+/* ---------- the collection time ----------
+   The nudge is only a reminder. The auto-send is the thing that actually
+   catches the mistake, because the failure we're guarding against is somebody
+   simply forgetting, and a reminder relies on the same person remembering. */
+let sentCount = 0;          /* how many of the list we've successfully sent */
+let sentAt = null;
+let lastChange = Date.now();
+
+const CUT = 13*60;                                    /* the collection time */
+const nowMins = () => { const d=new Date(); return d.getHours()*60+d.getMinutes(); };
+const unsent = () => bookings.length - sentCount;
+
+function nudge(){
+  const el = $("nudge");
+  const left = unsent();
+  if(!bookings.length){ el.hidden = true; return; }
+
+  if(left === 0){
+    el.hidden = false; el.className = "nudge nudge--done";
+    el.textContent = "Sent at "+sentAt+". Anything you add now gets sent as well.";
+    return;
+  }
+
+  const [nh,nm] = NUDGE_FROM.split(":").map(Number);
+  const mins = nowMins();
+  const label = SEND_URL ? "Send it to us" : "Download the file and send it to "+SEND_TO;
+
+  if(mins >= CUT){
+    el.hidden = false; el.className = "nudge nudge--late";
+    el.textContent = "It's past "+READY_BY+" and "+left+" booking"+(left>1?"s haven't":" hasn't")+
+      " been sent. " + (SEND_URL && AUTO_SEND_AFTER_SECS
+        ? "We'll send "+(left>1?"them":"it")+" automatically in a moment."
+        : label+", or ring us on "+PHONE+".");
+  }else if(mins >= nh*60+nm){
+    el.hidden = false; el.className = "nudge nudge--soon";
+    el.textContent = "Collection is at "+READY_BY+". "+label+" when you're finished adding.";
+  }else{ el.hidden = true; }
+}
+
+async function push(auto){
+  if(!SEND_URL || !unsent()) return false;
+  const btn = $("send");
+  if(btn){ btn.disabled = true; btn.textContent = "Sending\u2026"; }
+  let ok = false;
+  try{
+    const res = await fetch(SEND_URL, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        pharmacy: slug, shop: SHOP, date: new Date().toISOString(),
+        automatic: !!auto, headers: HEADERS, rows: rowsForImport(), bookings
+      })
+    });
+    if(!res.ok) throw new Error(res.status);
+    sentCount = bookings.length;
+    sentAt = new Date().toLocaleTimeString("en-IE",{hour:"2-digit",minute:"2-digit"});
+    toast(auto ? "Sent automatically at "+sentAt+"." : "Sent. "+bookings.length+" booking(s).");
+    ok = true;
+  }catch(e){
+    /* leave sentCount alone so it tries again on the next tick */
+    toast("Didn't send. Download the file and email it, then ring us.");
+  }
+  if(btn){ btn.disabled = false; btn.textContent = "Send to Pharmassist"; }
+  nudge();
+  return ok;
+}
+
+let sending = false;
+function tick(){
+  nudge();
+  if(!SEND_URL || !AUTO_SEND_AFTER_SECS || sending) return;
+  if(nowMins() < CUT || !unsent()) return;
+  if((Date.now() - lastChange) / 1000 < AUTO_SEND_AFTER_SECS) return;
+  sending = true;
+  push(true).finally(() => { sending = false; });
+}
+setInterval(tick, 15000);
+
+$("toggle").onclick = () => {
+  const open = !$("extra").hidden;
+  $("extra").hidden = open;
+  $("toggle").textContent = open
+    ? "Anything else? Notes, bag size, your own reference"
+    : "Hide the extras";
+};
+["rprop","rstreet","rarea"].forEach(id =>
+  $(id).addEventListener("input", showAddr));
+
+if(SEND_URL){
+  $("send").hidden = false;
+  $("send").onclick = () => {
+    if(!bookings.length){ toast("Nothing to send yet."); return; }
+    if(!unsent()){ toast("Already sent."); return; }
+    push(false);
+  };
+}
+
+const _draw = draw;
+draw = function(){ lastChange = Date.now(); _draw(); nudge(); };
+draw();
+</script>
 </body>
 </html>

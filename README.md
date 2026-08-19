@@ -1,188 +1,203 @@
-# Pharmassist site (v2)
+# Pharmassist booking
 
-Four static pages. No build step, no framework. Open `index.html` in a browser
-and it works.
-
-```
-index.html          For pharmacies (home)
-how-it-works.html   Operational detail
-coverage.html       The 12km area and the address checker
-for-patients.html   Patient-facing
-config.js           the only file you normally need to edit
-checker.js          address checker logic, shared by all pages
-styles.css          all styling
-```
-
-`v1-foleys-frozen/` sits alongside this folder and holds the exact checker file
-Foley's received for review. Don't edit it. It's the reference for what they saw.
-
----
-
-## What changed from v1
-
-v1 was built, then repeatedly patched as the business got clearer. v2 is built
-for what the business turned out to be, so the running order changed:
-
-1. **The three ways moved to the top of the home page**, straight after the hero.
-   It's the objection-killer. A pharmacist's first silent question is "would this
-   even work in my shop", and the answer is always yes.
-2. **Cold chain leads the value section** instead of being a caveat buried on
-   page two. It's a capability gate: pharmacies dispensing GLP-1 either see it
-   early or assume you can't.
-3. **The "same day" argument moved into the hero and the section heading.** The
-   old version aimed it at the post, which isn't the competitor. The chains
-   dispense locally and still don't deliver.
-4. **One price, explained.** Deliveries ride scheduled area runs and an area only
-   opens when it can carry a run. That's what makes a single number sustainable.
-5. **Jargon removed.** "Last mile", "integrate", "asymmetry", "order screen" and
-   "template" are gone. The test for anything new: would a pharmacist say this
-   word to another pharmacist? "Fridge lines" passes. "Last mile" doesn't.
-
----
-
-## Before this goes live
-
-Real copy means real claims. **Check each of these and change or delete it.**
-
-**Phone number.** Still `01 000 0000`. It's in `config.js` and hardcoded in the
-footer of all four pages, in the checker's out-of-area message, and in `tel:`
-links on `for-patients.html`. Replace both the display form and
-`tel:+35310000000`.
-
-**Email** is settled as `hello@pharmassist.ie` and consistent throughout.
-
-**The 1pm cutoff** on `how-it-works.html` is invented.
-
-**Proof of delivery.** Claimed as timestamped with the name of whoever took it,
-returned the same day.
-
-**Scanning bags in and out** at collection. If it's currently a signature on a
-docket, say that instead.
-
-**"If nobody's home we don't leave it."** The right rule for medicines, but
-confirm it's yours.
-
-**One price per delivery.** Stated along with the two things that make it work:
-scheduled area runs, and areas opening only when they can carry a run. If that's
-not how you intend to operate, rewrite it, because a single price with on-demand
-collection loses money on every thin pharmacy.
-
-**Fridge lines** are now stated as a capability, since Pharmassist carries
-Healthwave's cold chain. The wording stops short of anything unprovable: it says
-you pack the cold box to your own procedure and that same-day transit means it
-never holds overnight. It does **not** claim validated packaging, temperature
-logging, continuous monitoring or GDP certification. If you have any of those,
-say so. If not, leave it exactly as written.
-
-**Controlled drugs** are deliberately cautious: "we won't take them on a standard
-booking, raise it early". Only strengthen that if the procedures exist.
-
-**CRO number.** Worth adding beside the company name in the footer so a
-pharmacist can finish a due-diligence check in one go.
-
----
-
-## Customer logos
-
-`index.html` shows Healthwave as the anchor customer, currently a placeholder
-image. Replace `logo-placeholder-1.png` with their real mark, and get two things
-first: written permission to display the logo, and their agreement to take a
-reference call, since the line underneath offers one.
-
-**Foley's is not on the site.** A trial being set up is not "delivering with us".
-When the trial goes live, add a second `<img>` inside `.clients` and change the
-heading from "Healthwave send with us every day" to something covering both, such
-as "Dublin pharmacies already delivering with us", and make the sub-line and
-reference line plural.
-
-Logos are normalised on **height** (46px), width auto, 200px max, so different
-shapes look deliberate. Supply at roughly 140px tall. If one looks smaller than
-the other at the same pixel height, nudge it with an inline `style="height:52px"`
-rather than changing the shared rule.
-
----
-
-## The NSAI marks
-
-Both certificates are held by Flexi Logistics Services Ltd., and the site says so
-on `index.html`, `how-it-works.html` and in every footer.
-
-**Check the certified scope.** ISO 9001 is certified against a defined scope of
-activities. If that scope covers warehousing and general courier work but not
-pharmacy delivery, the copy claiming it covers "the way we handle, track and hand
-over your bags" is a stretch. Read the certificate.
-
-**Confirm the display conditions** attached to your certificate. Both marks are
-placed unaltered, at their own aspect ratio, with no crops, tints or added
-borders, which is the conservative reading.
-
-The source files were CMYK JPEGs carrying a 544KB print colour profile each.
-They're now greyscale PNGs with the profile stripped: 431KB became 23KB and
-13.6KB. The 9001 original was only 200px wide against 831px for the 14001, so
-it's upscaled and slightly softer. Worth asking NSAI for the EPS or SVG.
-
----
-
-## The two forms
-
-Both are wired but post nowhere until you fill in `config.js`:
-
-```js
-partnerFormUrl: "https://...",   // pharmacy enquiry form
-waitlistUrl:    "https://...",   // out-of-area email capture
-```
-
-Anything accepting a JSON POST works: Formspree, Basin, or a Vercel function.
-Until set, they still show a thank-you so nobody hits a dead end, but nothing is
-sent. Don't ship it that way.
-
----
-
-## The address checker
-
-The delivery area is a 12km circle around O'Connell Bridge. A routing key (the
-first three characters of an Eircode) is an *area*, not a point, so:
-
-- **18 routing keys sit entirely inside** the circle, giving an instant free yes
-  from three characters typed.
-- **Everything beyond the borderline list sits entirely outside**, giving an
-  instant no.
-- **8 routing keys are cut through by the circle** (D13, D15, D18, D22, D24, A96,
-  K67, K78). These need the full Eircode and a real coordinate lookup.
-
-Roughly 7 in 10 lookups never touch an API.
-
-### Switching on the exact lookup
-
-Put a Google Maps API key in `config.js` and enable **Maps JavaScript API** and
-**Geocoding API** on it. Google has carried Eircode data since 2017, so Irish
-postcodes geocode accurately.
-
-Without a key, borderline addresses are told to phone you. That's a working
-fallback, not a broken state, but it's a worse experience for a chunk of
-Tallaght, Blanchardstown, Clondalkin and Dún Laoghaire, which is a lot of people.
-
-### Move the key server-side
-
-A key in a web page can be scraped even with referrer restrictions. The clean fix
-is a small Vercel function holding the key, with the browser calling your own
-endpoint. That also lets you cache each Eircode you've resolved, so repeat
-lookups cost nothing. At minimum, restrict the key to your domain in Google Cloud
-Console under *Application restrictions → HTTP referrers*.
-
----
+One page. No build step, no framework, no backend. Open `index.html` in a
+browser and it works.
 
 ## Deploying
 
-Push to GitHub, import into Vercel, no build command needed. Plain static files.
+Push this folder to GitHub, import the repo into Vercel, accept the defaults.
+There's no build command and no output directory to set. It's a static file.
 
-Still missing for launch: a real `favicon.ico`. The wordmark is set live in
-Inter, all caps per the current logo, with `PHARM` in `#2F8F1C` and `ASSIST` in
-`#708090`, and the cross drawn as SVG. Casing is done with CSS `text-transform`
-rather than typed in caps, so screen readers say "Pharmassist" instead of
-spelling out eleven letters. To use the image file instead, replace the
-`<a class="mark">` block with:
+Once it's live, each pharmacy gets its own link to bookmark:
 
-```html
-<a href="index.html"><img src="pharmassist.png" alt="Pharmassist" width="200"></a>
 ```
+https://your-domain/?p=foleys
+https://your-domain/?p=healthwave
+```
+
+The `?p=` is what identifies the pharmacy. Without it the page shows a picker
+instead, which is handy for testing and harmless in daily use, since the shop
+name stays visible on screen and prints on the docket.
+
+Vercel gives you a working URL straight away, something like
+`https://pharmassist-booking.vercel.app/?p=foleys`. That's enough to trial with
+Foley's before pointing a real subdomain at it.
+
+## Adding a pharmacy
+
+One entry in `PHARMACIES` near the top of the script. The slug is whatever goes
+after `?p=`.
+
+```js
+mccauley: {
+  name:    "McCauley Pharmacy",
+  address: "12 Somewhere Street, Dublin 4",
+  eircode: "D04 XXXX",
+  phone:   "01 000 0000"
+}
+```
+
+The address and Eircode are the collection point, printed on the handover
+docket. The phone is the pharmacy's own, shown on screen so staff can check you
+hold the right details. It is deliberately not on the docket: the driver rings
+the customer, then Pharmassist, and Pharmassist rings the pharmacy.
+
+## Why the form is only two fields
+
+Owner-pharmacists are the ones at the counter, and the received wisdom in the
+trade is that delivery is complexity they don't want. So the form asks for the
+Eircode, then a name and a mobile. That's it.
+
+Everything else is either derived or hidden:
+
+- The **address comes from the Eircode**, shown as a plain line to confirm
+  rather than three boxes to fill.
+- **Bags, weight, notes and reference** sit behind an "anything else?" link.
+  Almost every prescription is one bag under a kilo, so the defaults are right
+  nearly always.
+- The **address fields only appear** if the lookup fails, and the page says so.
+
+Resist adding fields. Every one is another reason for a busy pharmacist to
+decide this is a project rather than a favour.
+
+## Settings worth knowing
+
+All near the top of the script.
+
+| Setting | Now | Notes |
+|---|---|---|
+| `PHONE` | 01 425 5722 | Pharmassist, shown wherever staff are told to ring us |
+| `READY_BY` | 1pm | The parcel-ready time, not the customer order cutoff |
+| `SERVICE` | Same Day | Written into every row of the import file |
+| `COUNTRY` | Ireland | Always |
+| `WEIGHT_MAX` | 4 | kg. Over this and the booking is refused at the counter |
+| `COVERED` | `D*`, `A94*`, `A96*`, `K67*` | Matched on the first 3 characters |
+| `OUTER` | see script | Rural tails that prompt staff to ring first |
+| `NOTES_INTO` | `"company"` | Delivery notes ride in Company Name, moved at import |
+| `LOOKUP_URL` | `"demo"` | Address lookup. See below |
+| `SEND_URL` | `null` | Set it and a Send button appears |
+| `SEND_TO` | bookings@pharmassist.ie | The address shown to staff |
+| `NUDGE_FROM` | 12:30 | When the on-screen reminder starts |
+| `AUTO_SEND_AFTER_SECS` | 90 | Past 1pm, send unsent bookings this long after the last edit. 0 disables |
+
+## The address lookup
+
+Currently `"demo"`, which fills the address for three sample Eircodes so you can
+see the behaviour. Three real ones to try: `D6W H948`, `D02 X285`, `D08 XR41`.
+
+To make it real, point `LOOKUP_URL` at your own endpoint that holds the API key
+and returns:
+
+```json
+{ "property": "Flat 2, 14", "street": "Ashfield Park", "area": "Terenure" }
+```
+
+Keep the key server-side, and cache each Eircode you resolve. The same patients
+reorder every month, so you'd otherwise pay for the same lookup repeatedly.
+
+Autoaddress holds the ECAD and returns the address already split into those
+three parts, which maps onto the import columns and gets apartments right.
+Google Geocoding is much cheaper but returns one formatted string to pull apart
+and is weaker on apartment-level Eircodes.
+
+Set it to `null` and staff type the address, which is how it worked before.
+
+## What it produces
+
+**Download import file** gives you an `.xlsx` matching `blank_multi_import.xlsx`
+exactly: same thirteen columns, same order, sheet named `Addresses`, header row
+reproduced character for character including the `Adreess Line 2` misspelling.
+Don't correct that, the importer may match on it.
+
+Two column notes:
+
+- Staff see the field labelled **Area**, because most Dublin suburbs aren't
+  towns. The column stays **Town** because the platform expects it.
+- **Company Name (Optional)** carries the delivery instruction, capped at 32
+  characters. The tool warns when a note is too long and names which one.
+
+**Print handover docket** is the pharmacy's own record of what left the counter,
+with a line for a signature and time. Optional. It carries no instructions and
+no phone numbers, because that's not what it's for.
+
+## Quiet days: no list, no collection
+
+**The standing arrangement is that a collection happens when a list arrives.**
+No list by the collection time means nothing to collect, and no driver calls.
+
+That's deliberate. The alternative, a van calling every day regardless, means
+someone has to actively signal "nothing today", and they'd have to remember to
+do it on precisely the day they have no reason to open the page at all. Silence
+is the more reliable signal, and a collection that only happens when there's
+something to collect is cheaper to run and reads better to a pharmacy than a
+daily call they don't need.
+
+The risk runs the other way instead: staff book six deliveries and forget to
+send. That's what the red nudge after the collection time is for, and it's the
+one failure worth watching in the first fortnight.
+
+Say this plainly when a pharmacy signs up, because it's part of what you're
+promising. It's on the page too, under the list, so counter staff see it.
+
+## Getting the list at 1pm
+
+The page can't email on a schedule. It's a browser tab, and at 1pm it may be
+closed, locked or refreshed, so nothing on a timer would be reliable. Anything
+scheduled has to run on a server.
+
+What it does instead:
+
+- **A nudge from 12:30**, going amber, then red once the collection time passes
+  if bookings still haven't been sent. It's a reminder, not a mechanism, which
+  is why nothing depends on it.
+- **A Send button**, if `SEND_URL` is set, posting the day's list as JSON.
+- **Automatic sending past the collection time.** Anything still unsent goes on
+  its own, `AUTO_SEND_AFTER_SECS` (90) after the last edit, so a booking
+  half-typed at 12:59 isn't sent mid-sentence. Late additions send themselves
+  too. Needs `SEND_URL`, and needs the tab still open.
+- Otherwise staff download the file and email it to whatever `SEND_TO` says.
+
+The auto-send is the part that actually catches the mistake. A reminder relies
+on the same person remembering, which is the thing that failed. Set
+`AUTO_SEND_AFTER_SECS` to 0 to turn it off and go back to the button alone.
+
+A failed send doesn't mark anything as sent, so it retries on the next tick and
+the red nudge stays up.
+
+The real deadline is the driver arriving. A person is already scheduled to be
+there at one o'clock, and they'll notice if the list isn't ready. That's more
+reliable than any cron job.
+
+### If you want it fully automatic
+
+Two ways, both needing a small backend:
+
+**Post as you go.** Each booking is sent the moment it's added, your server
+holds the day's rows and a scheduled job emails the compiled file at 1pm. Most
+robust: if the tab is closed at noon, everything added before then is already
+safe. The cost is that you're storing patient names for a few hours, so
+same-day deletion and a processing agreement apply.
+
+**Email each booking as it's added.** No storage, no scheduled job, no state.
+You get six emails instead of one file, which is untidy but has no data
+retention question attached at all.
+
+For a single-pharmacy trial, the button is enough. Revisit it when there are
+several pharmacies and chasing lists becomes someone's afternoon.
+
+## Data
+
+Nothing is stored. The list lives in the page and is gone on refresh, which is
+deliberate: patient names and mobiles shouldn't sit in a browser overnight. The
+footer tells staff to download before they finish up.
+
+If you ever want the list to survive a refresh, that belongs server-side, not in
+browser storage.
+
+## Still open
+
+- Whether 4kg is per booking or per bag. Treated here as per booking, since the
+  column is Total Weight.
+- Whether the site's "we don't leave bags" line should soften, given this tool
+  lets a patient authorise it.
+- A single-row test upload through your import tool before Foley's start.

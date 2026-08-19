@@ -1,10 +1,10 @@
 # Message templates for partner pharmacies
 
 Nothing here needs new software. These are drop-in replacements for messages
-your pharmacy already sends, with one extra line and a payment link.
+your pharmacy already sends, with one extra line.
 
-**Fill in the placeholders:** `[PHARMACY]`, `[PRICE]`, `[CUTOFF]`, `[LINK]`,
-`[TRACKING]`, `[PHONE]`.
+**Fill in the placeholders:** `[PHARMACY]`, `[PRICE]`, `[CUTOFF]`, `[TRACKING]`,
+`[PHONE]`.
 
 ---
 
@@ -42,8 +42,11 @@ That's it. Two options, one price, no explanation unless they ask.
 
 **If they say yes:**
 
-> "Grand. I'll text you a link to pay, and you'll get another message when it's
-> on the way."
+> "Grand, I'll put it on your bill. You'll get a message when it's on the way."
+
+Whatever you charge for delivery goes on the patient's bill like anything else,
+or into the price so nothing is said at all. Pharmassist bills the pharmacy, so
+there's nothing to collect at the door and no link to send.
 
 **Worth taping beside the phone.** The wording matters less than the offer being
 made every single time, which is the part that quietly stops happening in week
@@ -59,12 +62,12 @@ send now.
 **SMS** (fits one segment)
 
 > [PHARMACY]: order received. Collect in store, or have it delivered to your
-> door today for [PRICE]. Choose delivery: [LINK]
+> door today for [PRICE]. Reply YES for delivery.
 
 **Push notification**
 
 > Title: Order received
-> Body: Collect in store, or get it delivered today for [PRICE]. Tap to choose.
+> Body: Collect in store, or get it delivered today for [PRICE].
 
 **Email**
 
@@ -76,7 +79,7 @@ send now.
 > We deliver across Dublin the same day for [PRICE]. Order before [CUTOFF] and
 > it reaches you today.
 >
-> [Add delivery to this order]([LINK])
+> Just reply to this email and we'll sort it.
 >
 > Nothing changes about how your order is prepared. Delivery is handled by
 > Pharmassist, a courier we work with. Your bag is sealed here before it leaves
