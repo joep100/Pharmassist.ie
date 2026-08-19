@@ -99,6 +99,7 @@ All near the top of the script.
 | `OUTER` | see script | Rural tails that prompt staff to ring first |
 | `NOTES_INTO` | `"company"` | Delivery notes ride in Company Name, moved at import |
 | `LOOKUP_URL` | `"demo"` | Address lookup. See below |
+| `DEMO_EIRCODE` | D6W H948 | Prefills the box in demo mode only. Set to `""` for a blank start |
 | `SEND_URL` | `null` | Set it and a Send button appears |
 | `SEND_TO` | bookings@pharmassist.ie | The address shown to staff |
 | `NUDGE_FROM` | 12:30 | When the on-screen reminder starts |
@@ -107,7 +108,13 @@ All near the top of the script.
 ## The address lookup
 
 Currently `"demo"`, which fills the address for three sample Eircodes so you can
-see the behaviour. Three real ones to try: `D6W H948`, `D02 X285`, `D08 XR41`.
+see the behaviour: `D6W H948`, `D02 X285`, `D08 XR41`.
+
+In demo mode the page also opens with `DEMO_EIRCODE` already in the box and
+checked, so it shows what it does rather than a blank field. Both the prefill and
+the canned addresses are guarded on `LOOKUP_URL === "demo"`, so neither can reach
+a live deployment. Setting `LOOKUP_URL` to a real endpoint or to `null` turns both
+off automatically.
 
 To make it real, point `LOOKUP_URL` at your own endpoint that holds the API key
 and returns:

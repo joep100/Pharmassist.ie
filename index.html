@@ -311,6 +311,12 @@ const NOTES_INTO = "company";
      null     staff type the address, as it worked before                     */
 const LOOKUP_URL = "demo";
 
+/* Prefill the Eircode box, so a demo starts with something in it rather than a
+   blank field. Only fires when LOOKUP_URL is "demo", so it can't leak into the
+   live version. Any of the three demo Eircodes works: D6W H948, D02 X285,
+   D08 XR41. */
+const DEMO_EIRCODE = "D6W H948";
+
 /* ---- sending the day's list ----
    Fill in SEND_URL and a Send button appears. Left null, staff download the
    file and email it to SEND_TO instead.
@@ -777,6 +783,17 @@ if(SEND_URL){
 const _draw = draw;
 draw = function(){ lastChange = Date.now(); _draw(); nudge(); };
 draw();
+
+$("rpkgs").value = PACKAGES_DEFAULT;
+$("rweight").value = WEIGHT_DEFAULT;
+
+/* Demo only: start with an Eircode already in the box and checked, so the page
+   opens showing what it does instead of a blank field. Guarded on LOOKUP_URL,
+   so it cannot appear in a live deployment. */
+if(LOOKUP_URL === "demo" && DEMO_EIRCODE){
+  eir.value = DEMO_EIRCODE;
+  check();
+}
 </script>
 </body>
 </html>
