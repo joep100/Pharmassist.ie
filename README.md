@@ -23,6 +23,26 @@ Vercel gives you a working URL straight away, something like
 `https://pharmassist-booking.vercel.app/?p=foleys`. That's enough to trial with
 Foley's before pointing a real subdomain at it.
 
+## Two pharmacies, two files
+
+```
+index.html    opens on Foley's Chemist
+foodys.html   opens on Foody's Pharmacy
+```
+
+Both files are identical apart from one line, `DEFAULT_PHARMACY`. Both know
+about every pharmacy, so `?p=` still works on either, but each opens on its own
+shop and a bare URL can never book as the wrong one.
+
+Giving each pharmacy its own file rather than one URL with a query string means
+you can email it as an attachment, and there's no link for anyone to mangle.
+
+Their lists are kept separately, under `pharmassist:foleys` and
+`pharmassist:foodys`, so two pharmacies sharing a machine would never see each
+other's bookings.
+
+Bag references are prefixed per shop: `FOL-1`, `FDY-1`.
+
 ## Adding a pharmacy
 
 One entry in `PHARMACIES` near the top of the script. The slug is whatever goes
@@ -74,12 +94,11 @@ Eircode, then a name and a mobile. That's it.
 
 Everything else is either derived or hidden:
 
-- The **address comes from the Eircode**, shown as a plain line to confirm
-  rather than three boxes to fill.
+- The **address never appears at all.** The importer resolves it from the
+  Eircode, so there's nothing to type and nothing to check.
 - **Bags, weight, notes and reference** sit behind an "anything else?" link.
   Almost every prescription is one bag under a kilo, so the defaults are right
   nearly always.
-- The **address fields only appear** if the lookup fails, and the page says so.
 
 Resist adding fields. Every one is another reason for a busy pharmacist to
 decide this is a project rather than a favour.
@@ -90,6 +109,8 @@ All near the top of the script.
 
 | Setting | Now | Notes |
 |---|---|---|
+| `MODE` | practice | `live` or `practice` |
+| `DEFAULT_PHARMACY` | foleys | Used when the URL has no `?p=`. Null once several are live |
 | `PHONE` | 01 425 5722 | Pharmassist, shown wherever staff are told to ring us |
 | `READY_BY` | 1pm | The parcel-ready time, not the customer order cutoff |
 | `SERVICE` | Same Day | Written into every row of the import file |
@@ -98,40 +119,38 @@ All near the top of the script.
 | `COVERED` | `D*`, `A94*`, `A96*`, `K67*` | Matched on the first 3 characters |
 | `OUTER` | see script | Rural tails that prompt staff to ring first |
 | `NOTES_INTO` | `"company"` | Delivery notes ride in Company Name, moved at import |
-| `LOOKUP_URL` | `"demo"` | Address lookup. See below |
-| `DEMO_EIRCODE` | D6W H948 | Prefills the box in demo mode only. Set to `""` for a blank start |
 | `SEND_URL` | `null` | Set it and a Send button appears |
 | `SEND_TO` | bookings@pharmassist.ie | The address shown to staff |
 | `NUDGE_FROM` | 12:30 | When the on-screen reminder starts |
 | `AUTO_SEND_AFTER_SECS` | 90 | Past 1pm, send unsent bookings this long after the last edit. 0 disables |
 
-## The address lookup
+## The two confirmations
 
-Currently `"demo"`, which fills the address for three sample Eircodes so you can
-see the behaviour: `D6W H948`, `D02 X285`, `D08 XR41`.
+A complete, covered Eircode shows two ticked lines under the verdict:
 
-In demo mode the page also opens with `DEMO_EIRCODE` already in the box and
-checked, so it shows what it does rather than a blank field. Both the prefill and
-the canned addresses are guarded on `LOOKUP_URL === "demo"`, so neither can reach
-a live deployment. Setting `LOOKUP_URL` to a real endpoint or to `null` turns both
-off automatically.
+1. **We deliver to Terenure.** Inside the 12km area.
+2. **Address comes from the Eircode.** An Eircode points at one delivery point,
+   apartment and all, so the code gives the exact address.
 
-To make it real, point `LOOKUP_URL` at your own endpoint that holds the API key
-and returns:
+The second is deliberately worded as what happens, not as something that has
+already happened. **This page does not resolve the address**, the importer does,
+and claiming otherwise would be a promise the screen can't show. If a pharmacist
+ever asked to see the address, there would be nothing there.
 
-```json
-{ "property": "Flat 2, 14", "street": "Ashfield Park", "area": "Terenure" }
-```
+If you want the address actually displayed at the counter, that means putting a
+lookup back in and paying per booking. Worth doing only if pharmacists say they
+don't trust a bare postcode, which is the sort of thing the Foley's session
+should tell you.
 
-Keep the key server-side, and cache each Eircode you resolve. The same patients
-reorder every month, so you'd otherwise pay for the same lookup repeatedly.
+## There is no address lookup
 
-Autoaddress holds the ECAD and returns the address already split into those
-three parts, which maps onto the import columns and gets apartments right.
-Google Geocoding is much cheaper but returns one formatted string to pull apart
-and is weaker on apartment-level Eircodes.
+The importer resolves the address from the Eircode itself, apartments included,
+so the booking tool doesn't ask for one and doesn't call any lookup service. No
+API key, no per-lookup charge, no caching, nothing to fail mid-booking.
 
-Set it to `null` and staff type the address, which is how it worked before.
+In the import file, **Address Line 1, Adreess Line 2 and Town are sent empty on
+purpose.** The Eircode goes in `PostCode` and the importer fills the rest. If that
+ever changes, those three columns come back and so does the lookup.
 
 ## What it produces
 
@@ -142,8 +161,6 @@ Don't correct that, the importer may match on it.
 
 Two column notes:
 
-- Staff see the field labelled **Area**, because most Dublin suburbs aren't
-  towns. The column stays **Town** because the platform expects it.
 - **Company Name (Optional)** carries the delivery instruction, capped at 32
   characters. The tool warns when a note is too long and names which one.
 
@@ -173,6 +190,90 @@ one failure worth watching in the first fortnight.
 
 Say this plainly when a pharmacy signs up, because it's part of what you're
 promising. It's on the page too, under the list, so counter staff see it.
+
+## The pharmacy logo
+
+Each pharmacy record takes an optional `logo`. Leave it empty and the name is set
+in type instead, which is why this works before you've collected a single logo
+file.
+
+Foley's is **inlined as a base64 data URI**, not a separate image file. A
+relative path like `logo-foleys.png` breaks the moment the page is opened
+anywhere other than its own folder, which is exactly what happens when you email
+someone the file to look at. Inlined, it's one self-contained page that works
+from a link, an attachment or a memory stick.
+
+It's 138px square, about 11KB inlined, which is 3x the 46px it displays at. To
+add another, resize to roughly 138px and paste the data URI in the same way.
+
+## Practice mode
+
+`MODE` at the top of the script is either `"live"` or `"practice"`. It ships as
+`"practice"`.
+
+In practice mode:
+
+- An amber banner sits above everything: **nothing here will be delivered**, use
+  made-up names.
+- The browser tab reads "PRACTICE" so it's obvious even when minimised.
+- Every row's Service column becomes `PRACTICE - DO NOT DELIVER`, so a practice
+  list can never be mistaken for a real job at your end, even if somebody sends
+  it by accident.
+
+**Do not use practice mode with real patients.** Staff will book somebody who is
+then expecting a delivery that isn't coming, and nobody will have told the
+patient it was a rehearsal. Made-up names only.
+
+Set `MODE = "live"` when you're actually collecting.
+
+**Practice mode with no `SEND_URL` shows the real Send button and goes through
+the motions.** Nothing leaves the page, the confirmation says so plainly, and no
+network request is made. That lets somebody walk the whole flow, including the
+send, before you've set up the sheet.
+
+In live mode a missing `SEND_URL` still falls back to the download button,
+because then the list genuinely has to reach you somehow.
+
+### A word on "book as if it were live"
+
+The honest options are a rehearsal with invented patients, or going live with a
+small number of real deliveries you actually collect. There isn't a safe middle.
+
+Going live is also the better test. A rehearsal tells you whether the screen
+makes sense. It cannot tell you whether staff keep offering delivery once the
+shop is busy, and that is the thing most likely to decide whether this works.
+
+## Where the list lands
+
+`apps-script.gs` in this folder is a Google Apps Script endpoint that appends
+every booking to a Google Sheet. Free, no server, nothing to host, and about
+five minutes to set up. The instructions are at the top of that file.
+
+Why a sheet rather than an emailed file:
+
+- The rows arrive in the same thirteen columns your import template uses, with
+  the pharmacy, bag reference and a timestamp in front. Filter to today, select,
+  and it goes straight into the importer.
+- It accumulates. One sheet is your record across every pharmacy, which is what
+  you invoice from, and it answers "did they send anything today" without
+  digging through an inbox.
+- Nothing to chase. An emailed file has to be found, opened and saved. A sheet
+  is already open.
+
+Once it's deployed, paste the web app URL into `SEND_URL` and the Send button
+appears in place of the download.
+
+**One technical note.** The page posts as `text/plain`, not `application/json`.
+That's deliberate: JSON triggers a CORS preflight that Apps Script doesn't
+answer, and the send fails before it arrives. Apps Script parses the body itself,
+so nothing is lost. If you swap to a different endpoint later, it needs to accept
+`text/plain` or the content type has to change on both sides together.
+
+### If you'd rather have an email
+
+Formspree or Basin both accept a POST and mail it to you, and need no code at
+all. You lose the running record and the invoicing view, and you gain an inbox
+to keep on top of. For one pharmacy it's fine. For ten it isn't.
 
 ## Getting the list at 1pm
 
@@ -219,6 +320,27 @@ retention question attached at all.
 
 For a single-pharmacy trial, the button is enough. Revisit it when there are
 several pharmacies and chasing lists becomes someone's afternoon.
+
+## The day's list survives a refresh
+
+Bookings are held in `localStorage` on the pharmacy's own machine, keyed by
+pharmacy. A stray refresh or a closed tab at ten to one no longer loses a
+morning's work, which was the single most likely way for this to fail in
+practice.
+
+Three rules keep the patient data side of it honest:
+
+- **Only today.** Anything saved under a different date is discarded and wiped
+  on load, so names never linger past the day they were entered.
+- **Wiped once sent.** As soon as a list reaches you, the local copy goes.
+- **Never blocks the tool.** Private browsing and locked-down machines refuse
+  storage outright. Every call is wrapped, and the tool falls back to holding
+  the list in the page exactly as it did before.
+
+It's keyed on the resolved pharmacy, not the raw `?p=`, so opening the bare URL
+and the `?p=foleys` link on the same machine gives you one list rather than two.
+
+Nothing reaches us until the list is sent.
 
 ## Data
 
