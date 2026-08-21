@@ -1,4 +1,3 @@
-
 /**
  * Eircode lookup
  *
@@ -57,7 +56,25 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: "Address service unavailable." });
     }
 
-    const a = await upstream.json();
+    let a = await upstream.json();
+
+    // SelectEircodeAddress hands back a placeId and a locality, not a street.
+    // The full address sits behind the placeId, so fetch that too. If this
+    // second call fails we still return what we have rather than nothing.
+    if (a && a.placeId) {
+      try {
+        const detail = await fetch(
+          BASE + "/SelectAddress/" + encodeURIComponent(a.placeId),
+          { headers: { "X-API-Key": key, "Accept": "application/json" } }
+        );
+        if (detail.ok) {
+          const d = await detail.json();
+          if (d && (d.addressLine1 || d.city)) a = Object.assign({}, a, d);
+        }
+      } catch (e) {
+        // keep the locality-only answer
+      }
+    }
 
     // The same Eircode gets looked up every month by the same patients, so let
     // Vercel keep each answer for a day. Costs nothing and takes load off the API.
