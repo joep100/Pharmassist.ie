@@ -9,15 +9,70 @@
  * This one becomes:   https://your-site/api/address?eircode=D02X285
  *
  * Nothing here needs editing. The key comes from a Vercel setting called
- * CYCLONE_API_KEY, which is explained in the README.
+ * CYCLONE_API_KEY.
  */
 
 const BASE = "https://booking-api.cyclonegroup.ie/click_ext";
 
+/** First value with something in it, trying each name in turn. */
+function pick(obj, names) {
+  if (!obj) return "";
+  for (let i = 0; i < names.length; i++) {
+    const v = obj[names[i]];
+    if (v !== null && v !== undefined && String(v).trim() !== "") {
+      return String(v).trim();
+    }
+  }
+  return "";
+}
+
+/**
+ * Turn whatever came back into one readable address.
+ *
+ * Two things make this messier than it should be. The API answers in
+ * snake_case while the published schema says camelCase, so both are read. And
+ * the street arrives in company_name while address_line1 holds the postal
+ * district, so the field names can't be trusted: everything with content is
+ * collected in order and duplicates dropped.
+ */
+function toAddress(a) {
+  const parts = [
+    pick(a, ["company_name", "companyName"]),
+    pick(a, ["address_line1", "addressLine1"]),
+    pick(a, ["address_line2", "addressLine2"]),
+    pick(a, ["address_line3", "addressLine3"]),
+    pick(a, ["city"]),
+    pick(a, ["county"])
+  ];
+
+  // The same place often appears twice, e.g. Clonsilla as both line 2 and city.
+  const seen = {};
+  const lines = parts.filter(function (v) {
+    if (!v) return false;
+    const k = v.toLowerCase();
+    if (seen[k]) return false;
+    seen[k] = true;
+    return true;
+  });
+
+  const postal = pick(a, ["postal_code", "postalCode"]);
+  const eircode = postal
+    ? postal.replace(/\s+/g, "").replace(/^(.{3})(.{4})$/, "$1 $2")
+    : "";
+
+  return {
+    address: lines.join(", ") + (eircode ? ", " + eircode : ""),
+    lines: lines,
+    postalCode: eircode,
+    placeId: pick(a, ["placeId", "place_id"]) || null,
+    latitude: a.latitude || null,
+    longitude: a.longitude || null
+  };
+}
+
 module.exports = async function handler(req, res) {
   // Read the eircode from the web address. req.query is a convenience Vercel
-  // provides in some setups and not others, so read the raw URL if it's absent
-  // rather than crashing.
+  // provides in some setups and not others, so fall back to the raw URL.
   let raw = "";
   try {
     if (req.query && req.query.eircode) {
@@ -37,63 +92,68 @@ module.exports = async function handler(req, res) {
 
   const key = process.env.CYCLONE_API_KEY;
   if (!key) {
-    // Deployed without the setting. Say so plainly rather than failing oddly.
     return res.status(500).json({ error: "CYCLONE_API_KEY is not set in Vercel." });
   }
 
+  const headers = { "X-API-Key": key, "Accept": "application/json" };
+
   try {
-    const upstream = await fetch(
+    const first = await fetch(
       BASE + "/SelectEircodeAddress/" + encodeURIComponent(eircode),
-      { headers: { "X-API-Key": key, "Accept": "application/json" } }
+      { headers: headers }
     );
 
-    // Cyclone returns 404 when there's no exact match. That's a normal answer,
-    // not a failure: the pharmacist just types the address instead.
-    if (upstream.status === 404) {
+    // 404 means no exact match. That's a normal answer, not a failure: the
+    // pharmacist simply doesn't see an address and carries on.
+    if (first.status === 404) {
       return res.status(200).json({ found: false });
     }
-    if (!upstream.ok) {
+    if (!first.ok) {
       return res.status(502).json({ error: "Address service unavailable." });
     }
 
-    let a = await upstream.json();
+    let data = await first.json();
+    let out = toAddress(data);
 
-    // SelectEircodeAddress hands back a placeId and a locality, not a street.
-    // The full address sits behind the placeId, so fetch that too. If this
-    // second call fails we still return what we have rather than nothing.
-    if (a && a.placeId) {
+    // If the first call gave a placeId but little else, ask for the detail
+    // behind it. Merged field by field so an empty value can never wipe a good
+    // one, which is how the placeId went missing on an earlier attempt.
+    if (out.placeId && out.lines.length < 2) {
       try {
-        const detail = await fetch(
-          BASE + "/SelectAddress/" + encodeURIComponent(a.placeId),
-          { headers: { "X-API-Key": key, "Accept": "application/json" } }
+        const second = await fetch(
+          BASE + "/SelectAddress/" + encodeURIComponent(out.placeId),
+          { headers: headers }
         );
-        if (detail.ok) {
-          const d = await detail.json();
-          if (d && (d.addressLine1 || d.city)) a = Object.assign({}, a, d);
+        if (second.ok) {
+          const detail = await second.json();
+          if (detail) {
+            Object.keys(detail).forEach(function (k) {
+              const v = detail[k];
+              if (v !== null && v !== undefined && v !== "") data[k] = v;
+            });
+            const merged = toAddress(data);
+            if (merged.lines.length >= out.lines.length) out = merged;
+          }
         }
       } catch (e) {
-        // keep the locality-only answer
+        // keep what the first call gave us
       }
     }
 
-    // The same Eircode gets looked up every month by the same patients, so let
-    // Vercel keep each answer for a day. Costs nothing and takes load off the API.
+    // The same patients reorder monthly, so let Vercel keep each answer a day.
     res.setHeader("Cache-Control", "s-maxage=86400, stale-while-revalidate");
 
     return res.status(200).json({
       found: true,
-      placeId: a.placeId || null,      // needed later, when this also creates the booking
-      line1:   a.addressLine1 || "",
-      line2:   a.addressLine2 || "",
-      line3:   a.addressLine3 || "",
-      city:    a.city || "",
-      county:  a.county || "",
-      postalCode: a.postalCode || ""
+      address: out.address,
+      lines: out.lines,
+      postalCode: out.postalCode,
+      placeId: out.placeId,
+      latitude: out.latitude,
+      longitude: out.longitude
     });
 
   } catch (err) {
-    // Report what went wrong. Without this a failure is a blank 500 page and
-    // there is nothing to go on.
     return res.status(502).json({
       error: "Could not reach the address service.",
       detail: String(err && err.message ? err.message : err)
