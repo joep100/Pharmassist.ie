@@ -136,9 +136,11 @@ async function book(req, res) {
       return res.status(502).json({
         error: "Cyclone could not quote for that journey.",
         status: q.status,
-        detail: (qdata && Array.isArray(qdata.errorMessages) && qdata.errorMessages.length)
-          ? qdata.errorMessages.join("; ")
-          : (qdata && (qdata.title || qdata.detail)) || qtext.slice(0, 300),
+        detail: (function(){
+          const m = qdata && (qdata.error_messages || qdata.errorMessages);
+          if (Array.isArray(m) && m.length) return m.join("; ");
+          return (qdata && (qdata.title || qdata.detail)) || qtext.slice(0, 300);
+        })(),
         reply: qdata || qtext.slice(0, 1200)
       });
     }
@@ -180,26 +182,29 @@ async function book(req, res) {
       return res.status(502).json({
         error: "Cyclone refused the booking.",
         status: upstream.status,
-        detail: (data && Array.isArray(data.errorMessages) && data.errorMessages.length
-                  ? data.errorMessages.join("; ")
-                  : (data && (data.title || data.detail || data.message))) || text.slice(0, 300),
+        detail: (function(){
+                  const m = data && (data.error_messages || data.errorMessages);
+                  if (Array.isArray(m) && m.length) return m.join("; ");
+                  return (data && (data.title || data.detail || data.message)) || text.slice(0, 300);
+                })(),
         sent: booking,
         reply: data || text.slice(0, 1500)
       });
     }
 
     if (data && data.success === false) {
+      const msgs = data.error_messages || data.errorMessages;
       return res.status(502).json({
         error: "Cyclone refused the booking.",
-        detail: Array.isArray(data.errorMessages) && data.errorMessages.length
-          ? data.errorMessages.join("; ") : "No reason given.",
+        detail: Array.isArray(msgs) && msgs.length ? msgs.join("; ") : "No reason given.",
         reply: data
       });
     }
 
     return res.status(200).json({
       ok: true,
-      trackingNumber: (data && (data.trackingNumber || data.TrackingNumber)) || null,
+      trackingNumber: (data && (data.tracking_number || data.trackingNumber ||
+                                data.TrackingNumber)) || null,
       collectionTime: booking.collectionTime,
       quoteId: quote.uid,
       quotedVehicle: (quote.vehicle && (quote.vehicle.name || quote.vehicle.type)) || null,
