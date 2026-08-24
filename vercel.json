@@ -1,8 +1,24 @@
 {
   "rewrites": [
-    { "source": "/remedi", "destination": "/index.html" },
-    { "source": "/foleys", "destination": "/index.html" },
-    { "source": "/foodys", "destination": "/index.html" },
-    { "source": "/healthwave", "destination": "/index.html" }
+    {
+      "source": "/foleys",
+      "destination": "/booking.html"
+    },
+    {
+      "source": "/foodys",
+      "destination": "/booking.html"
+    },
+    {
+      "source": "/remedi",
+      "destination": "/booking.html"
+    },
+    {
+      "source": "/susanhunter",
+      "destination": "/booking.html"
+    },
+    {
+      "source": "/healthwave",
+      "destination": "/booking.html"
+    }
   ]
 }
