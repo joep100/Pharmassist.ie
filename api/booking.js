@@ -106,6 +106,58 @@ async function book(req, res) {
 
   if (b.deliverySubAddressLine) booking.deliverySubAddressLine = b.deliverySubAddressLine;
 
+  /* ------------------------------------------------------------------
+     CreateBooking will not take a booking on its own: it wants a quoteId,
+     even though the published spec lists that field as optional. So the
+     order is quote first, then book against it.
+
+     CreateQuote returns several options, one per vehicle. We pick the one
+     matching the vehicle asked for, and fall back to the first if there is
+     no match, because a quote for the wrong bike still beats no booking.
+     ------------------------------------------------------------------ */
+  let quote = null;
+  try {
+    const q = await fetch(BASE + "/CreateQuote", {
+      method: "POST",
+      headers: { "X-API-Key": key, "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        account: booking.account,
+        uuid: booking.uuid,
+        fromPlaceId: booking.collection,
+        toPlaceId: booking.delivery
+      })
+    });
+    const qtext = await q.text();
+    let qdata = null;
+    try { qdata = qtext ? JSON.parse(qtext) : null; } catch (e) { /* not JSON */ }
+
+    const quotes = (qdata && qdata.quotes) || [];
+    if (!q.ok || !quotes.length) {
+      return res.status(502).json({
+        error: "Cyclone could not quote for that journey.",
+        status: q.status,
+        detail: (qdata && Array.isArray(qdata.errorMessages) && qdata.errorMessages.length)
+          ? qdata.errorMessages.join("; ")
+          : (qdata && (qdata.title || qdata.detail)) || qtext.slice(0, 300),
+        reply: qdata || qtext.slice(0, 1200)
+      });
+    }
+
+    const want = String(booking.vehicle || "").toUpperCase();
+    quote = quotes.find(function (x) {
+      const n = String((x.vehicle && (x.vehicle.name || x.vehicle.type)) || "").toUpperCase();
+      return n.replace(/[^A-Z]/g, "") === want.replace(/[^A-Z]/g, "");
+    }) || quotes[0];
+
+  } catch (err) {
+    return res.status(502).json({
+      error: "Could not reach the quoting service.",
+      detail: String(err && err.message ? err.message : err)
+    });
+  }
+
+  booking.quoteId = quote.uid;
+
   try {
     const upstream = await fetch(BASE + "/CreateBooking", {
       method: "POST",
@@ -149,6 +201,9 @@ async function book(req, res) {
       ok: true,
       trackingNumber: (data && (data.trackingNumber || data.TrackingNumber)) || null,
       collectionTime: booking.collectionTime,
+      quoteId: quote.uid,
+      quotedVehicle: (quote.vehicle && (quote.vehicle.name || quote.vehicle.type)) || null,
+      distanceMetres: quote.distance || null,
       raw: data
     });
 
