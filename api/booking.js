@@ -122,12 +122,26 @@ async function book(req, res) {
     try { data = text ? JSON.parse(text) : null; } catch (e) { /* not JSON */ }
 
     if (!upstream.ok) {
-      // Pass the reason back rather than a bare failure, so the person at the
-      // counter is told something they can act on.
+      // Pass the whole reply back. A validation error names the offending field
+      // somewhere in there, and guessing which key it lives under wastes more
+      // time than sending the lot.
       return res.status(502).json({
         error: "Cyclone refused the booking.",
         status: upstream.status,
-        detail: (data && (data.title || data.detail || data.message)) || text.slice(0, 300)
+        detail: (data && Array.isArray(data.errorMessages) && data.errorMessages.length
+                  ? data.errorMessages.join("; ")
+                  : (data && (data.title || data.detail || data.message))) || text.slice(0, 300),
+        sent: booking,
+        reply: data || text.slice(0, 1500)
+      });
+    }
+
+    if (data && data.success === false) {
+      return res.status(502).json({
+        error: "Cyclone refused the booking.",
+        detail: Array.isArray(data.errorMessages) && data.errorMessages.length
+          ? data.errorMessages.join("; ") : "No reason given.",
+        reply: data
       });
     }
 
@@ -145,4 +159,3 @@ async function book(req, res) {
     });
   }
 }
-
