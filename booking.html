@@ -75,6 +75,8 @@ input.bad{border-color:var(--red);background:var(--red-bg)}
 #eircode{font-size:30px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
   background:var(--paper);padding:19px 22px}
 
+.f--unit{margin-top:18px;max-width:420px}
+.f--unit[hidden]{display:none}
 .checks{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;display:grid;gap:10px}
 .checks[hidden]{display:none}
 .check{display:flex;gap:11px;align-items:flex-start}
@@ -193,6 +195,11 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
              placeholder="D02 X285" autofocus>
     </div>
     <div class="verdict" id="verdict" hidden aria-live="polite"></div>
+    <div class="f f--unit" id="unitwrap" hidden>
+      <label for="runit">Flat or unit <span class="opt">if there is one</span></label>
+      <input id="runit" type="text" autocomplete="off" maxlength="40"
+             placeholder="Flat 4, or Apartment 12B">
+    </div>
     <div class="checks" id="checks" hidden>
       <div class="check" id="chk-addr-row" hidden>
         <span class="check__tick" aria-hidden="true">&#10003;</span>
@@ -263,7 +270,7 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
       <span class="count" id="count">nothing yet</span>
     </div>
     <p class="panel__hint" style="margin-top:6px"><span id="halfday"></span> Ready for us by <strong id="ready"></strong>.
-      Add through the morning, then send it to us. Write the bag reference on each bag with a
+      <span id="howitgoes"></span> Write the bag reference on each bag with a
       biro, and that's the only marking we need.</p>
     <div id="list"></div>
 
@@ -337,7 +344,7 @@ const ADDRESS_LOOKUP = "/api/address";
 
    Needs the account and uuid Cyclone gave you, and a placeId for each shop's
    own address, which is the `placeId` field in their entry below. */
-const CREATE_BOOKING = "/api/booking";          /* "/api/booking" once you're ready */
+const CREATE_BOOKING = null;          /* "/api/booking" once you're ready */
 const ACCOUNT = "INTER";
 const UUID    = "46cd6c17-e266-40ea-9b9f-15d5f48efa53";
 const VEHICLE = "BIKE";               /* per shop with vehicle: in their entry */
@@ -408,9 +415,6 @@ const AUTO_SEND_AFTER_SECS = 90;
 const PHARMACIES = {
   susanhunter: {
     tag:"SUH",
-        placeId:"<EIRCODE>1900142151",
-    eircode:"D02 XC78",
-    address:"Unit 13, Westbury Mall, Balfe Street, Dublin 2",
     logo:"",
     name:"Susan Hunter",
     address:"13 Westbury Mall, Grafton Street, Dublin 2",
@@ -423,8 +427,6 @@ const PHARMACIES = {
   },
   remedi: {
     tag:"REM",
-        placeId:"<EIRCODE>1900172071",
-    address:"Unit 8, Boyne House, IFSC, Dublin 1",
     logo:"/logos/remedi.png",
     name:"CarePlus Remedi Pharmacy",
     address:"Unit 8 Custom House Square, IFSC, Dublin 1",
@@ -433,7 +435,6 @@ const PHARMACIES = {
   },
   foleys: {
     tag:"FOL",                      /* written on the bag, keep it to 3 letters */
-    placeId:"<EIRCODE>1900172304",
     name:"Foley's Chemist",
     logo:"/logos/foleys.png",               /* inlined below. Omit and the name is set in type */
     address:"136 Parnell Street, Dublin 1",
@@ -442,8 +443,6 @@ const PHARMACIES = {
   },
   foodys: {
     tag:"FDY",
-        placeId:"<EIRCODE>1900184665",
-    eircode:"D02 F721",
     logo:"/logos/foodys.png",
     name:"Foody's Pharmacy",
     address:"The Harcourt Buildings, Harcourt Street, Dublin 2",
@@ -563,6 +562,9 @@ const CUTOFF = (typeof SHOP.sameDayUntil === "number") ? SHOP.sameDayUntil : SAM
 const CUTOFF_WORDS = cutoffWords(CUTOFF);
 const RATE = (typeof SHOP.price === "number") ? SHOP.price : PRICE;
 $("rate").textContent = euro(RATE) + " for this delivery";
+$("howitgoes").textContent = CREATE_BOOKING
+  ? "Each one reaches us as you add it, so there's nothing to send."
+  : "Add through the morning, then send it to us.";
 
 /* Has to run after CUTOFF exists, which is why it sits here rather than up with
    the other one-liners. */
@@ -691,7 +693,7 @@ function check(){
   }
   const area = AREAS[rk] || rk;
   if(!covers(rk)){
-    $("checks").hidden = true;
+    $("checks").hidden = true; $("unitwrap").hidden = true;
     show("no","Outside our area",
       "We don't deliver to " + (AREAS[rk] ? AREAS[rk]+" ("+rk+")" : rk+" addresses") +
       ". The patient will need to "+
@@ -731,6 +733,7 @@ function check(){
     : "It's past " + CUTOFF_WORDS + ", so this goes on tomorrow's run. Still a day ahead " +
       "of the post.";
   $("checks").hidden = false;
+  $("unitwrap").hidden = false;
   lookupAddress(code);
 
   const opening = p2.hidden;
@@ -786,6 +789,7 @@ $("add").onclick = () => {
     notes:g("rnotes"), leave:$("rleave").checked, ref:g("rref"),
     addr1: foundLine1,
     placeId: foundPlaceId,
+    unit: g("runit"),
     price: RATE,          /* the rate at the time of booking, so a later change
                              to the shop's price cannot rewrite today's total */
     pkgs:pkgs, weight:wt
@@ -830,6 +834,7 @@ async function sendBooking(b){
         deliveryPhone: b.mobile,
         reference: b.ref || b.bag,
         notes: b.notes || "",
+        deliverySubAddressLine: b.unit || "",
         tomorrow: new Date().getHours() >= CUTOFF,
         readyHour: 13
       })
@@ -849,13 +854,13 @@ async function sendBooking(b){
 }
 
 function reset(){
-  ["eircode","rname","rmobile","rnotes","rref"].forEach(id=>$(id).value="");
+  ["eircode","rname","rmobile","rnotes","rref","runit"].forEach(id=>$(id).value="");
   $("rleave").checked=false; $("err2").textContent="";
   ["rname","rmobile","rnotes","rpkgs","rweight"].forEach(id=>$(id).classList.remove("bad"));
   $("c-rname").textContent="0/32";
   $("extra").hidden = true;
   $("toggle").textContent = "Anything else? Notes, bag size, your own reference";
-  verdict.hidden=true; p2.hidden=true; $("checks").hidden=true;
+  verdict.hidden=true; p2.hidden=true; $("checks").hidden=true; $("unitwrap").hidden=true;
   $("chk-addr-row").hidden=true; lookingUpFor=null; foundLine1=null; foundPlaceId=null; currentKey=null;
 }
 $("clear").onclick = () => { reset(); eir.focus(); };
@@ -902,6 +907,7 @@ function draw(){
         '<button class="b-x" data-i="'+i+'" title="Remove">&times;</button>' +
       '</div>' +
       '<div class="job__addr">' +
+        (b.unit ? '<strong>'+esc(b.unit)+'</strong>, ' : '') +
         (b.addr1 ? esc(b.addr1)+' &middot; ' : '') + esc(b.eircode) +
       '</div>' +
       notes +
@@ -958,6 +964,7 @@ const unsent = () => bookings.length - sentCount;
 
 function nudge(){
   const el = $("nudge");
+  if(!LIST_MODE){ el.hidden = true; return; }
   const left = unsent();
   if(!bookings.length){ el.hidden = true; return; }
 
@@ -1032,6 +1039,7 @@ async function push(auto){
 let sending = false;
 function tick(){
   nudge();
+  if(!LIST_MODE) return;
   if((!SEND_URL && !REHEARSE) || !AUTO_SEND_AFTER_SECS || sending) return;
   if(nowMins() < CUT || !unsent()) return;
   if((Date.now() - lastChange) / 1000 < AUTO_SEND_AFTER_SECS) return;
@@ -1053,9 +1061,21 @@ $("toggle").onclick = () => {
    the download, because then it genuinely has to go somewhere. */
 const REHEARSE = (MODE === "practice" && !SEND_URL);
 
-if(!SEND_URL && !REHEARSE) $("xlsx").hidden = false;
+/* Everything below belongs to the old way of working: gather a list, send it at
+   1pm. Direct booking makes it redundant, so it is hidden rather than deleted.
+   Kept for a week as a fallback, then it can all come out: the Send button, the
+   nudge, the auto-send, the download, SEND_URL, SEND_TO and apps-script.gs. */
+const LIST_MODE = !CREATE_BOOKING;
 
-if(SEND_URL || REHEARSE){
+if(!LIST_MODE){
+  $("send").hidden = true;
+  $("xlsx").hidden = true;
+  $("nudge").hidden = true;
+}
+
+if(LIST_MODE && !SEND_URL && !REHEARSE) $("xlsx").hidden = false;
+
+if(LIST_MODE && (SEND_URL || REHEARSE)){
   $("send").hidden = false;
   $("send").onclick = () => {
     if(!bookings.length){ toast("Nothing to send yet."); return; }
