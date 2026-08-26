@@ -13,7 +13,8 @@
   /* same values the landing page uses, so the two read as one product */
   --brand:#E34C2F; --brand-dk:#C63C22; --brand-dker:#A32E18; --mark:#F26A4E;
   --slate:#98A1A8; --ink:#12161A; --head:#1D2429; --body:#646E76; --label:#98A1A8;
-  --line:#E6E9EB; --line-dk:#D5DADE; --paper:#F6F7F8; --mint:#FDECE8;
+  --line:#E6E9EB; --line-dk:#D5DADE; --paper:#F6F7F8; --sunk:#ECEEF0;
+  --mint:#FDECE8;
   --amber:#8A5A08; --amber-bg:#FDF4E3; --amber-br:#EBD9B4;
   --green:#1E6B45; --green-bg:#EDF6F1; --green-br:#C4E0D2;
   --red:#A83232; --red-bg:#FBEFEF;
@@ -50,12 +51,11 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
 
 /* This is orientation, not an alert. It sits as a white card like every other
    panel, with the colour confined to the small mono label. */
-.whoami{display:flex;align-items:center;gap:16px;background:#fff;
-  border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:16px;
-  font-size:14.5px;box-shadow:0 1px 3px -1px rgba(18,22,26,.06),
-                              0 12px 28px -20px rgba(18,22,26,.22)}
+.whoami{display:flex;align-items:center;gap:16px;background:var(--sunk);
+  border:1px solid var(--line-dk);border-radius:16px;padding:16px 18px;margin-bottom:22px;
+  font-size:14.5px;box-shadow:none}
 .whoami img{width:64px;height:64px;border-radius:12px;flex:none;display:block;
-  border:1px solid var(--line)}
+  border:1px solid var(--line-dk);background:#fff}
 .whoami img[hidden]{display:none}
 .whoami__txt{display:flex;flex-direction:column;gap:2px;min-width:0}
 .whoami__lbl{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;
@@ -64,7 +64,7 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
 .whoami__addr{color:var(--body);font-size:13.5px}
 
 .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px 30px 26px;
-  margin-bottom:16px;box-shadow:0 1px 3px -1px rgba(18,22,26,.06),
+  margin-bottom:12px;box-shadow:0 1px 3px -1px rgba(18,22,26,.06),
                                 0 12px 28px -20px rgba(18,22,26,.22)}
 .panel[hidden]{display:none}
 h2{font-size:24px;font-weight:600;color:var(--head);margin:0 0 4px;letter-spacing:-.022em}
@@ -182,6 +182,50 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .warnbox ul{margin:8px 0 0;padding-left:20px}
 .warnbox[hidden]{display:none}
 
+/* ---------- telling the sections apart ----------
+   Three white panels in a row give a member of staff nothing to navigate by.
+   The two that take input are numbered and carry a brand rule at the top; the
+   day's list is the record rather than a form, so it sits on the page tint with
+   a heavier edge and no rule. */
+.panel{position:relative;overflow:hidden}
+.panel--step::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;
+  background:var(--brand)}
+h2{display:flex;align-items:center;gap:11px}
+h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;
+  font-family:var(--sans);font-size:14px;font-weight:700;display:flex;align-items:center;
+  justify-content:center}
+.panel--list{background:var(--sunk);border-color:var(--line-dk);box-shadow:none;
+  margin-top:22px}
+.panel--list h2{gap:0}
+.panel--list .job{border-color:var(--line-dk)}
+
+/* ---------- the printed label ----------
+   Hidden on screen. When the label is printed everything else on the page is
+   taken out of the flow, so a shop with a plain A4 printer gets one clean label
+   and nothing else. Sized to be cut out and taped or stapled to the bag. */
+.sheet{display:none}
+@media print{
+  body > *{display:none!important}
+  body > .sheet{display:block!important}
+  .sheet{padding:0;margin:0}
+  @page{margin:14mm}
+}
+.sheet__card{border:2px solid #000;border-radius:6px;padding:16px 18px;width:104mm;
+  font-family:var(--sans);color:#000}
+.sheet__ref{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.06em;
+  border-bottom:2px solid #000;padding-bottom:9px;margin-bottom:12px}
+.sheet__name{font-size:21px;font-weight:700;line-height:1.2}
+.sheet__addr{font-size:16px;line-height:1.4;margin-top:5px}
+.sheet__mob{font-size:17px;font-weight:600;margin-top:9px}
+.sheet__notes{font-size:14px;line-height:1.35;margin-top:10px;padding-top:9px;
+  border-top:1px solid #000}
+.sheet__foot{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  margin-top:13px;padding-top:9px;border-top:1px solid #000}
+
+.b-print{background:#fff;border:1px solid var(--line-dk);color:var(--head);border-radius:8px;
+  padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;margin-left:auto}
+.b-print:hover{border-color:var(--brand);color:var(--brand)}
+
 .foot-note{font-size:13px;color:var(--label);margin-top:24px;line-height:1.7}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,18px);background:var(--ink);
   color:#fff;padding:12px 22px;border-radius:11px;font-size:14px;font-weight:500;opacity:0;
@@ -206,7 +250,7 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 
   <div class="top">
     <span class="mark"><img src="data:image/png;base64,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" alt="Cyclone Last Mile"></span>
-    <span class="top__tag">Delivery booking</span>
+    <span class="top__tag">In store booking</span>
     <span class="top__date" id="today"></span>
   </div>
 
@@ -226,8 +270,8 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     </div>
   </div>
 
-  <div class="panel">
-    <h2>Where's it going?</h2>
+  <div class="panel panel--step">
+    <h2><span class="n">1</span>Where's it going?</h2>
     <p class="panel__hint">Eircode first. If we don't cover it you won't waste time on the rest.</p>
     <div class="f">
       <label for="eircode">Customer's Eircode</label>
@@ -252,8 +296,8 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     </div>
   </div>
 
-  <div class="panel panel--form" id="p2" hidden>
-    <h2>Who's receiving it?</h2>
+  <div class="panel panel--step panel--form" id="p2" hidden>
+    <h2><span class="n">2</span>Who's receiving it?</h2>
     <p class="panel__hint">Two things. The Eircode gives us the address.</p>
 
     <div class="grid">
@@ -304,7 +348,7 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     </div>
   </div>
 
-  <div class="panel" id="listpanel">
+  <div class="panel panel--list" id="listpanel">
     <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
       <h2 style="margin:0">Today's collections</h2>
       <span class="count" id="count">nothing yet</span>
@@ -334,13 +378,22 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     Anything wrong, ring us on <strong id="phone"></strong>.
   </p>
 </div>
+<div class="sheet" id="sheet"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const PHONE   = "01 425 5722";      
+const PHONE   = "01 425 5722";
+
+/* When the rider calls. This is the default; any shop can set its own with
+   readyBy in their entry below.
+
+   It has to be at or after that shop's cutoff, or the page contradicts itself:
+   a 2pm cutoff with a 1pm collection tells staff a two o'clock booking goes
+   today and that we came for it an hour ago. The check further down shouts in
+   the console if the two ever disagree. */
 const READY_BY = "1pm";
 
 /* The day splits in two. Order before the cutoff and it goes today; after it,
@@ -430,6 +483,10 @@ const NOTES_INTO = "company";
    isn't coming. Made-up names only. */
 const MODE = "practice";
 
+/* Any shop can override the line above with mode:"practice" or mode:"live" in
+   their own entry. Without that, switching one shop to a demo would put every
+   other shop on the same page into practice at the same time. */
+
 /* Used when the URL carries no ?p=. Set to null once several pharmacies are
    live. */
 const DEFAULT_PHARMACY = null;
@@ -461,6 +518,7 @@ const PHARMACIES = {
     address:"13 Westbury Mall, Balfe Street, Dublin 2",
     eircode:"D02 XC78",
     phone:"01 679 1271",
+    readyBy:"2pm",                  /* CONFIRM: has to match when the rider actually calls */
     /* Nothing to dispense, and 700m from the bridge, so the cutoff can go out
        to 2pm. Her customers are mostly central too, which is the part that
        actually matters. */
@@ -492,6 +550,22 @@ const PHARMACIES = {
     address:"The Harcourt Buildings, 57B Harcourt Street, Dublin 2",
     eircode:"D02 F721",
     phone:"01 416 1918"
+  },
+  stockdesign: {
+    tag:"STK",
+    /* STILL TO DO: get this from
+       cyclonelastmile.ie/api/address?eircode=D02KP04 and paste the placeId. */
+    placeId:null,
+    logo:"",
+    name:"Stock Design",
+    address:"34 King Street South, Dublin 2",
+    eircode:"D02 KP04",
+    phone:"01 679 4316",
+    mode:"practice",                /* a demo while the others run live */
+    /* Around the corner from Susan Hunter, so the same 2pm cutoff should hold.
+       CONFIRM against when the rider actually calls. */
+    sameDayUntil: 14,
+    readyBy:"2pm"
   },
   healthwave: {
     tag:"HW",
@@ -556,6 +630,19 @@ const MARK = '<svg viewBox="0 0 64 64" aria-hidden="true">' +
     seen[tag] = k;
   });
   if(clashes.length) console.error("Config problem: " + clashes.join("; "));
+
+  /* A collection time earlier than the cutoff makes the page contradict itself. */
+  Object.keys(PHARMACIES).forEach(function(k){
+    const s = PHARMACIES[k];
+    const cut = (typeof s.sameDayUntil === "number") ? s.sameDayUntil : SAME_DAY_UNTIL;
+    const ready = s.readyBy || READY_BY;
+    const m = String(ready).match(/^(\d{1,2})\s*(am|pm)$/i);
+    if(!m) return;
+    let hr = parseInt(m[1], 10) % 12;
+    if(m[2].toLowerCase() === "pm") hr += 12;
+    if(hr < cut) console.error("Config problem: " + k + " has a " + cutoffWords(cut) +
+      " cutoff but the rider is shown as calling at " + ready);
+  });
 })();
 
 const $ = id => document.getElementById(id);
@@ -565,7 +652,7 @@ const listPlaces = a => a.length === 1 ? a[0] : a.slice(0,-1).join(", ")+" or "+
 $("today").textContent = new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"});
 $("phone").textContent = PHONE;
 $("phone2").textContent = PHONE;
-$("ready").textContent = READY_BY;
+
 
 /* Which pharmacy this page is for.
 
@@ -596,19 +683,21 @@ let SHOP = PHARMACIES[slug] || (DEFAULT_PHARMACY ? PHARMACIES[DEFAULT_PHARMACY] 
 
 if(!SHOP){
   document.querySelector(".wrap").innerHTML =
-    '<div class="panel" style="margin-top:40px"><h2>This link isn\u2019t set up for a pharmacy</h2>' +
-    '<p class="panel__hint" style="margin-bottom:0">Every pharmacy has its own booking link. ' +
+    '<div class="panel" style="margin-top:40px"><h2>This link isn\u2019t set up for a shop</h2>' +
+    '<p class="panel__hint" style="margin-bottom:0">Every shop has its own booking link. ' +
     'Ring us on <strong>' + PHONE + '</strong> and we\u2019ll send yours again.</p></div>';
   throw new Error("no pharmacy");
 }
 
 $("shop").textContent = SHOP.name;
 if(SHOP.logo){ $("shoplogo").src = SHOP.logo; $("shoplogo").alt = SHOP.name; $("shoplogo").hidden = false; }
-if(MODE === "practice"){
+const SHOP_MODE = SHOP.mode || MODE;
+if(SHOP_MODE === "practice"){
   $("practice").hidden = false;
   document.title = "PRACTICE " + document.title;
 }
 const CUTOFF = (typeof SHOP.sameDayUntil === "number") ? SHOP.sameDayUntil : SAME_DAY_UNTIL;
+const READY = SHOP.readyBy || READY_BY;
 const CUTOFF_WORDS = cutoffWords(CUTOFF);
 const RATE = (typeof SHOP.price === "number") ? SHOP.price : PRICE;
 $("rate").textContent = euro(RATE) + " for this delivery";
@@ -624,6 +713,7 @@ $("howitgoes").textContent = CREATE_BOOKING
     ? "<strong>Before " + CUTOFF_WORDS + ", so anything booked now goes out today.</strong>"
     : "<strong>Past " + CUTOFF_WORDS + ", so anything booked now goes out tomorrow.</strong>";
 })();
+$("ready").textContent = READY;
 $("shopaddr").textContent = SHOP.address + "  \u00b7  " + SHOP.eircode;
 $("shopphone").textContent = SHOP.phone;
 
@@ -971,6 +1061,7 @@ function draw(){
         '<span class="bagref">'+esc(b.bag)+'</span>' +
         '<span class="job__name">'+esc(b.name)+'</span>' +
         '<span class="job__mob">'+esc(b.mobile)+'</span>' +
+        '<button class="b-print" data-p="'+i+'" title="Print a label for this bag">Print label</button>' +
         '<button class="b-x" data-i="'+i+'" title="Remove">&times;</button>' +
       '</div>' +
       '<div class="job__addr">' +
@@ -984,6 +1075,32 @@ function draw(){
   $("list").querySelectorAll(".b-x").forEach(b => {
     b.onclick = () => { bookings.splice(+b.dataset.i,1); draw(); };
   });
+  $("list").querySelectorAll(".b-print").forEach(b => {
+    b.onclick = () => printLabel(bookings[+b.dataset.p]);
+  });
+}
+
+
+/* One label, one bag. The reference is set largest because it is the only thing
+   that ties this label to the bag it belongs to on a run of twenty. */
+function printLabel(b){
+  if(!b) return;
+  const line = [b.unit, b.addr1].filter(Boolean).join(", ");
+  $("sheet").innerHTML =
+    '<div class="sheet__card">' +
+      '<div class="sheet__ref">' + esc(b.bag) + '</div>' +
+      '<div class="sheet__name">' + esc(b.name) + '</div>' +
+      '<div class="sheet__addr">' + (line ? esc(line) + '<br>' : '') +
+        esc(b.eircode) + (b.area ? ' &middot; ' + esc(b.area) : '') + '</div>' +
+      '<div class="sheet__mob">' + esc(b.mobile) + '</div>' +
+      (b.notes ? '<div class="sheet__notes">' + esc(b.notes) + '</div>' : '') +
+      (b.leave ? '<div class="sheet__notes">Customer has authorised leaving it. ' +
+                 'See note above.</div>' : '') +
+      '<div class="sheet__foot">' + esc(SHOP.name) + ' &middot; ' +
+        new Date().toLocaleDateString("en-IE",{day:"numeric",month:"short",year:"numeric"}) +
+        ' &middot; Cyclone Last Mile</div>' +
+    '</div>';
+  window.print();
 }
 
 /* ---------- the import file ---------- */
@@ -994,7 +1111,7 @@ function rowsForImport(){
        importer resolves all three from the Eircode, apartments included. */
     return [ co, "", "", "", COUNTY,
              b.eircode.slice(0,16), COUNTRY, (b.ref || b.bag), b.name.slice(0,32), b.mobile,
-             b.pkgs, b.weight, (MODE === "practice" ? SERVICE_PRACTICE : SERVICE) ];
+             b.pkgs, b.weight, (SHOP_MODE === "practice" ? SERVICE_PRACTICE : SERVICE) ];
   });
 }
 $("xlsx").onclick = () => {
@@ -1050,13 +1167,13 @@ function nudge(){
 
   if(mins >= CUT){
     el.hidden = false; el.className = "nudge nudge--late";
-    el.textContent = "It's past "+READY_BY+" and "+left+" booking"+(left>1?"s haven't":" hasn't")+
+    el.textContent = "It's past "+READY+" and "+left+" booking"+(left>1?"s haven't":" hasn't")+
       " been sent. " + (canSend && AUTO_SEND_AFTER_SECS
         ? "We'll send "+(left>1?"them":"it")+" automatically in a moment."
         : label+", or ring us on "+PHONE+".");
   }else if(mins >= nh*60+nm){
     el.hidden = false; el.className = "nudge nudge--soon";
-    el.textContent = "Collection is at "+READY_BY+". "+label+" when you're finished adding.";
+    el.textContent = "Collection is at "+READY+". "+label+" when you're finished adding.";
   }else{ el.hidden = true; }
 }
 
@@ -1083,7 +1200,7 @@ async function push(auto){
       headers:{"Content-Type":"text/plain;charset=utf-8"},
       body: JSON.stringify({
         pharmacy: slug, shop: SHOP, date: new Date().toISOString(),
-        mode: MODE, automatic: !!auto, headers: HEADERS, rows: rowsForImport(), bookings
+        mode: SHOP_MODE, automatic: !!auto, headers: HEADERS, rows: rowsForImport(), bookings
       })
     });
     if(!res.ok) throw new Error(res.status);
@@ -1126,7 +1243,7 @@ $("toggle").onclick = () => {
    motions, so the flow can be walked end to end before anything is deployed.
    Nothing leaves the page. In live mode a missing SEND_URL still falls back to
    the download, because then it genuinely has to go somewhere. */
-const REHEARSE = (MODE === "practice" && !SEND_URL);
+const REHEARSE = (SHOP_MODE === "practice" && !SEND_URL);
 
 /* Everything below belongs to the old way of working: gather a list, send it at
    1pm. Direct booking makes it redundant, so it is hidden rather than deleted.
