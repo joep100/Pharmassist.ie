@@ -6,7 +6,7 @@
 <title>Cyclone Last Mile Booking</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -27,11 +27,20 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
 .wrap{max-width:980px;margin:0 auto;padding:26px 22px 90px}
 
 .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.mark{display:inline-flex;align-items:center;gap:7px;flex:none}
-.mark__word{font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.012em;
-  line-height:1;white-space:nowrap}
-.mark__word .g{color:var(--brand)} .mark__word .s{color:var(--slate)}
-.mark__cross{width:15px;height:15px;color:var(--mark);flex:none}
+/* The wordmark, and the only place Nunito is used. Everything else on the page
+   stays on Inter: the counter type was sized against Inter's metrics. */
+.mark{display:inline-flex;align-items:baseline;gap:8px;flex:none;text-decoration:none}
+.mark__name{font-family:"Nunito",var(--sans);font-size:22px;font-weight:700;
+  letter-spacing:-.025em;color:var(--head);line-height:1}
+.mark__sub{font-family:var(--mono);font-size:10.5px;font-weight:400;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--slate)}
+.mark__dot{width:7px;height:7px;border-radius:50%;background:var(--brand);flex:none;
+  align-self:center}
+@media (max-width:760px){
+  .mark__name{font-size:19px}
+  .mark__sub{font-size:9.5px;letter-spacing:.12em}
+  .mark__dot{width:6px;height:6px}
+}
 .top__tag{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.18em;
   text-transform:uppercase;color:var(--label);padding-left:14px;border-left:1px solid var(--line)}
 .top__date{margin-left:auto;font-size:14px;color:var(--label)}
