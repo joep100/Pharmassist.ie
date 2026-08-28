@@ -225,6 +225,41 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
 .panel--list h2{gap:0}
 .panel--list .job{border-color:var(--line-dk)}
 
+/* ---------- asking to be set up ----------
+   Not a login. A store fills this in, it reaches us, and we send them their
+   link. Storing a password would need a server and it would mean anybody who
+   found this page could raise real courier jobs on our account. */
+.reg{max-width:460px;margin:6vh auto 0}
+.reg h2{margin-bottom:6px}
+.reg > p{font-size:15.5px;color:var(--body);margin:0 0 22px;line-height:1.5}
+.reg .grid{gap:16px}
+.reg .b-go{width:100%;margin-top:8px}
+.reg__err{font-size:14px;color:var(--red);margin:12px 0 0;min-height:20px}
+.reg__foot{font-size:13.5px;color:var(--label);margin:18px 0 0;text-align:center;
+  line-height:1.6}
+.reg__found{font-size:14px;color:var(--body);margin:7px 0 0;padding-left:2px}
+.reg__found[hidden]{display:none}
+.swap{background:none;border:0;padding:0;font-family:var(--sans);font-size:14px;
+  font-weight:500;color:var(--brand);cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px}
+
+/* ---------- signing in ----------
+   The per-shop link still works and is what most stores bookmark. This is for
+   a store arriving at the plain address, and it means adding a store is a line
+   in the list below rather than a new route and a deploy. */
+.signin{max-width:420px;margin:8vh auto 0}
+.signin h2{margin-bottom:6px}
+.signin p{font-size:15.5px;color:var(--body);margin:0 0 20px;line-height:1.5}
+.signin label{margin-bottom:8px;display:block}
+.signin input{font-size:22px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  text-align:center;background:var(--paper);padding:16px}
+.signin .b-go{width:100%;margin-top:14px}
+.signin__err{font-size:14px;color:var(--red);margin:12px 0 0;text-align:center;min-height:20px}
+.signin__foot{font-size:13.5px;color:var(--label);margin:18px 0 0;text-align:center;line-height:1.6}
+.b-out{background:none;border:0;padding:0;font-family:var(--sans);font-size:12px;
+  color:var(--label);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.b-out:hover{color:var(--brand)}
+
 /* ---------- the printed label ----------
    Hidden on screen. When the label is printed everything else on the page is
    taken out of the flow, so a shop with a plain A4 printer gets one clean label
@@ -296,6 +331,7 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
       <span class="whoami__lbl">Booking as</span>
       <strong id="shop"></strong>
       <span id="shopaddr" class="whoami__addr"></span>
+      <button class="b-out" id="signout" type="button" hidden>Not your store? Sign out</button>
     </div>
   </div>
 
@@ -447,6 +483,11 @@ function cutoffWords(h){
    just without showing the address. */
 const ADDRESS_LOOKUP = "/api/address";
 
+/* Where a new store goes to put a card on file. Stripe's own hosted page
+   collects it, so no card details ever reach this page or our server. Left
+   null, the registration form emails us instead and we send a link by hand. */
+const CARD_SETUP = "/api/setup-card";
+
 /* ---- creating the booking ----
    Set this and each booking goes straight into Clickacourier as it's made:
    no list to send, no file, no 1pm deadline for us. Leave it null and the tool
@@ -529,6 +570,7 @@ const AUTO_SEND_AFTER_SECS = 90;
 const PHARMACIES = {
   susanhunter: {
     tag:"SUH",
+    code:"HUNTER-2291",
         placeId:"<EIRCODE>1900142151",
     logo: "/logos/susanhunter.png",
     name:"Susan Hunter",
@@ -543,6 +585,7 @@ const PHARMACIES = {
   },
   remedi: {
     tag:"REM",
+    code:"REMEDI-4417",
         placeId:"<EIRCODE>1900172071",
     logo:"/logos/remedi.png",
     name:"CarePlus Remedi Pharmacy",
@@ -551,7 +594,8 @@ const PHARMACIES = {
     phone:"01 672 1831"
   },
   foleys: {
-    tag:"FOL",    /* written on the bag, keep it to 3 letters */
+    tag:"FOL",
+    code:"FOLEYS-1183",    /* written on the bag, keep it to 3 letters */
         placeId:"<EIRCODE>1900172304",
     name:"Foley's Chemist",
     logo:"/logos/foleys.png",               /* inlined below. Omit and the name is set in type */
@@ -561,6 +605,7 @@ const PHARMACIES = {
   },
   foodys: {
     tag:"FDY",
+    code:"FOODYS-6072",
         placeId:"<EIRCODE>1900184665",
     logo:"/logos/foodys.png",
     name:"Foody's Pharmacy",
@@ -570,6 +615,7 @@ const PHARMACIES = {
   },
   stockdesign: {
     tag:"STK",
+    code:"STOCK-3540",
     placeId:"<EIRCODE>1900008540",
     logo:"/logos/stockdesign.png",
     name:"Stock Design",
@@ -584,6 +630,7 @@ const PHARMACIES = {
   },
   healthwave: {
     tag:"HW",
+    code:"WAVE-8806",
     /* STILL TO DO. Without a placeId a direct booking is refused with
        "Missing: collection". Get one from
        cyclonelastmile.ie/api/address?eircode=<their real Eircode>
@@ -694,15 +741,205 @@ const slug = (function(){
    travels with the list either way, so a mistake is visible rather than silent. */
 let SHOP = PHARMACIES[slug] || (DEFAULT_PHARMACY ? PHARMACIES[DEFAULT_PHARMACY] : null);
 
+/* A store that has signed in on this machine before. Held locally, so it is
+   per browser and clears when they sign out. */
+const CODE_KEY = "cyclone:code";
+function shopForCode(entered){
+  const c = String(entered || "").trim().toUpperCase();
+  if(!c) return null;
+  const hit = Object.keys(PHARMACIES).find(k =>
+    String(PHARMACIES[k].code || "").toUpperCase() === c);
+  return hit || null;
+}
+if(!SHOP){
+  let held = null;
+  try{ held = localStorage.getItem(CODE_KEY); }catch(e){}
+  const k = shopForCode(held);
+  if(k) SHOP = PHARMACIES[k];
+}
+
 if(!SHOP){
   document.querySelector(".wrap").innerHTML =
-    '<div class="panel" style="margin-top:40px"><h2>This link isn\u2019t set up for a store</h2>' +
-    '<p class="panel__hint" style="margin-bottom:0">Every shop has its own booking link. ' +
-    'Ring us on <strong>' + PHONE + '</strong> and we\u2019ll send yours again.</p></div>';
-  throw new Error("no pharmacy");
+    '<div class="panel signin" id="panelin">' +
+      '<h2>Sign in</h2>' +
+      '<p>Enter the code we gave you. You only need to do this once on this ' +
+        'computer.</p>' +
+      '<div class="f">' +
+        '<label for="code">Your code</label>' +
+        '<input id="code" type="text" autocomplete="off" spellcheck="false" ' +
+               'placeholder="FOLEYS-1183" autofocus>' +
+      '</div>' +
+      '<button class="b-go" id="signin" type="button">Sign in</button>' +
+      '<p class="signin__err" id="signinerr"></p>' +
+      '<p class="signin__foot">Not set up yet? ' +
+        '<button class="swap" id="toreg" type="button">Ask us to set you up</button>' +
+        '<br>Lost the code? Ring us on <strong>' + PHONE + '</strong>.</p>' +
+    '</div>' +
+
+    '<div class="panel reg" id="panelreg" hidden>' +
+      '<h2>Ask us to set you up</h2>' +
+      '<p>Fill this in, put a card on file, and we will send your booking link ' +
+        'the same day. Nothing is charged now: deliveries are invoiced at the end ' +
+        'of the month.</p>' +
+      '<div class="grid">' +
+        '<div class="f f--wide">' +
+          '<label for="rgshop">Store name</label>' +
+          '<input id="rgshop" type="text" autocomplete="off">' +
+        '</div>' +
+        '<div class="f f--wide">' +
+          '<label for="rgeir">Your Eircode</label>' +
+          '<input id="rgeir" type="text" autocomplete="off" spellcheck="false" ' +
+                 'maxlength="8" placeholder="D02 X285">' +
+          '<p class="reg__found" id="rgfound" hidden></p>' +
+        '</div>' +
+        '<div class="f">' +
+          '<label for="rgwho">Your name</label>' +
+          '<input id="rgwho" type="text" autocomplete="off">' +
+        '</div>' +
+        '<div class="f">' +
+          '<label for="rgphone">Phone</label>' +
+          '<input id="rgphone" type="tel" inputmode="tel" autocomplete="off">' +
+        '</div>' +
+        '<div class="f f--wide">' +
+          '<label for="rgmail">Email</label>' +
+          '<input id="rgmail" type="email" autocomplete="off">' +
+        '</div>' +
+        '<div class="f f--wide">' +
+          '<label for="rgvol">Deliveries a week, roughly</label>' +
+          '<input id="rgvol" type="text" autocomplete="off" placeholder="A handful, 10, 50">' +
+        '</div>' +
+      '</div>' +
+      '<p class="reg__err" id="rgerr"></p>' +
+      '<button class="b-go" id="rgsend" type="button">Continue to card details</button>' +
+      '<p class="reg__foot">Or ring us on <strong>' + PHONE + '</strong>.' +
+        '<br><button class="swap" id="toin" type="button">I already have a code</button></p>' +
+    '</div>';
+
+  /* swap between the two panels */
+  $("toreg").onclick = () => { $("panelin").hidden = true;  $("panelreg").hidden = false; $("rgshop").focus(); };
+  $("toin").onclick  = () => { $("panelreg").hidden = true; $("panelin").hidden = false;  $("code").focus(); };
+
+  /* Resolve their own address as they type it. Same endpoint the booking form
+     uses, so the collection address is confirmed before we ever set them up
+     and the placeId comes back with the request. */
+  let rgPlaceId = null, rgAddress = null, rgAsking = null;
+  $("rgeir").addEventListener("input", async () => {
+    const bare = $("rgeir").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
+    $("rgeir").value = pretty(bare);
+    rgPlaceId = null; rgAddress = null;
+    const line = $("rgfound");
+    if(bare.length !== 7 || !ADDRESS_LOOKUP){ line.hidden = true; return; }
+    rgAsking = bare;
+    line.hidden = false; line.textContent = "Checking the address\u2026";
+    try{
+      const res = await fetch(ADDRESS_LOOKUP + "?eircode=" + encodeURIComponent(bare));
+      const a = await res.json();
+      if(rgAsking !== bare) return;
+      if(!res.ok || !a.found || !a.address){ line.hidden = true; return; }
+      rgAddress = a.address; rgPlaceId = a.placeId || null;
+      line.textContent = a.address;
+    }catch(e){ line.hidden = true; }
+  });
+
+  $("rgsend").onclick = async () => {
+    const g = id => $(id).value.trim();
+    const missing = [];
+    if(g("rgshop").length < 2) missing.push("the store name");
+    if(tidy(g("rgeir")).length !== 7) missing.push("your Eircode");
+    if(g("rgwho").length < 2) missing.push("your name");
+    if(!g("rgmail")) missing.push("an email address");
+    if(missing.length){
+      $("rgerr").textContent = "We still need " + listPlaces(missing) + ".";
+      return;
+    }
+    $("rgerr").textContent = "";
+
+    const payload = {
+      shop: g("rgshop"),
+      eircode: pretty(tidy(g("rgeir"))),
+      address: rgAddress || "",
+      placeId: rgPlaceId || "",
+      who: g("rgwho"),
+      phone: g("rgphone"),
+      email: g("rgmail"),
+      volume: g("rgvol")
+    };
+
+    /* No endpoint yet, or it fails: fall back to emailing us, so the store is
+       never left with a dead button. */
+    const byEmail = () => {
+      const body = Object.keys(payload).map(k => k + ": " + (payload[k] || "-")).join("\n");
+      window.location.href = "mailto:hello@cyclonelastmile.ie" +
+        "?subject=" + encodeURIComponent("Set us up: " + payload.shop) +
+        "&body=" + encodeURIComponent(body);
+    };
+    if(!CARD_SETUP){ byEmail(); return; }
+
+    const btn = $("rgsend");
+    btn.disabled = true; btn.textContent = "One moment\u2026";
+    try{
+      const res = await fetch(CARD_SETUP, {
+        method: "POST",
+        headers: {"Content-Type": "text/plain;charset=utf-8"},
+        body: JSON.stringify(payload)
+      });
+      const out = await res.json();
+      if(!res.ok || !out.ok || !out.url) throw new Error(out.error || "refused");
+      /* Straight to Stripe's hosted page. Nothing is charged there. */
+      window.location.href = out.url;
+    }catch(e){
+      btn.disabled = false; btn.textContent = "Send";
+      $("rgerr").textContent = "That didn't go through. We'll take it by email instead.";
+      setTimeout(byEmail, 1200);
+    }
+  };
+
+  /* Back from Stripe. The card is saved against their customer record; the
+     code follows once we have looked at the registration. */
+  (function(){
+    const s = new URLSearchParams(location.search).get("setup");
+    if(!s) return;
+    const box = $("signinerr");
+    if(s === "done"){
+      box.style.color = "var(--brand)";
+      box.textContent = "Card saved. We will email your code today.";
+    }else if(s === "cancelled"){
+      box.textContent = "No card was saved. Start again when you are ready.";
+    }
+  })();
+
+  const go = () => {
+    const k = shopForCode($("code").value);
+    if(!k){
+      $("signinerr").textContent = "That code isn't one of ours. Check it and try again.";
+      $("code").classList.add("bad");
+      return;
+    }
+    try{ localStorage.setItem(CODE_KEY, PHARMACIES[k].code); }catch(e){}
+    location.reload();
+  };
+  $("signin").onclick = go;
+  $("code").addEventListener("keydown", e => { if(e.key === "Enter") go(); });
+  $("code").addEventListener("input", () => {
+    $("code").classList.remove("bad"); $("signinerr").textContent = "";
+  });
+  throw new Error("not signed in");
 }
 
 $("shop").textContent = SHOP.name;
+/* Only offer sign out to a store that signed in with a code. One that arrived
+   on its own link has nothing to sign out of. */
+(function(){
+  let held = null;
+  try{ held = localStorage.getItem(CODE_KEY); }catch(e){}
+  if(!held) return;
+  const b = $("signout");
+  b.hidden = false;
+  b.onclick = () => {
+    try{ localStorage.removeItem(CODE_KEY); }catch(e){}
+    location.reload();
+  };
+})();
 if(SHOP.logo){ $("shoplogo").src = SHOP.logo; $("shoplogo").alt = SHOP.name; $("shoplogo").hidden = false; }
 const SHOP_MODE = SHOP.mode || MODE;
 if(SHOP_MODE === "practice"){
