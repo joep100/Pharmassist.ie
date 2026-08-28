@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyclone Last Mile Booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  /* same values the landing page uses, so the two read as one product */
+  --brand:#E34C2F; --brand-dk:#C63C22; --brand-dker:#A32E18; --mark:#F26A4E;
+  --slate:#98A1A8; --ink:#12161A; --head:#1D2429; --body:#646E76; --label:#98A1A8;
+  --line:#E6E9EB; --line-dk:#D5DADE; --paper:#F6F7F8; --sunk:#ECEEF0;
+  --mint:#FDECE8;
+  --amber:#8A5A08; --amber-bg:#FDF4E3; --amber-br:#EBD9B4;
+  --green:#1E6B45; --green-bg:#EDF6F1; --green-br:#C4E0D2;
+  --red:#A83232; --red-bg:#FBEFEF;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
+  font-size:18px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:26px 22px 90px}
+
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+/* The wordmark, and the only place Nunito is used. Everything else on the page
+   stays on Inter: the counter type was sized against Inter's metrics. */
+.mark{display:inline-flex;align-items:baseline;gap:8px;flex:none;text-decoration:none}
+.mark__name{font-family:"Nunito",var(--sans);font-size:22px;font-weight:700;
+  letter-spacing:-.025em;color:var(--head);line-height:1}
+.mark__sub{font-family:var(--mono);font-size:10.5px;font-weight:400;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--slate)}
+.mark__dot{width:7px;height:7px;border-radius:50%;background:var(--brand);flex:none;
+  align-self:center}
+@media (max-width:760px){
+  .mark__name{font-size:19px}
+  .mark__sub{font-size:9.5px;letter-spacing:.12em}
+  .mark__dot{width:6px;height:6px}
+}
+.top__tag{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--label);padding-left:14px;border-left:1px solid var(--line)}
+.top__date{margin-left:auto;font-size:14px;color:var(--label)}
+.top__home{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--brand);text-decoration:none;padding-left:14px;
+  border-left:1px solid var(--line-dk)}
+.top__home:hover{text-decoration:underline}
+@media (max-width:760px){
+  .top__home{padding-left:0;border-left:0;font-size:10px;letter-spacing:.08em}
+}
+
+/* A warning that whispers gets ignored. This is the one thing on the page that
+   should stop somebody, so it takes the dark panel from the landing page and
+   the brand orange, rather than a pastel tint that reads as decoration. */
+.practice{background:var(--ink);border:0;border-radius:14px;padding:16px 19px;
+  margin-bottom:16px;box-shadow:0 10px 30px -18px rgba(18,22,26,.55)}
+.practice[hidden]{display:none}
+.practice strong{display:block;font-size:16px;font-weight:600;color:#fff;
+  letter-spacing:-.012em}
+.practice strong::before{content:"PRACTICE";font-family:var(--mono);font-size:10.5px;
+  font-weight:500;letter-spacing:.18em;color:var(--mark);display:block;margin-bottom:6px}
+.practice span{display:block;font-size:14px;color:rgba(255,255,255,.62);margin-top:5px;
+  line-height:1.5}
+
+/* This is orientation, not an alert. It sits as a white card like every other
+   panel, with the colour confined to the small mono label. */
+.whoami{display:flex;align-items:center;gap:16px;background:var(--sunk);
+  border:1px solid var(--line-dk);border-radius:16px;padding:16px 18px;margin-bottom:22px;
+  font-size:14.5px;box-shadow:none}
+/* Shop logos come in every shape: Foley's is square, Stock Design is a wide
+   horizontal lockup. A fixed square either squashes them or strands them in
+   white space, so cap both dimensions instead and let each one keep its own
+   proportions inside the box. */
+.whoami img{max-width:104px;max-height:60px;width:auto;height:auto;border-radius:10px;
+  flex:none;display:block;border:1px solid var(--line-dk);background:#fff;
+  padding:5px;object-fit:contain}
+.whoami img[hidden]{display:none}
+.whoami__txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.whoami__lbl{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--brand)}
+.whoami strong{color:var(--head);font-weight:600;font-size:18px;letter-spacing:-.018em}
+.whoami__addr{color:var(--body);font-size:13.5px}
+
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px 30px 26px;
+  margin-bottom:12px;box-shadow:0 1px 3px -1px rgba(18,22,26,.06),
+                                0 12px 28px -20px rgba(18,22,26,.22)}
+.panel[hidden]{display:none}
+h2{font-size:24px;font-weight:600;color:var(--head);margin:0 0 16px;letter-spacing:-.022em}
+.panel__hint{font-size:15px;color:var(--label);margin:0 0 18px}
+
+.more{margin:14px 0 0}
+.linky{background:none;border:0;padding:0;font-family:var(--sans);font-size:14px;
+  font-weight:500;color:var(--brand-dk);cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px}
+.extra{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.extra[hidden]{display:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f{display:flex;flex-direction:column;gap:7px}
+.f--wide{grid-column:1/-1}
+
+label{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--label);
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+label .opt{font-family:var(--sans);font-weight:400;letter-spacing:0;text-transform:none;
+  color:var(--label);font-size:12.5px}
+label .cnt{font-family:var(--sans);font-weight:400;letter-spacing:0;text-transform:none;
+  font-size:12px;color:var(--label)}
+label .cnt.warn{color:var(--red);font-weight:600}
+
+input,textarea{font-family:var(--sans);font-size:19px;color:var(--head);background:#fff;
+  border:1px solid var(--line-dk);border-radius:11px;padding:14px 16px;width:100%}
+textarea{min-height:70px;resize:vertical;line-height:1.45}
+input:focus,textarea:focus{outline:none;border-color:var(--brand);
+  box-shadow:0 0 0 3px rgba(227,76,47,.16)}
+input.bad{border-color:var(--red);background:var(--red-bg)}
+/* the one field everything else waits on, so it is sized to be hit standing up */
+#eircode{font-size:30px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--paper);padding:19px 22px;border-radius:13px}
+
+.f--unit{margin-top:18px;max-width:420px}
+.f--unit[hidden]{display:none}
+.checks{margin-top:16px;border-top:1px solid var(--line);padding-top:15px;display:grid;gap:11px}
+.checks[hidden]{display:none}
+.check{display:flex;gap:11px;align-items:flex-start}
+.check__tick{color:var(--mark);font-size:15px;font-weight:700;line-height:1.35;flex:none}
+.check b{display:block;font-size:16.5px;font-weight:600;color:var(--head)}
+.check span{display:block;font-size:15px;color:var(--body);line-height:1.45;margin-top:1px}
+
+.verdict{margin-top:16px;display:flex;gap:13px;align-items:flex-start}
+.verdict[hidden]{display:none}
+.verdict svg{width:34px;height:34px;flex:none;margin-top:1px}
+.verdict h3{font-size:21px;font-weight:600;margin:0 0 3px;color:var(--head);letter-spacing:-.018em}
+.verdict p{margin:0;font-size:16px}
+.is-yes svg{color:var(--mark)} .is-yes h3{color:var(--brand)}
+.is-no svg{color:var(--slate)} .is-err svg{color:var(--red)} .is-err h3{color:var(--red)}
+.is-no .up,.is-err .up{display:none}
+
+button{font-family:var(--sans);font-size:17px;font-weight:600;cursor:pointer;border-radius:11px;
+  padding:15px 26px;border:1px solid transparent;transition:.15s}
+.b-go{background:var(--brand);border-color:var(--brand);color:#fff}
+.b-go:hover{background:var(--brand-dk);border-color:var(--brand-dk)}
+/* The shape lives on the `button` selector, which an <a> never matches, so
+   restate it here. Used as a link in the sign-up fallback. */
+.b-ghost{font-family:var(--sans);font-size:17px;font-weight:600;cursor:pointer;
+  border-radius:11px;padding:15px 26px;border:1px solid var(--line-dk);
+  background:#fff;color:var(--head);text-decoration:none;display:inline-block;
+  text-align:center;transition:.15s}
+.b-ghost:hover{border-color:var(--brand);color:var(--brand)}
+.b-x{background:none;border:0;color:var(--label);padding:4px 10px;font-size:22px;line-height:1;
+  order:99}
+.b-x:hover{color:var(--red)}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.rate{font-family:var(--mono);font-size:14px;color:var(--label);margin-left:auto}
+.err{font-size:13px;color:var(--red);margin-top:10px}
+
+.auth{background:var(--amber-bg);border:1px solid var(--amber-br);border-radius:12px;
+  padding:14px 16px;grid-column:1/-1}
+.auth label{font-family:var(--sans);display:flex;gap:10px;align-items:flex-start;
+  font-size:14.5px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--amber);
+  cursor:pointer;line-height:1.45;justify-content:flex-start}
+.auth input[type=checkbox]{width:17px;height:17px;flex:none;margin-top:2px;
+  accent-color:var(--brand)}
+.auth__note{font-size:13px;color:#8A6A2A;margin:9px 0 0 27px}
+
+.count{font-family:var(--mono);font-size:12.5px;font-weight:500;color:var(--label);
+  margin-left:auto}
+.job{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 17px;
+  margin-bottom:10px}
+.job:last-child{margin-bottom:0}
+.job__top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.job__name{font-size:18px;font-weight:600;color:var(--head)}
+.job__mob{font-size:16px;color:var(--body);margin-left:auto}
+.job__addr{font-size:15.5px;color:var(--body);margin-top:5px}
+.job__notes{font-size:15px;color:var(--body);margin-top:6px}
+.job__flags{margin-top:8px;display:flex;gap:7px;flex-wrap:wrap}
+
+/* The bag reference is what gets written on the bag in biro, so it is set in
+   the mono face: it should read as something to copy, not as prose. */
+.bagref{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.06em;
+  color:var(--brand);background:var(--mint);border-radius:6px;padding:4px 9px;flex:none}
+
+/* These four were used in draw() but had no styles at all, so every status
+   was rendering as loose grey text in the middle of the card. */
+.flag{display:inline-block;font-size:12.5px;font-weight:500;line-height:1;
+  border-radius:100px;padding:6px 11px;background:var(--paper);color:var(--body);
+  border:1px solid var(--line)}
+.flag--ok{background:var(--green-bg);color:var(--green);border-color:var(--green-br)}
+.flag--bad{background:var(--red-bg);color:var(--red);border-color:#E8C4C4;font-weight:600}
+.flag--size{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-br)}
+.flag--why{background:#fff;color:var(--body);border-color:var(--line-dk);font-family:var(--mono);
+  font-size:11.5px;letter-spacing:.02em}
+.b-retry{background:var(--brand);border:0;color:#fff;border-radius:100px;padding:6px 13px;
+  font-size:12.5px;font-weight:600;cursor:pointer;line-height:1}
+.b-retry:hover{background:var(--mark)}
+
+@keyframes freshen{from{background:#FBDDD4}to{background:#fff}}
+.job--fresh{animation:freshen 1.6s ease-out}
+.empty{text-align:center;color:var(--label);font-size:16px;padding:30px 0}
+
+.nudge{border-radius:12px;padding:13px 16px;margin-top:14px;font-size:14px}
+.nudge[hidden]{display:none}
+.nudge--soon{background:var(--amber-bg);border:1px solid var(--amber-br);color:var(--amber)}
+.nudge--late{background:var(--red-bg);border:1px solid #E8C4C4;color:var(--red)}
+.nudge--done{background:var(--mint);border:1px solid #F7D2C8;color:#8F2E1A}
+.warnbox{background:var(--amber-bg);border:1px solid var(--amber-br);border-radius:12px;
+  padding:15px 17px;margin-top:16px;font-size:14px;color:var(--amber)}
+.warnbox strong{font-weight:700}
+.warnbox ul{margin:8px 0 0;padding-left:20px}
+.warnbox[hidden]{display:none}
+
+/* ---------- telling the sections apart ----------
+   Three white panels in a row give a member of staff nothing to navigate by.
+   The two that take input are numbered and carry a brand rule at the top; the
+   day's list is the record rather than a form, so it sits on the page tint with
+   a heavier edge and no rule. */
+.panel{position:relative;overflow:hidden}
+.panel--step::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;
+  background:var(--brand)}
+h2{display:flex;align-items:center;gap:11px}
+h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;
+  font-family:var(--sans);font-size:14px;font-weight:700;display:flex;align-items:center;
+  justify-content:center}
+.panel--list{background:var(--sunk);border-color:var(--line-dk);box-shadow:none;
+  margin-top:22px}
+.panel--list h2{gap:0}
+.panel--list .job{border-color:var(--line-dk)}
+
+/* ---------- asking to be set up ----------
+   Not a login. A store fills this in, it reaches us, and we send them their
+   link. Storing a password would need a server and it would mean anybody who
+   found this page could raise real courier jobs on our account. */
+.reg{max-width:460px;margin:6vh auto 0}
+.reg h2{margin-bottom:6px}
+.reg > p{font-size:15.5px;color:var(--body);margin:0 0 22px;line-height:1.5}
+.reg .grid{gap:16px}
+.reg .b-go{width:100%;margin-top:8px}
+.reg__err{font-size:14px;color:var(--red);margin:12px 0 0;min-height:20px}
+.reg__foot{font-size:13.5px;color:var(--label);margin:18px 0 0;text-align:center;
+  line-height:1.6}
+.reg__found{font-size:14px;color:var(--body);margin:7px 0 0;padding-left:2px}
+.reg__found[hidden]{display:none}
+.swap{background:none;border:0;padding:0;font-family:var(--sans);font-size:14px;
+  font-weight:500;color:var(--brand);cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px}
+
+/* ---------- signing in ----------
+   The per-shop link still works and is what most stores bookmark. This is for
+   a store arriving at the plain address, and it means adding a store is a line
+   in the list below rather than a new route and a deploy. */
+.signin{max-width:420px;margin:8vh auto 0}
+.signin h2{margin-bottom:6px}
+.signin p{font-size:15.5px;color:var(--body);margin:0 0 20px;line-height:1.5}
+.signin label{margin-bottom:8px;display:block}
+.signin input{font-size:22px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  text-align:center;background:var(--paper);padding:16px}
+.signin .b-go{width:100%;margin-top:14px}
+.signin__err{font-size:14px;color:var(--red);margin:12px 0 0;text-align:center;min-height:20px}
+.signin__foot{font-size:13.5px;color:var(--label);margin:18px 0 0;text-align:center;line-height:1.6}
+.b-out{background:none;border:0;padding:0;font-family:var(--sans);font-size:12px;
+  color:var(--label);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.b-out:hover{color:var(--brand)}
+
+/* ---------- the fallback when the card step is unavailable ----------
+   A mailto: link does nothing at all on a machine with no mail client bound to
+   it, which is a lot of shop counter PCs using webmail. So the details are
+   shown on screen with a copy button and nothing depends on the browser
+   handing off to another application. */
+.byhand{font-size:15px;line-height:1.55;color:var(--body)}
+.byhand__box{background:var(--paper);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;margin:14px 0 0;font-family:var(--mono);font-size:13px;
+  line-height:1.65;color:var(--head);white-space:pre-wrap;word-break:break-word}
+.byhand__row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.byhand__row button,.byhand__row a{flex:1 1 160px;text-align:center}
+
+/* ---------- bag or suitcase ----------
+   Two buttons, not a dropdown, because it is the only choice on the page and
+   staff should be able to hit it without reading. Bag is preselected: nearly
+   everything is a bag, so the extra step is invisible for the common case. */
+.size{display:flex;gap:10px;margin:0 0 4px}
+.size button{flex:1;background:#fff;border:1px solid var(--line-dk);border-radius:12px;
+  padding:13px 14px;cursor:pointer;text-align:left;font-family:var(--sans);transition:.14s}
+.size button:hover{border-color:var(--brand)}
+.size button[aria-pressed="true"]{border-color:var(--brand);background:var(--mint);
+  box-shadow:inset 0 0 0 1px var(--brand)}
+.size b{display:block;font-size:15.5px;font-weight:600;color:var(--head);line-height:1.2}
+.size span{display:block;font-size:12.5px;color:var(--label);margin-top:3px}
+.size__note{font-size:13.5px;color:var(--amber);margin:2px 0 0;min-height:19px}
+
+/* ---------- the printed label ----------
+   Hidden on screen. When the label is printed everything else on the page is
+   taken out of the flow, so a shop with a plain A4 printer gets one clean label
+   and nothing else. Sized to be cut out and taped or stapled to the bag. */
+.sheet{display:none}
+@media print{
+  body > *{display:none!important}
+  body > .sheet{display:block!important}
+  .sheet{padding:0;margin:0}
+  @page{margin:14mm}
+}
+.sheet__card{border:2px solid #000;border-radius:6px;padding:16px 18px;width:104mm;
+  font-family:var(--sans);color:#000}
+.sheet__ref{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.06em;
+  border-bottom:2px solid #000;padding-bottom:9px;margin-bottom:12px}
+.sheet__name{font-size:21px;font-weight:700;line-height:1.2}
+.sheet__addr{font-size:16px;line-height:1.4;margin-top:5px}
+.sheet__mob{font-size:17px;font-weight:600;margin-top:9px}
+.sheet__notes{font-size:14px;line-height:1.35;margin-top:10px;padding-top:9px;
+  border-top:1px solid #000}
+.sheet__foot{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  margin-top:13px;padding-top:9px;border-top:1px solid #000}
+
+.b-print{background:#fff;border:1px solid var(--line-dk);color:var(--head);border-radius:8px;
+  padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;margin-left:auto}
+.b-print:hover{border-color:var(--brand);color:var(--brand)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,18px);background:var(--ink);
+  color:#fff;padding:12px 22px;border-radius:11px;font-size:14px;font-weight:500;opacity:0;
+  pointer-events:none;transition:.22s;z-index:50;
+  box-shadow:0 10px 30px -12px rgba(18,22,26,.5)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:760px){
+  .wrap{padding:18px 14px 70px}
+  .panel{padding:20px 18px 18px;border-radius:14px}
+  .grid{grid-template-columns:1fr}
+  .top__date{margin-left:0;width:100%}
+  #eircode{font-size:25px;padding:16px 18px}
+  h2{font-size:20px}
+  .job__mob{margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="mark" href="https://www.cyclonelastmile.ie" aria-label="Cyclone Last Mile">
+      <span class="mark__name">Cyclone</span>
+      <span class="mark__sub">Last Mile</span>
+      <span class="mark__dot" aria-hidden="true"></span>
+    </a>
+    <span class="top__tag">In store booking</span>
+    <span class="top__date" id="today"></span>
+    <a class="top__home" href="https://www.cyclonelastmile.ie">Home</a>
+  </div>
+
+  <div class="practice" id="practice" hidden>
+    <strong>Practice mode. Nothing here will be delivered.</strong>
+    <span>Use made-up names, not real customers. Anything you add is tagged as practice
+      and ignored at our end.</span>
+  </div>
+
+  <div class="whoami">
+    <img id="shoplogo" alt="" hidden>
+    <div class="whoami__txt">
+      <span class="whoami__lbl">Booking as</span>
+      <strong id="shop"></strong>
+      <span id="shopaddr" class="whoami__addr"></span>
+      <button class="b-out" id="signout" type="button" hidden>Not your store? Sign out</button>
+    </div>
+  </div>
+
+  <div class="panel panel--step">
+    <h2><span class="n">1</span>Where's it going?</h2>
+    <div class="f">
+      <label for="eircode">Customer's Eircode</label>
+      <input id="eircode" type="text" autocomplete="off" spellcheck="false" maxlength="8"
+             placeholder="D02 X285" autofocus>
+    </div>
+    <div class="verdict" id="verdict" hidden aria-live="polite"></div>
+    <div class="f f--unit" id="unitwrap" hidden>
+      <label for="runit">Flat or unit <span class="opt">if there is one</span></label>
+      <input id="runit" type="text" autocomplete="off" maxlength="40"
+             placeholder="Flat 4, or Apartment 12B">
+    </div>
+    <div class="checks" id="checks" hidden>
+      <div class="check" id="chk-addr-row" hidden>
+        <span class="check__tick" aria-hidden="true">&#10003;</span>
+        <div><b>Delivering to</b><span id="chk-found"></span></div>
+      </div>
+      <div class="check" id="chk-when-row">
+        <span class="check__tick" aria-hidden="true">&#10003;</span>
+        <div><b id="chk-when"></b><span id="chk-when-sub"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel panel--step panel--form" id="p2" hidden>
+    <h2><span class="n">2</span>Who's receiving it?</h2>
+
+    <div class="grid">
+      <div class="f">
+        <label for="rname">Name <span class="cnt" id="c-rname"></span></label>
+        <input id="rname" type="text" autocomplete="off" maxlength="32">
+      </div>
+      <div class="f">
+        <label for="rmobile">Mobile</label>
+        <input id="rmobile" type="tel" inputmode="tel" autocomplete="off" placeholder="087 123 4567">
+      </div>
+    </div>
+
+    <div class="f f--wide" style="margin-bottom:18px">
+      <label>How big is it?</label>
+      <div class="size">
+        <button type="button" id="sz-bag" aria-pressed="true">
+          <b>A bag</b><span>Up to 4kg, fits in a shopping bag</span>
+        </button>
+        <button type="button" id="sz-big" aria-pressed="false">
+          <b>A suitcase</b><span>Up to 20kg, one person can lift it</span>
+        </button>
+      </div>
+      <p class="size__note" id="sz-note"></p>
+    </div>
+
+    <p class="more"><button type="button" class="linky" id="toggle">Anything else? Notes, bag size, your own reference</button></p>
+
+    <div class="grid extra" id="extra" hidden>
+      <div class="f f--wide">
+        <label for="rnotes">Notes for the driver <span class="opt">optional</span></label>
+        <textarea id="rnotes" placeholder="Back door. Ring twice, hard of hearing."></textarea>
+      </div>
+      <div class="auth">
+        <label>
+          <input type="checkbox" id="rleave">
+          <span>The customer has asked us to leave it if nobody answers, and has said where.</span>
+        </label>
+        <p class="auth__note">Only tick this if the customer asked themselves. Say exactly where in
+          the notes.</p>
+      </div>
+      <div class="f">
+        <label for="rpkgs">Bags</label>
+        <input id="rpkgs" type="number" min="1" max="20" step="1" inputmode="numeric">
+      </div>
+      <div class="f">
+        <label for="rweight">Total weight <span class="opt">kg, 4 max</span></label>
+        <input id="rweight" type="number" min="0.1" max="4" step="0.1" inputmode="decimal">
+      </div>
+      <div class="f f--wide">
+        <label for="rref">Your reference <span class="opt">optional</span></label>
+        <input id="rref" type="text" autocomplete="off" placeholder="Bag number or till ref">
+      </div>
+    </div>
+
+    <div class="err" id="err2"></div>
+    <div class="row">
+      <button class="b-go" id="add">Add to today's collection</button>
+      <button class="b-ghost" id="clear">Clear</button>
+      <span class="rate" id="rate"></span>
+    </div>
+  </div>
+
+  <div class="panel panel--list" id="listpanel">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0">Today's collections</h2>
+      <span class="count" id="count">nothing yet</span>
+    </div>
+    <p class="panel__hint" style="margin-top:6px"><span id="halfday"></span>
+      Ready for us by <strong id="ready"></strong>.</p>
+    <div id="list"></div>
+
+    <div class="warnbox" id="warn" hidden></div>
+
+    <div class="nudge" id="nudge" hidden></div>
+
+    <div class="row">
+      <button class="b-go" id="send" hidden>Send today's list</button>
+      <button class="b-go" id="xlsx" hidden>Download today's list</button>
+    </div>
+  </div>
+
+</div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==========================================================================
+   CONFIG
+   ========================================================================== */
+const PHONE   = "01 425 5722";
+
+/* When the rider calls. This is the default; any shop can set its own with
+   readyBy in their entry below.
+
+   It has to be at or after that shop's cutoff, or the page contradicts itself:
+   a 2pm cutoff with a 1pm collection tells staff a two o'clock booking goes
+   today and that we came for it an hour ago. The check further down shouts in
+   the console if the two ever disagree. */
+const READY_BY = "1pm";
+
+/* The day splits in two. Order before the cutoff and it goes today; after it,
+   guaranteed tomorrow. Both beat an overnight carrier, whose "next day" means
+   the day after dispatch, so an afternoon order there is two days.
+
+   The default is midday, which suits a pharmacy: they have to dispense before
+   the van comes. A shop taking something off a shelf needs no such lead time,
+   so any entry below can set its own with sameDayUntil, e.g. 14 for 2pm.
+
+   Bear in mind the cutoff protects the DELIVERY, not the collection. A late
+   collection in the city centre is easy; getting the parcel to Blanchardstown
+   by five is not. Push it out where the customers are close in. */
+const SAME_DAY_UNTIL = 12;
+
+/* What we charge the shop per delivery. This is their cost, not what they charge
+   the customer: they add it to the bill, absorb it, or split it as they like.
+
+   The default applies to everyone. Any entry below can set its own with price,
+   which is how a volume rate gets given to one shop without touching the rest. */
+const PRICE = 9.95;
+
+const euro = n => "\u20ac" + Number(n).toFixed(2);
+
+/* Reads as "midday" or "2pm" rather than a bare number. */
+function cutoffWords(h){
+  if(h === 12) return "midday";
+  if(h === 24 || h === 0) return "midnight";
+  return (h > 12 ? h - 12 : h) + (h >= 12 ? "pm" : "am");
+}
+
+/* Where the address lookup lives. Vercel serves the file at api/address.js on
+   this path automatically. Set to null and the tool works exactly as before,
+   just without showing the address. */
+const ADDRESS_LOOKUP = "/api/address";
+
+/* Where a new store goes to put a card on file. Stripe's own hosted page
+   collects it, so no card details ever reach this page or our server. Left
+   null, the registration form emails us instead and we send a link by hand. */
+const CARD_SETUP = "/api/setup-card";
+
+/* ---- creating the booking ----
+   Set this and each booking goes straight into Clickacourier as it's made:
+   no list to send, no file, no 1pm deadline for us. Leave it null and the tool
+   behaves as it did, collecting a list the shop sends at the end.
+
+   Needs the account and uuid Cyclone gave you, and a placeId for each shop's
+   own address, which is the `placeId` field in their entry below. */
+const CREATE_BOOKING = "/api/booking";         /* "/api/booking" once you're ready */
+const ACCOUNT = "INTER";
+const UUID    = "46cd6c17-e266-40ea-9b9f-15d5f48efa53";
+/* Every motorbike on the road has a top box, so a bag-sized parcel is a
+   TOP-BOX-BIKE job. It used to send BIKE, which is the bare 3kg documents
+   service — 30x20x20cm, well under what we actually promise.
+
+   A suitcase-sized parcel goes on a cargo bike instead: 20kg, 65x40x40cm.
+   Same price, but it only reaches the zones the cargo riders cover. */
+const VEHICLE_BAG   = "TOP-BOX-BIKE";   /* max 8kg per the rate card, we cap at 4 */
+const VEHICLE_CARGO = "CARGO-BIKE";     /* max 20kg, city zones only */
+const VEHICLE = VEHICLE_BAG;            /* per shop with vehicle: in their entry */
+const SERVICE_LEVEL = "STANDARD";     /* not SERVICE: that name is taken by the
+                                         spreadsheet column above */
+
+/* ---- import file defaults ----
+   These land in every row of the download. The header row is reproduced exactly
+   as it appears in blank_multi_import.xlsx, including the "Adreess Line 2"
+   misspelling, in case the importer matches on header text. Don't tidy it. */
+const SERVICE  = "Same Day";        /* default; adjusted in the import tool if needed */
+const SERVICE_PRACTICE = "PRACTICE - DO NOT DELIVER";
+const COUNTRY  = "Ireland";         /* always Ireland */
+const COUNTY   = "Dublin";          /* conditional field, mandatory for some countries */
+const PACKAGES_DEFAULT = 1;
+const WEIGHT_DEFAULT   = 1;         /* kg, prefilled. Staff can change it. */
+const WEIGHT_MAX       = 4;         /* kg. Our limit, so catch it at the counter rather
+                                       than have the upload rejected at 1pm. */
+
+/* The import template has no column for delivery instructions, so they ride in
+   "Company Name (Optional)" instead. It's unused for a residential delivery,
+   and the import tool moves them into the proper field on the way in. Capped at
+   32 characters, which is the column limit.
+
+   Set to null if you'd rather they didn't travel in the file at all, in which
+   case they only appear on the handover docket. */
+const NOTES_INTO = "company";
+
+/* ---- sending the day's list ----
+   Fill in SEND_URL and a Send button appears. Left null, staff download the
+   file and email it to SEND_TO instead.
+
+   This page can't email on a timer. It's a browser tab, and at 1pm it may be
+   closed or locked, so anything scheduled has to run on a server.           */
+/* ---- live or practice ----
+   "live"      real bookings, real collections
+   "practice"  a rehearsal. A banner tells staff nothing will be delivered, and
+               every row reaches the sheet tagged PRACTICE so it can never be
+               mistaken for a job.
+
+   Use practice for training and for showing the tool to a pharmacy. Do not use
+   it with real customers: staff will book somebody expecting a delivery that
+   isn't coming. Made-up names only. */
+const MODE = "practice";
+
+/* Any shop can override the line above with mode:"practice" or mode:"live" in
+   their own entry. Without that, switching one shop to a demo would put every
+   other shop on the same page into practice at the same time. */
+
+/* Used when the URL carries no ?p=. Set to null once several pharmacies are
+   live. */
+const DEFAULT_PHARMACY = null;
+
+/* Paste the Apps Script web app URL here and the Send button appears.
+   See apps-script.gs for the five minute setup. */
+const SEND_URL = null;
+const SEND_TO  = "bookings@cyclonelastmile.ie";
+
+/* A quiet reminder from this time, louder once the collection time passes. */
+const NUDGE_FROM = "12:30";
+
+/* Past the collection time, anything still unsent goes on its own, this long
+   after the last edit so a booking half-typed at 12:59 isn't sent mid-sentence.
+   Needs SEND_URL and needs the tab still open. Set to 0 to rely on the button. */
+const AUTO_SEND_AFTER_SECS = 90;
+
+/* Logos live in /logos and are named in each pharmacy's entry below. Kept as
+   files rather than embedded in this page: embedded, every pharmacy downloads
+   every other pharmacy's logo on every visit, which at twenty shops is most of
+   a megabyte of other people's branding. */
+
+const PHARMACIES = {
+  susanhunter: {
+    tag:"SUH",
+    code:"HUNTER-2291",
+        placeId:"<EIRCODE>1900142151",
+    logo: "/logos/susanhunter.png",
+    name:"Susan Hunter",
+    address:"13 Westbury Mall, Balfe Street, Dublin 2",
+    eircode:"D02 XC78",
+    phone:"01 679 1271",
+    readyBy:"2pm",                  /* CONFIRM: has to match when the rider actually calls */
+    /* Nothing to dispense, and 700m from the bridge, so the cutoff can go out
+       to 2pm. Her customers are mostly central too, which is the part that
+       actually matters. */
+    sameDayUntil: 14
+  },
+  remedi: {
+    tag:"REM",
+    code:"REMEDI-4417",
+        placeId:"<EIRCODE>1900172071",
+    logo:"/logos/remedi.png",
+    name:"CarePlus Remedi Pharmacy",
+    address:"Unit 8 Boyne House, IFSC, Dublin 1",
+    eircode:"D01 X099",
+    phone:"01 672 1831"
+  },
+  foleys: {
+    tag:"FOL",
+    code:"FOLEYS-1183",    /* written on the bag, keep it to 3 letters */
+        placeId:"<EIRCODE>1900172304",
+    name:"Foley's Chemist",
+    logo:"/logos/foleys.png",               /* inlined below. Omit and the name is set in type */
+    address:"136 Parnell Street, Dublin 1",
+    eircode:"D01 A9C7",
+    phone:"01 874 6972"
+  },
+  foodys: {
+    tag:"FDY",
+    code:"FOODYS-6072",
+        placeId:"<EIRCODE>1900184665",
+    logo:"/logos/foodys.png",
+    name:"Foody's Pharmacy",
+    address:"The Harcourt Buildings, 57B Harcourt Street, Dublin 2",
+    eircode:"D02 F721",
+    phone:"01 416 1918"
+  },
+  stockdesign: {
+    tag:"STK",
+    code:"STOCK-3540",
+    placeId:"<EIRCODE>1900008540",
+    logo:"/logos/stockdesign.png",
+    name:"Stock Design",
+    address:"34 King Street South, Dublin 2",
+    eircode:"D02 KP04",
+    phone:"01 679 4316",
+    mode:"practice",                /* a demo while the others run live */
+    /* Around the corner from Susan Hunter, so the same 2pm cutoff should hold.
+       CONFIRM against when the rider actually calls. */
+    sameDayUntil: 14,
+    readyBy:"2pm"
+  },
+  healthwave: {
+    tag:"HW",
+    code:"WAVE-8806",
+    /* STILL TO DO. Without a placeId a direct booking is refused with
+       "Missing: collection". Get one from
+       cyclonelastmile.ie/api/address?eircode=<their real Eircode>
+       and paste it here. The Eircode and phone below are placeholders too. */
+    placeId:null,
+    logo:"",
+    name:"Healthwave", address:"Dundrum, Dublin 14",                 
+    eircode:"D14 XXXX",             /* CONFIRM */
+    phone:"01 425 5722"  /* CONFIRM: this is Cyclone's number, not theirs */                          
+  }
+};
+
+const COVERED = ["D*","A94*","A96*","K67*"];
+
+/* ---------- where we will take a NEW STORE from ----------
+   Not the same as where we deliver to. Delivery reaches D24 and Blackrock,
+   which is the whole point: the customer is in the suburbs. Collections have
+   to cluster, because four shops within two hundred metres is a route and one
+   shop on its own is not.
+
+   Measured as a straight line from O'Connell Bridge. Routing keys cannot do
+   this: the last four characters of an Eircode are deliberately random rather
+   than geographic, so D02 tells you the district and nothing finer. D08 runs
+   out past Inchicore and D04 down to Booterstown, so a key-based gate would
+   let in shops no route could reach.
+
+   Widen SIGNUP_KM as each new cluster opens. */
+const CENTRE = { lat: 53.34733, lng: -6.25922 };   /* O'Connell Bridge */
+const SIGNUP_KM = 2;
+
+/* Straight-line distance in km. */
+function kmFromCentre(lat, lng){
+  const R = 6371, rad = d => d * Math.PI / 180;
+  const dLat = rad(lat - CENTRE.lat), dLng = rad(lng - CENTRE.lng);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(rad(CENTRE.lat)) * Math.cos(rad(lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/* If the address lookup gives us coordinates we measure properly. If it does
+   not, fall back to the tightest routing keys that are wholly or mostly inside
+   two kilometres, and let anything doubtful go to the waiting list rather than
+   sign up a store we cannot serve. */
+
+/* ---------- the cargo bike delivery zone ----------
+   A cargo bike takes far more than a topbox — the box is big enough for a
+   suitcase — but it is a bicycle, so it cannot range. These are the operational
+   zones the cargo riders actually cover, exported from the zone map: the city
+   centre and the inner ring, out to about five kilometres. Clonskeagh (SH1) and
+   Terenure (SW1) are deliberately out; they reach past six.
+
+   Collection still has to be inside the sign-up zone. This governs where a
+   large parcel can be delivered TO.
+
+   Two rings were dropped from CSW1 on the way in. That zone is Dublin 8,
+   Portobello and the South Circular Road, but the export had it also claiming
+   an eleven kilometre box across the whole city, which made it swallow
+   Sandymount, Rathmines and Phibsborough. Worth checking whether the same bad
+   outline exists in Clickacourier rather than only in the export.
+
+   Each zone is one or more rings of [lng,lat,lng,lat,...]. */
+const CARGO_ZONES = {"CN":[[-6.2751,53.3471,-6.2754,53.3465,-6.276,53.3458,-6.2755,53.3457,-6.2723,53.3454,-6.2679,53.3458,-6.2651,53.3461,-6.2632,53.3464,-6.2594,53.3473,-6.2574,53.3477,-6.255,53.348,-6.2515,53.3479,-6.2481,53.3476,-6.246,53.3474,-6.2455,53.3515,-6.2481,53.3517,-6.2453,53.3537,-6.2468,53.3547,-6.2471,53.3547,-6.2492,53.3529,-6.2495,53.3531,-6.2536,53.3521,-6.2548,53.3541,-6.2552,53.354,-6.2556,53.3546,-6.258,53.3539,-6.2581,53.3536,-6.2608,53.3525,-6.2614,53.3532,-6.2618,53.3531,-6.263,53.3539,-6.2649,53.3533,-6.263,53.352,-6.2635,53.3517,-6.2641,53.3521,-6.265,53.3516,-6.2645,53.3513,-6.2653,53.351,-6.2656,53.3509,-6.2661,53.3511,-6.2666,53.3509,-6.267,53.3513,-6.2685,53.3507,-6.2688,53.3509,-6.2697,53.3513,-6.2703,53.3508,-6.2709,53.3505,-6.2711,53.3497,-6.2709,53.3491,-6.2708,53.3483,-6.272,53.3481,-6.2733,53.348,-6.2749,53.3478,-6.2751,53.3471]],"CN1":[[-6.2712,53.3607,-6.2719,53.3582,-6.2726,53.3549,-6.2718,53.355,-6.2712,53.3548,-6.2716,53.3545,-6.2699,53.3539,-6.2678,53.3528,-6.2674,53.3531,-6.2667,53.3539,-6.2665,53.3545,-6.266,53.3544,-6.2655,53.3551,-6.2652,53.3555,-6.2651,53.3558,-6.2648,53.356,-6.2637,53.3551,-6.2631,53.3547,-6.2625,53.355,-6.2615,53.3556,-6.2603,53.3547,-6.2592,53.3538,-6.2585,53.354,-6.2572,53.3544,-6.2576,53.355,-6.2563,53.3554,-6.2552,53.3558,-6.2556,53.3562,-6.2537,53.357,-6.2523,53.3576,-6.2522,53.3579,-6.2546,53.3584,-6.258,53.3591,-6.2595,53.3595,-6.2613,53.3598,-6.2625,53.3587,-6.2637,53.3577,-6.2643,53.3572,-6.2651,53.3574,-6.2666,53.3578,-6.2675,53.358,-6.2682,53.3574,-6.2688,53.3581,-6.2696,53.3591,-6.2694,53.3605,-6.2712,53.3607]],"CN2":[[-6.2655,53.3551,-6.266,53.3544,-6.2665,53.3545,-6.2669,53.3541,-6.2674,53.3531,-6.2665,53.3525,-6.265,53.3516,-6.2641,53.3521,-6.2635,53.3517,-6.263,53.352,-6.2649,53.3533,-6.263,53.3539,-6.2621,53.3533,-6.2618,53.3531,-6.2614,53.3532,-6.261,53.3528,-6.2608,53.3525,-6.2581,53.3536,-6.2584,53.3539,-6.2592,53.3538,-6.2601,53.3545,-6.2615,53.3555,-6.2618,53.3554,-6.2625,53.355,-6.2631,53.3547,-6.2634,53.3549,-6.2648,53.356,-6.2651,53.356,-6.2653,53.3557,-6.2655,53.3551]],"CNE":[[-6.2458,53.3494,-6.246,53.3474,-6.2409,53.3471,-6.2294,53.3461,-6.2274,53.3459,-6.2267,53.3498,-6.2411,53.3506,-6.2453,53.3537,-6.2481,53.3517,-6.2455,53.3515,-6.2458,53.3494]],"CNW1":[[-6.2787,53.3469,-6.2791,53.3468,-6.28,53.3468,-6.2802,53.3465,-6.279,53.3463,-6.2777,53.3461,-6.2768,53.3459,-6.276,53.3458,-6.2756,53.3465,-6.2771,53.3468,-6.2787,53.3469]],"CNW2":[[-6.2803,53.3469,-6.2804,53.3466,-6.28,53.3468,-6.2792,53.3467,-6.2789,53.3468,-6.278,53.3467,-6.2772,53.3466,-6.2754,53.3465,-6.2752,53.347,-6.2749,53.3478,-6.2734,53.3479,-6.2719,53.3481,-6.2712,53.3483,-6.2708,53.3483,-6.2709,53.3491,-6.2711,53.3497,-6.2709,53.3505,-6.2702,53.3509,-6.2697,53.3513,-6.2688,53.3509,-6.2685,53.3507,-6.267,53.3513,-6.2666,53.3509,-6.2661,53.3511,-6.2656,53.3509,-6.2653,53.351,-6.265,53.3511,-6.2645,53.3513,-6.2661,53.3523,-6.2674,53.3531,-6.2678,53.3528,-6.2683,53.353,-6.2697,53.3537,-6.2716,53.3545,-6.2712,53.3548,-6.2718,53.355,-6.2727,53.3549,-6.2728,53.354,-6.2737,53.3516,-6.2745,53.3516,-6.2751,53.3514,-6.2779,53.3511,-6.2783,53.3511,-6.2785,53.3505,-6.2798,53.3506,-6.2799,53.3509,-6.2816,53.3509,-6.2814,53.3506,-6.2817,53.3506,-6.2817,53.3501,-6.2814,53.3498,-6.2815,53.3494,-6.2816,53.3488,-6.2798,53.3486,-6.28,53.3479,-6.2801,53.3476,-6.2803,53.3469]],"CS":[[-6.2769,53.3457,-6.2771,53.3452,-6.2775,53.3451,-6.2777,53.3447,-6.2751,53.3451,-6.2752,53.3439,-6.2733,53.3439,-6.2717,53.3436,-6.2702,53.3437,-6.2703,53.3432,-6.2697,53.3432,-6.2691,53.3431,-6.2687,53.3429,-6.2683,53.3421,-6.2669,53.3411,-6.2672,53.3417,-6.2665,53.3418,-6.2661,53.3419,-6.2654,53.3416,-6.2662,53.3413,-6.2666,53.34,-6.2662,53.3399,-6.2662,53.3396,-6.2671,53.3397,-6.2663,53.3394,-6.2662,53.3388,-6.2662,53.3384,-6.2663,53.3379,-6.266,53.3378,-6.2661,53.337,-6.266,53.3363,-6.2658,53.3355,-6.2654,53.3355,-6.2658,53.3354,-6.2658,53.3343,-6.2657,53.334,-6.2656,53.3337,-6.2651,53.3322,-6.2649,53.3314,-6.2649,53.3299,-6.2619,53.3301,-6.2589,53.3307,-6.2545,53.3317,-6.2508,53.3327,-6.2485,53.3334,-6.2453,53.3344,-6.2423,53.3364,-6.2404,53.3376,-6.239,53.3386,-6.2387,53.3386,-6.2375,53.3383,-6.2374,53.3388,-6.2378,53.3389,-6.2379,53.3392,-6.238,53.3402,-6.2386,53.3413,-6.238,53.344,-6.2341,53.3436,-6.2311,53.3434,-6.23,53.3457,-6.2374,53.3462,-6.2413,53.3465,-6.2465,53.3469,-6.2515,53.3477,-6.255,53.3476,-6.2572,53.3475,-6.2612,53.3467,-6.263,53.3462,-6.265,53.3459,-6.2677,53.3455,-6.2705,53.3453,-6.2721,53.3451,-6.2757,53.3454,-6.2769,53.3457]],"CS1":[[-6.2274,53.3459,-6.2295,53.3462,-6.2301,53.3448,-6.2311,53.3429,-6.2354,53.3433,-6.2372,53.3435,-6.2372,53.3432,-6.238,53.3402,-6.2381,53.3394,-6.2378,53.3391,-6.2374,53.3388,-6.2375,53.3383,-6.2387,53.3386,-6.2398,53.3378,-6.2415,53.3366,-6.2441,53.335,-6.2453,53.3343,-6.247,53.3338,-6.2514,53.3324,-6.2533,53.3319,-6.2526,53.3306,-6.2521,53.3307,-6.2516,53.3302,-6.2518,53.3297,-6.251,53.3294,-6.2501,53.3291,-6.2491,53.3289,-6.2483,53.3284,-6.248,53.3286,-6.2475,53.3288,-6.2465,53.3284,-6.2482,53.3273,-6.2472,53.327,-6.2463,53.3271,-6.2459,53.3273,-6.2455,53.3271,-6.2445,53.3278,-6.2429,53.3277,-6.2415,53.3265,-6.24,53.3253,-6.2404,53.3252,-6.2399,53.3248,-6.2368,53.3262,-6.2349,53.3249,-6.2323,53.3258,-6.232,53.3261,-6.2313,53.327,-6.2311,53.3281,-6.2307,53.3288,-6.2288,53.3283,-6.2269,53.3279,-6.2255,53.3289,-6.2252,53.3294,-6.2251,53.3301,-6.2245,53.3306,-6.2279,53.3333,-6.2271,53.334,-6.2268,53.334,-6.2257,53.3343,-6.225,53.3351,-6.2261,53.3368,-6.2274,53.3392,-6.2287,53.3417,-6.227,53.3419,-6.2273,53.3424,-6.227,53.3425,-6.2267,53.3426,-6.2262,53.3427,-6.2258,53.3423,-6.2242,53.3426,-6.2231,53.3431,-6.2229,53.3436,-6.2201,53.3454,-6.2274,53.3459]],"CS2":[[-6.2483,53.3284,-6.2491,53.3289,-6.2501,53.3291,-6.251,53.3294,-6.2518,53.3297,-6.2516,53.3302,-6.2521,53.3307,-6.2526,53.3306,-6.2533,53.3319,-6.2592,53.3306,-6.2581,53.3288,-6.2579,53.3285,-6.2576,53.3274,-6.2562,53.3271,-6.2559,53.3267,-6.2542,53.3267,-6.253,53.326,-6.2542,53.3256,-6.2535,53.3251,-6.2529,53.3247,-6.2524,53.3246,-6.2522,53.3243,-6.2517,53.3249,-6.2511,53.3256,-6.2502,53.3264,-6.2492,53.3262,-6.2472,53.3264,-6.2455,53.3271,-6.2459,53.3273,-6.2463,53.3271,-6.247,53.3272,-6.2482,53.3273,-6.2469,53.3282,-6.2465,53.3284,-6.2475,53.3288,-6.2479,53.3286,-6.2483,53.3284]],"CS3":[[-6.1866,53.3433,-6.1909,53.3434,-6.2033,53.3442,-6.2116,53.3448,-6.2201,53.3454,-6.2226,53.3438,-6.223,53.3435,-6.2231,53.3431,-6.2241,53.3426,-6.2258,53.3423,-6.2261,53.3427,-6.2267,53.3426,-6.2273,53.3424,-6.227,53.3419,-6.2287,53.3417,-6.2266,53.3377,-6.2203,53.3381,-6.2193,53.3375,-6.2169,53.3362,-6.2129,53.335,-6.2097,53.3349,-6.1831,53.3339,-6.1758,53.3415,-6.1866,53.3433]],"CS4":[[-6.2243,53.3237,-6.2237,53.324,-6.2249,53.325,-6.2234,53.3257,-6.2237,53.3259,-6.2248,53.327,-6.226,53.3276,-6.2269,53.3279,-6.2288,53.3283,-6.2308,53.3289,-6.2311,53.3281,-6.2313,53.327,-6.2315,53.3266,-6.2323,53.3258,-6.2349,53.3249,-6.2357,53.324,-6.2341,53.3233,-6.232,53.3216,-6.2319,53.3204,-6.2314,53.3204,-6.2297,53.3201,-6.2254,53.3204,-6.2257,53.3217,-6.2234,53.323,-6.2243,53.3237]],"CS5":[[-6.2576,53.3274,-6.2579,53.3285,-6.2585,53.3294,-6.2592,53.3306,-6.2601,53.3304,-6.2615,53.3301,-6.2639,53.3299,-6.2638,53.329,-6.2639,53.3282,-6.2635,53.3281,-6.2639,53.3277,-6.2641,53.3271,-6.2638,53.3271,-6.2638,53.3266,-6.2639,53.3257,-6.2639,53.3253,-6.2629,53.3252,-6.2626,53.325,-6.2621,53.3244,-6.2618,53.3241,-6.2621,53.324,-6.2623,53.3236,-6.262,53.3234,-6.2617,53.3231,-6.2623,53.3229,-6.2616,53.322,-6.2612,53.3216,-6.2611,53.3213,-6.2596,53.3213,-6.2595,53.3208,-6.2588,53.3208,-6.2584,53.3208,-6.2584,53.3204,-6.257,53.3206,-6.2558,53.3209,-6.2552,53.3209,-6.2551,53.3206,-6.2546,53.3206,-6.2543,53.3197,-6.2538,53.3177,-6.253,53.3148,-6.2517,53.3149,-6.251,53.3149,-6.2488,53.3144,-6.2482,53.3154,-6.2491,53.3156,-6.2488,53.3161,-6.2476,53.3163,-6.2465,53.3171,-6.2449,53.3166,-6.2424,53.3157,-6.241,53.3167,-6.2431,53.318,-6.2426,53.3183,-6.242,53.3186,-6.242,53.3194,-6.2429,53.32,-6.2433,53.3203,-6.2444,53.3209,-6.2451,53.3216,-6.2453,53.322,-6.2456,53.3223,-6.2462,53.3223,-6.2466,53.3221,-6.2469,53.3223,-6.2474,53.3227,-6.2467,53.3229,-6.2474,53.3238,-6.2477,53.3237,-6.2483,53.324,-6.249,53.3245,-6.2497,53.325,-6.2497,53.3256,-6.2492,53.3262,-6.2502,53.3264,-6.2509,53.3255,-6.2522,53.3243,-6.2525,53.3245,-6.2529,53.3247,-6.2537,53.3252,-6.2542,53.3256,-6.253,53.326,-6.2538,53.3264,-6.2542,53.3267,-6.2559,53.3267,-6.2562,53.3271,-6.2576,53.3274]],"CSW":[[-6.2812,53.3445,-6.2818,53.3423,-6.2819,53.3414,-6.2824,53.3408,-6.2847,53.3404,-6.2859,53.34,-6.2867,53.3395,-6.287,53.3386,-6.2873,53.3378,-6.2865,53.3372,-6.286,53.3373,-6.2854,53.3369,-6.2843,53.3362,-6.2828,53.3366,-6.2831,53.3375,-6.2816,53.3378,-6.281,53.337,-6.2796,53.3366,-6.2793,53.3361,-6.2784,53.3361,-6.2775,53.335,-6.2762,53.3345,-6.2756,53.335,-6.2759,53.3351,-6.2756,53.3355,-6.2757,53.3359,-6.276,53.3359,-6.2762,53.3369,-6.2753,53.3373,-6.2754,53.3376,-6.2751,53.3377,-6.2754,53.3385,-6.2753,53.3389,-6.2746,53.3393,-6.2743,53.3393,-6.2747,53.3405,-6.2751,53.3404,-6.2754,53.3409,-6.2759,53.3413,-6.2763,53.3412,-6.2765,53.3415,-6.2765,53.342,-6.2768,53.3426,-6.276,53.3428,-6.2752,53.3436,-6.2751,53.3451,-6.2777,53.3447,-6.2809,53.3453,-6.2812,53.3445]],"CSW1":[[-6.2751,53.3377,-6.2754,53.3376,-6.2753,53.3373,-6.2762,53.3369,-6.2761,53.3365,-6.276,53.3359,-6.2757,53.3359,-6.2756,53.3355,-6.2759,53.3351,-6.2756,53.335,-6.2759,53.3347,-6.2762,53.3345,-6.2759,53.3337,-6.276,53.3334,-6.2759,53.333,-6.2756,53.3325,-6.2756,53.3321,-6.2764,53.3319,-6.2767,53.3313,-6.2765,53.3309,-6.277,53.3297,-6.2741,53.3295,-6.2673,53.3298,-6.2649,53.3299,-6.2651,53.3313,-6.2654,53.3334,-6.2655,53.3337,-6.2657,53.334,-6.2657,53.3343,-6.2658,53.3354,-6.2654,53.3354,-6.2658,53.3355,-6.266,53.3364,-6.2661,53.3368,-6.2661,53.3371,-6.2661,53.3376,-6.2663,53.3379,-6.2664,53.3383,-6.2752,53.3379,-6.2751,53.3377]],"NE":[[-6.2251,53.3523,-6.2267,53.3498,-6.2274,53.3459,-6.1919,53.3434,-6.1866,53.3433,-6.1871,53.3541,-6.1874,53.355,-6.1949,53.3563,-6.2047,53.3579,-6.2157,53.3604,-6.2187,53.358,-6.2212,53.3547,-6.2251,53.3523]],"NE1":[[-6.2157,53.3604,-6.2203,53.3628,-6.2234,53.3611,-6.2281,53.3588,-6.233,53.3604,-6.2356,53.3588,-6.2388,53.3606,-6.2405,53.3612,-6.2417,53.3614,-6.2429,53.3614,-6.2432,53.361,-6.2445,53.36,-6.2471,53.3584,-6.2497,53.357,-6.2504,53.3575,-6.2522,53.3579,-6.2523,53.3576,-6.2556,53.3562,-6.2552,53.3558,-6.2576,53.355,-6.2572,53.3544,-6.2585,53.354,-6.2581,53.3536,-6.258,53.3539,-6.257,53.3541,-6.2556,53.3546,-6.2552,53.354,-6.2548,53.3541,-6.2536,53.3521,-6.2504,53.3529,-6.2495,53.3531,-6.2492,53.3529,-6.2488,53.3533,-6.2471,53.3547,-6.2468,53.3547,-6.2451,53.3536,-6.2435,53.3523,-6.2411,53.3506,-6.2346,53.3502,-6.2267,53.3498,-6.2258,53.3513,-6.2251,53.3523,-6.2234,53.3533,-6.2212,53.3547,-6.2187,53.358,-6.2157,53.3604]],"NE2":[[-6.2242,53.3737,-6.2263,53.3743,-6.2268,53.3735,-6.2277,53.3746,-6.2293,53.3742,-6.2281,53.3728,-6.2304,53.3729,-6.2322,53.373,-6.2319,53.3733,-6.2334,53.3741,-6.2353,53.3744,-6.2358,53.3734,-6.2369,53.372,-6.2382,53.3724,-6.2382,53.3719,-6.2387,53.3718,-6.2395,53.3701,-6.2398,53.3695,-6.241,53.3697,-6.2435,53.3702,-6.2439,53.37,-6.2449,53.3678,-6.2488,53.3672,-6.2507,53.3663,-6.2494,53.3655,-6.2472,53.3643,-6.2459,53.3637,-6.2445,53.3634,-6.2431,53.3624,-6.2425,53.3621,-6.2426,53.3618,-6.2429,53.3614,-6.2417,53.3614,-6.2405,53.3612,-6.2388,53.3606,-6.2356,53.3588,-6.2353,53.359,-6.233,53.3604,-6.2302,53.3619,-6.2294,53.3623,-6.2304,53.3635,-6.2298,53.3637,-6.2282,53.3642,-6.2267,53.3648,-6.2261,53.3651,-6.2263,53.3655,-6.225,53.366,-6.2245,53.3662,-6.2257,53.3674,-6.2262,53.3679,-6.2266,53.3675,-6.2272,53.3678,-6.2268,53.3685,-6.2247,53.3699,-6.2226,53.3718,-6.2215,53.3728,-6.2219,53.3731,-6.2223,53.3732,-6.2231,53.3733,-6.224,53.3732,-6.2242,53.3737]],"NW":[[-6.2753,53.3584,-6.2771,53.358,-6.2781,53.3592,-6.2785,53.3592,-6.2804,53.3588,-6.2824,53.3582,-6.2836,53.3578,-6.2871,53.3572,-6.2884,53.357,-6.2901,53.357,-6.2908,53.3568,-6.2924,53.3557,-6.2919,53.3555,-6.2933,53.3546,-6.2947,53.3537,-6.2961,53.3527,-6.2974,53.3518,-6.2979,53.3515,-6.297,53.3506,-6.2981,53.3502,-6.2974,53.3492,-6.3004,53.349,-6.2969,53.3482,-6.2965,53.3483,-6.2966,53.349,-6.2954,53.3492,-6.2949,53.3487,-6.2941,53.3487,-6.293,53.3484,-6.2917,53.3483,-6.2901,53.3483,-6.2889,53.3482,-6.2889,53.3471,-6.2853,53.347,-6.2829,53.3469,-6.2804,53.3466,-6.2798,53.3486,-6.2806,53.3487,-6.2816,53.3488,-6.2815,53.3494,-6.2814,53.3498,-6.2817,53.3499,-6.2818,53.3504,-6.2814,53.3506,-6.2816,53.3509,-6.2799,53.3509,-6.2798,53.3506,-6.2788,53.3506,-6.2785,53.3505,-6.2783,53.3511,-6.2758,53.3511,-6.2752,53.3512,-6.2745,53.3514,-6.2737,53.3516,-6.2728,53.3538,-6.2726,53.3552,-6.2721,53.3574,-6.2719,53.3582,-6.2733,53.3584,-6.2754,53.3588,-6.2753,53.3584]],"SH":[[-6.2314,53.3204,-6.2319,53.3204,-6.2321,53.3216,-6.2341,53.3233,-6.2357,53.324,-6.2349,53.3249,-6.2351,53.3252,-6.2368,53.3262,-6.2399,53.3248,-6.2404,53.3252,-6.24,53.3253,-6.2428,53.3276,-6.2445,53.3278,-6.2455,53.3271,-6.2472,53.3264,-6.2492,53.3262,-6.2497,53.3256,-6.2497,53.325,-6.249,53.3245,-6.2482,53.3242,-6.2477,53.3237,-6.2474,53.3238,-6.2467,53.3229,-6.2474,53.3227,-6.2469,53.3223,-6.2466,53.3221,-6.2462,53.3223,-6.2456,53.3223,-6.2452,53.3219,-6.2451,53.3216,-6.2444,53.3209,-6.2433,53.3203,-6.242,53.3194,-6.242,53.3186,-6.2413,53.3182,-6.2375,53.3179,-6.2373,53.3174,-6.2374,53.3169,-6.2366,53.3166,-6.2361,53.3156,-6.2356,53.3159,-6.2351,53.3161,-6.2348,53.3159,-6.2344,53.316,-6.2338,53.3153,-6.2324,53.3138,-6.2315,53.3141,-6.2296,53.3147,-6.2331,53.3136,-6.2326,53.3131,-6.23,53.3141,-6.2284,53.3125,-6.2275,53.3115,-6.2267,53.3105,-6.2248,53.3111,-6.2208,53.3108,-6.2204,53.3112,-6.2219,53.313,-6.2228,53.3137,-6.2239,53.3143,-6.225,53.3146,-6.2259,53.315,-6.2295,53.3175,-6.2279,53.3182,-6.2268,53.3181,-6.2265,53.3187,-6.2264,53.319,-6.2193,53.3189,-6.2159,53.319,-6.2165,53.3203,-6.2171,53.3208,-6.2181,53.3207,-6.2182,53.3213,-6.2218,53.321,-6.2229,53.3205,-6.2236,53.3199,-6.2252,53.3198,-6.2254,53.3204,-6.2297,53.3201,-6.2313,53.3203,-6.2314,53.3204]],"SL":[[-6.2264,53.319,-6.219,53.319,-6.2159,53.319,-6.2264,53.319],[-6.2268,53.3181,-6.2265,53.3187,-6.2264,53.319,-6.2268,53.3181],[-6.2026,53.3165,-6.2024,53.3166,-6.2026,53.3166,-6.2026,53.3165],[-6.2042,53.3164,-6.2026,53.3165,-6.2026,53.3165,-6.2042,53.3164],[-6.2092,53.3117,-6.209,53.3121,-6.2103,53.3147,-6.2092,53.3117],[-6.2052,53.3164,-6.2083,53.316,-6.2052,53.3163,-6.2042,53.3164,-6.2052,53.3164],[-6.2123,53.311,-6.2114,53.3111,-6.2099,53.3115,-6.2092,53.3117,-6.2123,53.311],[-6.2159,53.319,-6.2142,53.32,-6.2026,53.3166,-6.2072,53.328,-6.2097,53.3349,-6.2129,53.335,-6.2169,53.3362,-6.2203,53.3381,-6.2225,53.3379,-6.2247,53.3378,-6.2266,53.3377,-6.225,53.3351,-6.2257,53.3343,-6.227,53.334,-6.2279,53.3333,-6.2245,53.3306,-6.2251,53.3301,-6.2252,53.3294,-6.2255,53.329,-6.2269,53.3279,-6.226,53.3276,-6.2248,53.327,-6.2237,53.3259,-6.2234,53.3257,-6.2249,53.325,-6.2236,53.324,-6.2243,53.3237,-6.2234,53.323,-6.2257,53.3217,-6.2252,53.3199,-6.2236,53.32,-6.2229,53.3206,-6.2218,53.321,-6.2182,53.3213,-6.2181,53.3207,-6.2171,53.3208,-6.2165,53.3204,-6.2159,53.319]],"SL1":[[-6.2103,53.3147,-6.2082,53.3151,-6.2083,53.316,-6.2024,53.3165,-6.2142,53.32,-6.2159,53.319,-6.2264,53.319,-6.2268,53.3181,-6.2279,53.3181,-6.2295,53.3174,-6.2273,53.3159,-6.2259,53.3149,-6.225,53.3145,-6.2239,53.3142,-6.2228,53.3136,-6.2219,53.3129,-6.2205,53.3113,-6.2196,53.3101,-6.2169,53.3093,-6.2152,53.3102,-6.2132,53.3109,-6.2123,53.3109,-6.2108,53.3112,-6.2092,53.3117,-6.2103,53.3147]],"SW":[[-6.2675,53.3298,-6.2741,53.3295,-6.2756,53.3296,-6.2792,53.3299,-6.2822,53.3304,-6.2825,53.3304,-6.2826,53.3301,-6.2828,53.3298,-6.2847,53.3287,-6.2882,53.3267,-6.2875,53.3256,-6.2872,53.3251,-6.2869,53.325,-6.2865,53.324,-6.2874,53.3236,-6.2882,53.3233,-6.2895,53.3228,-6.2907,53.3223,-6.2908,53.3217,-6.2904,53.321,-6.2918,53.3203,-6.2907,53.3195,-6.2892,53.3197,-6.2876,53.3199,-6.2863,53.3203,-6.2853,53.3194,-6.2847,53.3187,-6.2841,53.3181,-6.284,53.3177,-6.2846,53.3166,-6.2835,53.3167,-6.2834,53.3157,-6.2819,53.316,-6.2814,53.3161,-6.2805,53.3168,-6.2795,53.3165,-6.279,53.3164,-6.2786,53.3151,-6.2797,53.3149,-6.2793,53.3138,-6.2791,53.3128,-6.2788,53.312,-6.2781,53.312,-6.278,53.3117,-6.2787,53.3115,-6.2786,53.3112,-6.2814,53.3104,-6.2809,53.3095,-6.2811,53.3092,-6.2821,53.3088,-6.282,53.3083,-6.2806,53.3085,-6.2797,53.3085,-6.2788,53.3086,-6.2788,53.3089,-6.2771,53.3091,-6.2769,53.3088,-6.2774,53.3087,-6.2772,53.3076,-6.2757,53.3076,-6.2735,53.3078,-6.2733,53.3072,-6.2759,53.307,-6.2747,53.3052,-6.2712,53.3048,-6.2679,53.3044,-6.2664,53.3054,-6.2673,53.3062,-6.2693,53.3068,-6.2698,53.3071,-6.2702,53.3076,-6.2676,53.3079,-6.267,53.3079,-6.2658,53.3082,-6.2654,53.3083,-6.2658,53.3086,-6.2662,53.3092,-6.2664,53.3098,-6.2664,53.3104,-6.2661,53.311,-6.266,53.3113,-6.2652,53.3118,-6.2647,53.3122,-6.2642,53.3126,-6.2628,53.313,-6.2617,53.3129,-6.2609,53.3129,-6.2604,53.3127,-6.2602,53.3112,-6.258,53.3112,-6.2553,53.3112,-6.254,53.3113,-6.2522,53.3114,-6.2527,53.3137,-6.2532,53.3156,-6.2546,53.3206,-6.2551,53.3206,-6.2552,53.3209,-6.2555,53.3209,-6.2558,53.3209,-6.257,53.3207,-6.2584,53.3204,-6.2584,53.3208,-6.2588,53.3208,-6.2595,53.3208,-6.2596,53.3213,-6.2611,53.3213,-6.2623,53.3229,-6.2617,53.3231,-6.2621,53.3234,-6.2622,53.3238,-6.2618,53.3241,-6.2621,53.3244,-6.2626,53.325,-6.2629,53.3252,-6.2639,53.3253,-6.2639,53.3257,-6.2638,53.3268,-6.2638,53.3271,-6.2641,53.3271,-6.2639,53.3277,-6.2635,53.3279,-6.2635,53.3282,-6.2639,53.3282,-6.2638,53.3297,-6.2642,53.33,-6.2675,53.3298]],"WW1":[[-6.2839,53.3416,-6.2875,53.3416,-6.2875,53.3423,-6.2878,53.3428,-6.2881,53.3429,-6.2881,53.3434,-6.2886,53.3434,-6.2886,53.3428,-6.2899,53.3428,-6.29,53.3423,-6.292,53.3421,-6.2919,53.3417,-6.2901,53.3388,-6.2925,53.3385,-6.2963,53.338,-6.2992,53.3377,-6.2995,53.3385,-6.3002,53.3392,-6.3013,53.3397,-6.3023,53.3403,-6.3034,53.34,-6.3045,53.3403,-6.3059,53.3403,-6.3071,53.3404,-6.3076,53.3406,-6.3076,53.3403,-6.3076,53.3399,-6.308,53.3383,-6.3077,53.3379,-6.3072,53.3378,-6.3063,53.3371,-6.3064,53.3366,-6.3051,53.3361,-6.3022,53.3351,-6.2986,53.3337,-6.2986,53.3334,-6.299,53.3334,-6.2993,53.3336,-6.3001,53.3338,-6.3006,53.3336,-6.3006,53.3328,-6.3005,53.3319,-6.2984,53.3316,-6.2986,53.3313,-6.2982,53.3312,-6.2986,53.3304,-6.298,53.3303,-6.2973,53.3305,-6.2958,53.3311,-6.2938,53.3318,-6.2932,53.3314,-6.292,53.3304,-6.2913,53.3306,-6.2906,53.3307,-6.29,53.3307,-6.2883,53.3304,-6.2879,53.3311,-6.2846,53.3307,-6.2825,53.3304,-6.2811,53.3302,-6.279,53.3299,-6.2772,53.3298,-6.2765,53.3309,-6.2767,53.3313,-6.2765,53.3319,-6.2756,53.332,-6.2756,53.3325,-6.276,53.3334,-6.2759,53.3337,-6.276,53.3343,-6.2775,53.335,-6.2784,53.3361,-6.2793,53.3361,-6.2796,53.3366,-6.281,53.337,-6.2816,53.3378,-6.2831,53.3375,-6.2828,53.3366,-6.2843,53.3362,-6.286,53.3373,-6.2864,53.3372,-6.2873,53.3378,-6.2872,53.3381,-6.2867,53.3395,-6.2859,53.34,-6.2847,53.3404,-6.2829,53.3407,-6.2824,53.3408,-6.2819,53.3414,-6.2818,53.3423,-6.2815,53.3433,-6.2812,53.3445,-6.2809,53.3453,-6.2777,53.3447,-6.2775,53.3451,-6.2771,53.3452,-6.2769,53.3457,-6.2773,53.3458,-6.2801,53.3463,-6.2807,53.3464,-6.2815,53.3465,-6.2828,53.3466,-6.2848,53.3467,-6.2867,53.3468,-6.2905,53.3471,-6.29,53.3474,-6.292,53.3479,-6.2919,53.3472,-6.2937,53.3469,-6.2956,53.3469,-6.3006,53.3475,-6.304,53.3477,-6.304,53.3459,-6.3051,53.3451,-6.3064,53.344,-6.3013,53.3451,-6.2969,53.3457,-6.2916,53.3462,-6.2913,53.3446,-6.2848,53.3448,-6.2848,53.3435,-6.2837,53.3435,-6.2839,53.3416]]};
+
+/* Is this point inside any cargo zone? Ray casting, same test a mapping
+   library would use, but this needs no library. */
+function inRing(lng, lat, flat){
+  let hit = false;
+  const n = flat.length / 2;
+  for(let i = 0, j = n - 1; i < n; j = i++){
+    const xi = flat[i*2], yi = flat[i*2+1];
+    const xj = flat[j*2], yj = flat[j*2+1];
+    if(((yi > lat) !== (yj > lat)) &&
+       (lng < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi)) hit = !hit;
+  }
+  return hit;
+}
+function cargoZoneFor(lat, lng){
+  if(typeof lat !== "number" || typeof lng !== "number") return null;
+  for(const z in CARGO_ZONES){
+    for(const ring of CARGO_ZONES[z]){
+      if(inRing(lng, lat, ring)) return z;
+    }
+  }
+  return null;
+}
+
+/* What a cargo bike will take. The frame of reference staff are given is a
+   suitcase, because nobody has a tape measure at a counter and everyone knows
+   what a suitcase holds. Twenty kilos is the ceiling because one rider has to
+   lift it in and out of the box. */
+const CARGO_MAX_KG = 20;
+
+
+/* ---------- small helpers ----------
+   Defined here, above the sign-in block, because that block throws to stop the
+   rest of the page initialising. Anything declared below the throw would never
+   exist, and the sign-in and registration panels need these. */
+const tidy = raw => String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7);
+
+const keyOf = c => {
+  const rk = String(c || "").slice(0, 3);
+  if (rk === "D6W") return rk;
+  return (rk.length === 3 && "ACDEFHKNPRTVWXY".includes(rk[0]) &&
+          /^[0-9]{2}$/.test(rk.slice(1))) ? rk : null;
+};
+
+const pretty = c => c.length > 3 ? c.slice(0, 3) + " " + c.slice(3) : c;
+
+const esc = s => String(s || "").replace(/[&<>"]/g,
+  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const num = v => (typeof v === "number" && isFinite(v))
+  ? v
+  : (v && isFinite(parseFloat(v)) ? parseFloat(v) : null);
+
+const SIGNUP_KEYS_FALLBACK = ["D01","D02"];
+
+function signupCheck(rk, lat, lng){
+  if(typeof lat === "number" && typeof lng === "number"){
+    const km = kmFromCentre(lat, lng);
+    return { ok: km <= SIGNUP_KM, km: km, how: "measured" };
+  }
+  return { ok: !!rk && SIGNUP_KEYS_FALLBACK.indexOf(rk) !== -1, km: null, how: "district" };
+}
+const OUTER = {
+  D22:["Newcastle"], D24:["Brittas","Bohernabreena","Glenasmole"],
+  D18:["Glencullen"], D15:["Clonee"], K67:["Lissenhall","Kilsallaghan","Ballyboughal"]
+};
+
+/* first place name is used to prefill the Town field, editable by staff */
+const AREAS = {
+  D01:"Dublin 1", D02:"Dublin 2", D03:"Clontarf", D04:"Dublin 4", D05:"Raheny",
+  D06:"Rathmines", D6W:"Terenure", D07:"Phibsborough", D08:"Dublin 8",
+  D09:"Drumcondra", D10:"Ballyfermot", D11:"Finglas", D12:"Crumlin",
+  D13:"Baldoyle", D14:"Dundrum", D15:"Blanchardstown", D16:"Ballinteer",
+  D17:"Coolock", D18:"Sandyford", D20:"Palmerstown", D22:"Clondalkin",
+  D24:"Tallaght", A94:"Blackrock", A96:"D\u00fan Laoghaire", A98:"Bray",
+  K32:"Balbriggan", K34:"Skerries", K36:"Lusk", K45:"Rush", K56:"Donabate",
+  K67:"Swords", K78:"Lucan"
+};
+
+/* Exact header row from the supplied template. Do not correct the spelling, and
+   note "Town" stays as-is here even though staff see the field labelled "Area":
+   the platform matches on these strings, and most Dublin suburbs aren't towns. */
+const HEADERS = ["Company Name (Optional)","Address Line 1","Adreess Line 2","Town","County",
+                 "PostCode","Country","Your Ref (Optional)","Deliver Contact","Deliver Phone",
+                 "# of Packages","Total Weight","Service"];
+
+/* ========================================================================== */
+const LETTERS = "ACDEFHKNPRTVWXY";
+const SWAPS = {O:"0",Q:"0",I:"1",L:"1",J:"1",S:"5",Z:"2",B:"8",G:"6",U:"V"};
+const DUBLIN_KEYS = ["D01","D02","D03","D04","D05","D06","D6W","D07","D08","D09","D10","D11",
+                     "D12","D13","D14","D15","D16","D17","D18","D20","D22","D24"];
+/* The arrow is the verdict. A yes keeps the head; anything else leaves the
+   shaft alone, which reads as a dash rather than a direction. */
+const MARK = '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+  '<rect x="2" y="26" width="40" height="12" rx="2.5" fill="currentColor"/>' +
+  '<path class="up" d="M38 8 L62 32 L38 56 Z" fill="currentColor"/></svg>';
+
+/* Two pharmacies sharing a bag prefix would put FOL-1 on two different bags on
+   the same run, and the driver could not tell them apart. Cheap to check, so
+   check it: this shows up the moment a pharmacy is added, not on the day a bag
+   goes to the wrong house. */
+(function(){
+  const seen = {}, clashes = [];
+  Object.keys(PHARMACIES).forEach(function(k){
+    const tag = (PHARMACIES[k].tag || "").toUpperCase();
+    if(!tag){ clashes.push(k + " has no tag"); return; }
+    if(seen[tag]) clashes.push(tag + " used by both " + seen[tag] + " and " + k);
+    seen[tag] = k;
+  });
+  if(clashes.length) console.error("Config problem: " + clashes.join("; "));
+
+  /* A collection time earlier than the cutoff makes the page contradict itself. */
+  Object.keys(PHARMACIES).forEach(function(k){
+    const s = PHARMACIES[k];
+    const cut = (typeof s.sameDayUntil === "number") ? s.sameDayUntil : SAME_DAY_UNTIL;
+    const ready = s.readyBy || READY_BY;
+    const m = String(ready).match(/^(\d{1,2})\s*(am|pm)$/i);
+    if(!m) return;
+    let hr = parseInt(m[1], 10) % 12;
+    if(m[2].toLowerCase() === "pm") hr += 12;
+    if(hr < cut) console.error("Config problem: " + k + " has a " + cutoffWords(cut) +
+      " cutoff but the rider is shown as calling at " + ready);
+  });
+})();
+
+const $ = id => document.getElementById(id);
+const covers = rk => COVERED.some(p => p.endsWith("*") ? rk.startsWith(p.slice(0,-1)) : rk === p);
+const listPlaces = a => a.length === 1 ? a[0] : a.slice(0,-1).join(", ")+" or "+a[a.length-1];
+
+$("today").textContent = new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"});
+
+
+/* Which pharmacy this page is for.
+
+   Read from the web address two ways, because Vercel serves /foleys by
+   rewriting to this same file: the browser keeps showing /foleys, so the
+   pharmacy has to come from the path, not from a ?p= that isn't there.
+
+     /foleys            the tidy version, what pharmacies get
+     /?p=foleys         still works, handy for testing
+     no address at all  falls back to DEFAULT_PHARMACY
+
+   One file serves every pharmacy. Adding one is a line in PHARMACIES below and
+   a line in vercel.json, and every fix reaches all of them at once. */
+const slug = (function(){
+  const q = (new URLSearchParams(location.search).get("p") || "").toLowerCase();
+  if(q) return q;
+  const path = (location.pathname || "").replace(/^\/+|\/+$/g, "").toLowerCase();
+  return path.replace(/\.html$/, "");
+})();
+/* Which pharmacy this is. Normally it comes from the link they bookmark,
+   ?p=foleys. DEFAULT_PHARMACY covers a bare URL, which is what happens when you
+   email somebody the file to look at.
+
+   Set DEFAULT_PHARMACY to null once more than one pharmacy is live, so a bare
+   URL can't quietly book as the wrong shop. The name is on screen throughout and
+   travels with the list either way, so a mistake is visible rather than silent. */
+let SHOP = PHARMACIES[slug] || (DEFAULT_PHARMACY ? PHARMACIES[DEFAULT_PHARMACY] : null);
+
+/* A store that has signed in on this machine before. Held locally, so it is
+   per browser and clears when they sign out. */
+const CODE_KEY = "cyclone:code";
+function shopForCode(entered){
+  const c = String(entered || "").trim().toUpperCase();
+  if(!c) return null;
+  const hit = Object.keys(PHARMACIES).find(k =>
+    String(PHARMACIES[k].code || "").toUpperCase() === c);
+  return hit || null;
+}
+if(!SHOP){
+  let held = null;
+  try{ held = localStorage.getItem(CODE_KEY); }catch(e){}
+  const k = shopForCode(held);
+  if(k) SHOP = PHARMACIES[k];
+}
+
+if(!SHOP){
+  document.querySelector(".wrap").innerHTML =
+    '<div class="panel signin" id="panelin">' +
+      '<h2>Sign in</h2>' +
+      '<p>Enter the code we gave you. You only need to do this once on this ' +
+        'computer.</p>' +
+      '<div class="f">' +
+        '<label for="code">Your code</label>' +
+        '<input id="code" type="text" autocomplete="off" spellcheck="false" ' +
+               'placeholder="FOLEYS-1183" autofocus>' +
+      '</div>' +
+      '<button class="b-go" id="signin" type="button">Sign in</button>' +
+      '<p class="signin__err" id="signinerr"></p>' +
+      '<p class="signin__foot">Not set up yet? ' +
+        '<button class="swap" id="toreg" type="button">Ask us to set you up</button>' +
+        '<br>Lost the code? Ring us on <strong>' + PHONE + '</strong>.</p>' +
+    '</div>' +
+
+    '<div class="panel reg" id="panelreg" hidden>' +
+      '<h2>Ask us to set you up</h2>' +
+      '<p>Fill this in, put a card on file, and we will send your booking link ' +
+        'the same day. Nothing is charged now: deliveries are invoiced at the end ' +
+        'of the month.</p>' +
+      '<div class="grid">' +
+        '<div class="f f--wide">' +
+          '<label for="rgshop">Store name</label>' +
+          '<input id="rgshop" type="text" autocomplete="off">' +
+        '</div>' +
+        '<div class="f f--wide">' +
+          '<label for="rgeir">Your Eircode</label>' +
+          '<input id="rgeir" type="text" autocomplete="off" spellcheck="false" ' +
+                 'maxlength="8" placeholder="D02 X285">' +
+          '<p class="reg__found" id="rgfound" hidden></p>' +
+        '</div>' +
+        '<div class="f">' +
+          '<label for="rgwho">Your name</label>' +
+          '<input id="rgwho" type="text" autocomplete="off">' +
+        '</div>' +
+        '<div class="f">' +
+          '<label for="rgphone">Phone</label>' +
+          '<input id="rgphone" type="tel" inputmode="tel" autocomplete="off">' +
+        '</div>' +
+        '<div class="f f--wide">' +
+          '<label for="rgmail">Email</label>' +
+          '<input id="rgmail" type="email" autocomplete="off">' +
+        '</div>' +
+        '<div class="f f--wide">' +
+          '<label for="rgvol">Deliveries a week, roughly</label>' +
+          '<input id="rgvol" type="text" autocomplete="off" placeholder="A handful, 10, 50">' +
+        '</div>' +
+      '</div>' +
+      '<p class="reg__err" id="rgerr"></p>' +
+      '<button class="b-go" id="rgsend" type="button">Continue to card details</button>' +
+      '<p class="reg__foot">Or ring us on <strong>' + PHONE + '</strong>.' +
+        '<br><button class="swap" id="toin" type="button">I already have a code</button></p>' +
+    '</div>';
+
+  /* swap between the two panels */
+  const showReg = () => { $("panelin").hidden = true;  $("panelreg").hidden = false; $("rgshop").focus(); };
+  const showIn  = () => { $("panelreg").hidden = true; $("panelin").hidden = false;  $("code").focus(); };
+  $("toreg").onclick = showReg;
+  $("toin").onclick  = showIn;
+
+  /* Arriving from "Start today" on the landing page. Somebody who has just
+     clicked that has no code, so opening on a sign-in form would be the wrong
+     way round. */
+  if(new URLSearchParams(location.search).get("new")) showReg();
+
+  /* Resolve their own address as they type it. Same endpoint the booking form
+     uses, so the collection address is confirmed before we ever set them up
+     and the placeId comes back with the request. */
+  let rgPlaceId = null, rgAddress = null, rgAsking = null, rgLat = null, rgLng = null;
+  /* Held while a lookup is running. Pressing the button before it returns would
+     fall back to the district test, which excludes D04, D06, D07 and D08 —
+     legitimately inside two kilometres — and wrongly send them to the waiting
+     list. So wait for the answer instead of guessing. */
+  let rgPending = null;
+  $("rgeir").addEventListener("input", async () => {
+    const bare = $("rgeir").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
+    $("rgeir").value = pretty(bare);
+    rgPlaceId = null; rgAddress = null; rgLat = null; rgLng = null;
+    $("rgsend").textContent = "Continue to card details";
+    const line = $("rgfound");
+    if(bare.length !== 7 || !ADDRESS_LOOKUP){ line.hidden = true; return; }
+    rgAsking = bare;
+    line.hidden = false; line.textContent = "Checking the address\u2026";
+    let settle;
+    rgPending = new Promise(r => { settle = r; });
+    try{
+      const res = await fetch(ADDRESS_LOOKUP + "?eircode=" + encodeURIComponent(bare));
+      const a = await res.json();
+      if(rgAsking !== bare) return;
+      if(!res.ok || !a.found || !a.address){ line.hidden = true; return; }
+      rgAddress = a.address; rgPlaceId = a.placeId || null;
+      /* Coordinates may come back under any of these names, or not at all. */
+      rgLat = num(a.lat ?? a.latitude ?? (a.location && a.location.lat));
+      rgLng = num(a.lng ?? a.lon ?? a.longitude ?? (a.location && a.location.lng));
+      const chk = signupCheck(keyOf(bare), rgLat, rgLng);
+      line.textContent = a.address +
+        (chk.ok ? "" : "  \u2014 not in an area we collect from yet");
+      line.style.color = chk.ok ? "" : "var(--amber)";
+      /* Say what pressing it will do, so nobody fills in three more fields
+         expecting a card and gets a waiting list. */
+      $("rgsend").textContent = chk.ok ? "Continue to card details"
+                                       : "Join the waiting list";
+    }catch(e){ line.hidden = true; }
+    finally{ settle(); rgPending = null; }
+  });
+
+  $("rgsend").onclick = async () => {
+    const g = id => $(id).value.trim();
+    const missing = [];
+    if(g("rgshop").length < 2) missing.push("the store name");
+    if(tidy(g("rgeir")).length !== 7) missing.push("your Eircode");
+    if(g("rgwho").length < 2) missing.push("your name");
+    if(!g("rgmail")) missing.push("an email address");
+    if(missing.length){
+      $("rgerr").textContent = "We still need " + listPlaces(missing) + ".";
+      return;
+    }
+    $("rgerr").textContent = "";
+
+    /* Their own Eircode decides which of the two paths they take. */
+    /* If the address is still being looked up, let it finish first. */
+    if(rgPending){
+      $("rgsend").disabled = true;
+      $("rgsend").textContent = "One moment\u2026";
+      try{ await rgPending; }catch(e){}
+      $("rgsend").disabled = false;
+    }
+    const zoneKey = keyOf(tidy(g("rgeir")));
+    const chk = signupCheck(zoneKey, rgLat, rgLng);
+    const inZone = chk.ok;
+
+    const payload = {
+      shop: g("rgshop"),
+      eircode: pretty(tidy(g("rgeir"))),
+      address: rgAddress || "",
+      placeId: rgPlaceId || "",
+      who: g("rgwho"),
+      phone: g("rgphone"),
+      email: g("rgmail"),
+      volume: g("rgvol")
+    };
+
+    /* The keys above are what the endpoint expects. These are what a person
+       reads when they copy the details into an email. */
+    const LABELS = {
+      shop: "Store", eircode: "Eircode", address: "Address",
+      placeId: "Collection point", who: "Contact", phone: "Phone",
+      email: "Email", volume: "Deliveries a week",
+      distance_km: "Distance from centre (km)"
+    };
+    const readable = () => Object.keys(payload)
+      .map(k => (LABELS[k] || k) + ": " + (payload[k] || "-"))
+      .join("\n");
+
+    /* No endpoint yet, or it is unreachable. Nothing has gone wrong from the
+       store's point of view, so do not tell them it has. Show them what we
+       need and let them copy it or open their mail client, whichever works on
+       the machine they are sitting at. */
+    const byHand = (heading) => {
+      const body = readable();
+      const mail = "mailto:hello@cyclonelastmile.ie" +
+        "?subject=" + encodeURIComponent("Set us up: " + payload.shop) +
+        "&body=" + encodeURIComponent(body);
+      $("panelreg").innerHTML =
+        '<h2>' + esc(heading) + '</h2>' +
+        '<p class="byhand">Send us these details and we will set you up and come ' +
+          'back to you today. Copy them into an email, or ring us if that is ' +
+          'quicker.</p>' +
+        '<div class="byhand__box" id="hbody"></div>' +
+        '<div class="byhand__row">' +
+          '<button class="b-go" id="hcopy" type="button">Copy the details</button>' +
+          '<a class="b-ghost" href="' + mail + '">Open my email</a>' +
+        '</div>' +
+        '<p class="reg__foot">Or ring us on <strong>' + PHONE + '</strong>.</p>';
+      $("hbody").textContent = body;
+      $("hcopy").onclick = async () => {
+        try{
+          await navigator.clipboard.writeText(body);
+          $("hcopy").textContent = "Copied";
+        }catch(e){
+          /* Clipboard refused, usually on an insecure origin. Select it so they
+             can copy by hand rather than being stuck. */
+          const r = document.createRange();
+          r.selectNodeContents($("hbody"));
+          const s = window.getSelection();
+          s.removeAllRanges(); s.addRange(r);
+          $("hcopy").textContent = "Selected, press Ctrl+C";
+        }
+      };
+    };
+    /* Outside the zone we do not take a card, because we cannot build a run
+       round them yet. Their Eircode goes on the list so we know where the next
+       cluster should be. */
+    if(!inZone){
+      $("panelreg").innerHTML =
+        '<h2>Not in your area yet</h2>' +
+        '<p>We build routes one area at a time, and we have not reached ' +
+          (zoneKey ? '<strong>' + esc(zoneKey) + '</strong>' : 'you') + ' yet. ' +
+          'We have taken your details and will come back the moment we do.</p>' +
+        '<p style="margin-top:0">Somewhere else in the city with a shop we could ' +
+          'collect from? Ring us on <strong>' + PHONE + '</strong> and we will ' +
+          'tell you straight where we are.</p>';
+      payload.distance_km = (chk.km === null ? "not measured" : chk.km.toFixed(2));
+      const body = readable();
+      const mail = "mailto:hello@cyclonelastmile.ie" +
+        "?subject=" + encodeURIComponent("Waiting list: " + payload.shop + " (" + (zoneKey||"?") + ")") +
+        "&body=" + encodeURIComponent(body);
+      $("panelreg").innerHTML =
+        '<h2>Not in your area yet</h2>' +
+        '<p class="byhand">We build routes one area at a time and we have not ' +
+          'reached ' + (zoneKey ? '<strong>' + esc(zoneKey) + '</strong>' : 'you') +
+          ' yet. Send us these details and we will come back the moment we do.</p>' +
+        '<div class="byhand__box" id="hbody"></div>' +
+        '<div class="byhand__row">' +
+          '<button class="b-go" id="hcopy" type="button">Copy the details</button>' +
+          '<a class="b-ghost" href="' + mail + '">Open my email</a>' +
+        '</div>' +
+        '<p class="reg__foot">Or ring us on <strong>' + PHONE + '</strong>.</p>';
+      $("hbody").textContent = body;
+      $("hcopy").onclick = async () => {
+        try{
+          await navigator.clipboard.writeText(body);
+          $("hcopy").textContent = "Copied";
+        }catch(e){
+          const r = document.createRange();
+          r.selectNodeContents($("hbody"));
+          const s = window.getSelection();
+          s.removeAllRanges(); s.addRange(r);
+          $("hcopy").textContent = "Selected, press Ctrl+C";
+        }
+      };
+      return;
+    }
+
+    if(!CARD_SETUP){ byHand("Nearly there"); return; }
+
+    const btn = $("rgsend");
+    btn.disabled = true; btn.textContent = "One moment\u2026";
+    try{
+      const res = await fetch(CARD_SETUP, {
+        method: "POST",
+        headers: {"Content-Type": "text/plain;charset=utf-8"},
+        body: JSON.stringify(payload)
+      });
+      const out = await res.json();
+      if(!res.ok || !out.ok || !out.url) throw new Error(out.error || "refused");
+      /* Straight to Stripe's hosted page. Nothing is charged there. */
+      window.location.href = out.url;
+    }catch(e){
+      /* The card step is unavailable. Not the store's fault and not a failure
+         of their details, so say neither. */
+      byHand("Nearly there");
+    }
+  };
+
+  /* Back from Stripe. The card is saved against their customer record; the
+     code follows once we have looked at the registration. */
+  (function(){
+    const s = new URLSearchParams(location.search).get("setup");
+    if(!s) return;
+    const box = $("signinerr");
+    if(s === "done"){
+      box.style.color = "var(--brand)";
+      box.textContent = "Card saved. We will email your code today.";
+    }else if(s === "cancelled"){
+      box.textContent = "No card was saved. Start again when you are ready.";
+    }
+  })();
+
+  const go = () => {
+    const k = shopForCode($("code").value);
+    if(!k){
+      $("signinerr").textContent = "That code isn't one of ours. Check it and try again.";
+      $("code").classList.add("bad");
+      return;
+    }
+    try{ localStorage.setItem(CODE_KEY, PHARMACIES[k].code); }catch(e){}
+    location.reload();
+  };
+  $("signin").onclick = go;
+  $("code").addEventListener("keydown", e => { if(e.key === "Enter") go(); });
+  $("code").addEventListener("input", () => {
+    $("code").classList.remove("bad"); $("signinerr").textContent = "";
+  });
+  throw new Error("not signed in");
+}
+
+$("shop").textContent = SHOP.name;
+/* Only offer sign out to a store that signed in with a code. One that arrived
+   on its own link has nothing to sign out of. */
+(function(){
+  let held = null;
+  try{ held = localStorage.getItem(CODE_KEY); }catch(e){}
+  if(!held) return;
+  const b = $("signout");
+  b.hidden = false;
+  b.onclick = () => {
+    try{ localStorage.removeItem(CODE_KEY); }catch(e){}
+    location.reload();
+  };
+})();
+if(SHOP.logo){ $("shoplogo").src = SHOP.logo; $("shoplogo").alt = SHOP.name; $("shoplogo").hidden = false; }
+const SHOP_MODE = SHOP.mode || MODE;
+if(SHOP_MODE === "practice"){
+  $("practice").hidden = false;
+  document.title = "PRACTICE " + document.title;
+}
+const CUTOFF = (typeof SHOP.sameDayUntil === "number") ? SHOP.sameDayUntil : SAME_DAY_UNTIL;
+const READY = SHOP.readyBy || READY_BY;
+
+/* Clickacourier is told when the bag is actually ready. It was hardcoded to 13,
+   so a shop collecting at 2pm was telling us the parcel existed an hour before
+   it did. Read it off the same value the page shows staff, so the two can never
+   disagree. */
+const READY_HOUR = (function(){
+  const m = String(READY).match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i);
+  if(!m) return 13;
+  let h = parseInt(m[1], 10) % 12;
+  if(m[3].toLowerCase() === "pm") h += 12;
+  return h;
+})();
+const CUTOFF_WORDS = cutoffWords(CUTOFF);
+const RATE = (typeof SHOP.price === "number") ? SHOP.price : PRICE;
+$("rate").textContent = euro(RATE) + " for this delivery";
+
+/* Has to run after CUTOFF exists, which is why it sits here rather than up with
+   the other one-liners. */
+(function(){
+  const before = new Date().getHours() < CUTOFF;
+  $("halfday").innerHTML = before
+    ? "<strong>Before " + CUTOFF_WORDS + ", so anything booked now goes out today.</strong>"
+    : "<strong>Past " + CUTOFF_WORDS + ", so anything booked now goes out tomorrow.</strong>";
+})();
+$("ready").textContent = READY;
+$("shopaddr").textContent = SHOP.address + "  \u00b7  " + SHOP.eircode;
+
+const eir = $("eircode"), verdict = $("verdict"), p2 = $("p2");
+let bookings = [], currentKey = null, justAdded = false;
+
+/* ---------- keeping the list through a refresh ----------
+   Held on this machine only, and only for today. A closed tab or a stray
+   refresh at ten to one shouldn't lose a morning's bookings, but customer names
+   shouldn't linger either, so anything from a previous day is discarded on
+   load and the whole lot is wiped once it's been sent.
+
+   Everything is wrapped: private browsing and locked-down machines can refuse
+   storage outright, and the tool has to keep working when they do. */
+const SHOP_ID = slug || DEFAULT_PHARMACY || "unknown";
+/* Deliberately still "pharmassist": this is the key the browser saves the day's
+   list under. Renaming it would empty the list of anyone who had one open at
+   that moment, and nobody ever sees it. */
+const STORE_KEY = "pharmassist:" + SHOP_ID;
+const today = () => new Date().toISOString().slice(0,10);
+
+function save(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      date: today(), bookings: bookings, sentCount: sentCount, sentAt: sentAt
+    }));
+  }catch(e){ /* no storage: the list simply lives in the page, as before */ }
+}
+function wipe(){
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+}
+function restore(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    const held = JSON.parse(raw);
+    if(held.date !== today()){ wipe(); return; }   /* yesterday's is not ours to keep */
+    bookings  = held.bookings || [];
+    sentCount = held.sentCount || 0;
+    sentAt    = held.sentAt || null;
+  }catch(e){ wipe(); }
+}
+
+/* Only offer a correction if the corrected version is a plausible Eircode:
+   seven characters with a routing key we recognise. Otherwise typing "nonsense"
+   gets told it might be "N0N 5EN5E", which makes the tool look silly. */
+const fixFor = c => {
+  const f = [...c].map(x => SWAPS[x] || x).join("");
+  if(f === c || f.length !== 7) return null;
+  const rk = keyOf(f);
+  if(!rk) return null;
+  if(rk[0] === "D" && !DUBLIN_KEYS.includes(rk)) return null;   /* no D00, no D19 */
+  return (covers(rk) || AREAS[rk]) ? f : null;
+};
+
+function show(kind,title,body){
+  verdict.hidden=false; verdict.className="verdict is-"+kind;
+  verdict.innerHTML = MARK+'<div><h3>'+title+'</h3><p>'+body+'</p></div>';
+}
+
+/* Ask our own server for the address. Never blocks a booking: if it's slow,
+   missing or switched off, the pharmacist carries on exactly as before. */
+let lookingUpFor = null;
+let foundLine1 = null;   /* first line of the looked up address, kept on the booking */
+let foundPlaceId = null; /* Cyclone's id for that address, needed to book it */
+let foundLat = null, foundLng = null;  /* to test the cargo zones */
+
+async function lookupAddress(code){
+  if(!ADDRESS_LOOKUP || lookingUpFor === code) return;
+  lookingUpFor = code;
+  const row = $("chk-addr-row"), out = $("chk-found");
+  foundLine1 = null; foundPlaceId = null; foundLat = null; foundLng = null;
+  row.hidden = false;
+  out.textContent = "Checking the address\u2026";
+  try{
+    const res = await fetch(ADDRESS_LOOKUP + "?eircode=" + encodeURIComponent(code));
+    const a = await res.json();
+    if(lookingUpFor !== code) return;            /* they typed on, ignore this answer */
+    if(!res.ok || !a.found){
+      row.hidden = true;
+      return;
+    }
+    /* One line, no field labels: the API puts the street in company_name and
+       the district in address_line1, so labelled fields would read wrongly. */
+    if(!a.address){ row.hidden = true; return; }
+    out.textContent = a.address;
+    /* Keep the first line so it can sit beside the name in the day's list, as a
+       second pair of eyes on the address before the bag goes out. */
+    foundLine1 = (a.lines && a.lines.length) ? a.lines[0] : (a.address.split(",")[0] || null);
+    foundPlaceId = a.placeId || null;
+    foundLat = num(a.latitude ?? a.lat);
+    foundLng = num(a.longitude ?? a.lng ?? a.lon);
+    cargoNote();
+  }catch(e){
+    row.hidden = true;                            /* silent: it is a nicety, not a step */
+  }
+}
+
+function check(){
+  const code = tidy(eir.value); currentKey = null;
+  if(code.length < 3){ verdict.hidden=true; p2.hidden=true; return; }
+  const rk = keyOf(code);
+  if(!rk){
+    const f = fixFor(code);
+    $("checks").hidden = true;
+    show("err","That isn't a valid Eircode","Seven characters, like <strong>D02 X285</strong>."+
+      (f?" Did you mean <strong>"+pretty(f)+"</strong>?":""));
+    p2.hidden=true; return;
+  }
+  const area = AREAS[rk] || rk;
+  if(!covers(rk)){
+    $("checks").hidden = true; $("unitwrap").hidden = true;
+    show("no","Outside our area",
+      "We don't deliver to " + (AREAS[rk] ? AREAS[rk]+" ("+rk+")" : rk+" addresses") +
+      ". The customer will need to "+
+      "collect, or ring us on "+PHONE+" if it's urgent.");
+    p2.hidden=true; return;
+  }
+  const notes = [];
+  if(rk[0]==="D" && !DUBLIN_KEYS.includes(rk))
+    notes.push("There's no Dublin "+rk.slice(1).replace(/^0/,"")+", so that looks mistyped. "+
+               "Carry on if you're sure.");
+  if(OUTER[rk])
+    notes.push("If this is in "+listPlaces(OUTER[rk])+", ring us first. Those are outside the run.");
+  currentKey = rk;
+
+  /* Answer as soon as the routing key is in, because that's the fast yes staff
+     want. But don't open the form until all seven characters are there: the
+     Eircode becomes the PostCode column in the import file, and a three
+     character postcode would sail straight through to the platform. */
+  const complete = code.length === 7;
+  show("yes","We cover "+area,
+    complete ? (notes.length ? notes.join(" ") : "Fill in the details below.")
+             : (notes.length ? notes.join(" ")+" " : "") + "Finish the Eircode to book it.");
+
+  if(!complete){ p2.hidden = true; $("checks").hidden = true; return; }
+
+  /* Two confirmations, because "I only gave you a postcode" is the first thing
+     anyone asks. The second is deliberately future tense: this page doesn't
+     resolve the address, the import does, and saying otherwise would be a claim
+     we can't show. */
+  /* what to tell the customer, based on the time right now */
+  const beforeCutoff = new Date().getHours() < CUTOFF;
+  $("chk-when").textContent = beforeCutoff
+    ? "You can say: it will be with you today"
+    : "You can say: it will be with you tomorrow";
+  $("chk-when-sub").textContent = beforeCutoff
+    ? "Ordered before " + CUTOFF_WORDS + ", so it goes on today's run."
+    : "It's past " + CUTOFF_WORDS + ", so this goes on tomorrow's run. Still a day ahead " +
+      "of the post.";
+  $("checks").hidden = false;
+  $("unitwrap").hidden = false;
+  lookupAddress(code);
+
+  const opening = p2.hidden;
+  p2.hidden = false;
+  /* only move the cursor at the moment the form opens, never mid-typing */
+  if(opening && !$("rname").value) $("rname").focus();
+}
+eir.addEventListener("input", () => {
+  const bare = eir.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
+  eir.value = pretty(bare); check();
+});
+eir.addEventListener("keydown", e => { if(e.key==="Enter") check(); });
+
+/* live character counts, because the platform truncates silently at 32 */
+[["rname",32]].forEach(([id,max]) => {
+  const el=$(id), c=$("c-"+id);
+  const upd=()=>{ const n=el.value.length; c.textContent=n+"/"+max;
+    c.classList.toggle("warn", n>=max); };
+  el.addEventListener("input",upd); upd();
+});
+
+/* The bag reference goes on the bag in biro, so it must never repeat. Counting
+   the list was wrong: delete a row and the next booking reuses a number that is
+   already written on a bag sitting in the basket, and two bags on the same run
+   carry the same reference with nothing to tell them apart.
+
+   So take the highest number already used today and add one. Deleted numbers
+   are retired rather than reissued, and because the day's list is restored from
+   storage on load, a refresh cannot reset the count either. */
+const BAG_PREFIX = (SHOP.tag || slug.slice(0,3).toUpperCase());
+function nextBag(){
+  const used = bookings.map(function(b){
+    const m = String(b.bag || "").match(/-(\d+)$/);
+    return m ? parseInt(m[1], 10) : 0;
+  });
+  return BAG_PREFIX + "-" + (Math.max(0, ...used) + 1);
+}
+
+const digits = v => String(v||"").replace(/[^\d+]/g,"").replace(/^\+353/,"0").replace(/\D/g,"");
+const mobileOk = v => /^08[3-9]\d{7}$/.test(digits(v));
+
+$("add").onclick = () => {
+  const g = id => $(id).value.trim();
+  const errs = [];
+  if(tidy(eir.value).length !== 7){ errs.push("The Eircode isn't complete."); eir.classList.add("bad"); }
+  else eir.classList.remove("bad");
+  ["rname","rmobile","rnotes","rpkgs","rweight"].forEach(id=>$(id).classList.remove("bad"));
+  if(g("rname").length < 2){ errs.push("Add the recipient's name."); $("rname").classList.add("bad"); }
+  if(!mobileOk(g("rmobile"))){ errs.push("Irish mobiles start 083 to 089."); $("rmobile").classList.add("bad"); }
+  const pkgs = parseInt(g("rpkgs"),10);
+  const wt   = parseFloat(g("rweight"));
+  if(!(pkgs >= 1)){ errs.push("How many bags?"); $("rpkgs").classList.add("bad"); }
+  if(!(wt > 0)){ errs.push("Weight is required by the delivery system."); $("rweight").classList.add("bad"); }
+  else{
+    const cap = isBig ? CARGO_MAX_KG : WEIGHT_MAX;
+    if(wt > cap){
+      errs.push("That's over our "+cap+"kg limit, so we can't take it on a standard "+
+                "booking. Ring us on "+PHONE+".");
+      $("rweight").classList.add("bad");
+    }
+  }
+  /* A suitcase goes on a cargo bike, and the cargo riders cover the city and the
+     inner suburbs only. Stop it here rather than sending a job no one can do. */
+  if(isBig && foundLat && foundLng && !cargoZoneFor(foundLat, foundLng)){
+    errs.push("A suitcase is too big for that address \u2014 the cargo bikes don't go "+
+              "that far. A bag-sized parcel is fine, or ring us on "+PHONE+".");
+  }
+  if($("rleave").checked && g("rnotes").length < 3){
+    errs.push("If the customer asked us to leave it, say where in the notes.");
+    $("rnotes").classList.add("bad");
+  }
+  $("err2").textContent = errs.join(" ");
+  if(errs.length) return;
+
+  bookings.push({
+    bag: nextBag(),
+    eircode: pretty(tidy(eir.value)), area: AREAS[currentKey]||currentKey,
+    name:g("rname"), mobile:digits(g("rmobile")),
+    notes:g("rnotes"), leave:$("rleave").checked, ref:g("rref"),
+    addr1: foundLine1,
+    placeId: foundPlaceId,
+    big: isBig,
+    unit: g("runit"),
+    price: RATE,          /* the rate at the time of booking, so a later change
+                             to the shop's price cannot rewrite today's total */
+    pkgs:pkgs, weight:wt
+  });
+  justAdded = true;
+  const justBooked = bookings[bookings.length-1];
+  reset(); draw();
+  if(CREATE_BOOKING) sendBooking(justBooked);
+  toast("Added. "+bookings.length+" for collection.");
+  eir.focus();
+  /* The form collapses on add, so the list moves down the page and staff can
+     miss it entirely. Bring it to them and flash the new line. */
+  const panel = document.getElementById("listpanel");
+  if(panel && panel.scrollIntoView) panel.scrollIntoView({behavior:"smooth", block:"nearest"});
+  setTimeout(function(){ justAdded = false; }, 1600);
+};
+
+/* One booking, straight to Cyclone. The booking is already on the list and
+   saved before this runs, so a failure here never loses it: the row simply
+   shows as not yet sent, and can be retried. */
+async function sendBooking(b){
+  b.state = "sending";
+  draw();
+  try{
+    const res = await fetch(CREATE_BOOKING, {
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({
+        caller: SHOP.name,
+        collection: SHOP.placeId,
+        delivery: b.placeId,
+        account: SHOP.account || ACCOUNT,
+        uuid: SHOP.uuid || UUID,
+        vehicle: b.big ? VEHICLE_CARGO : (SHOP.vehicle || VEHICLE),
+        service: SHOP.service || SERVICE_LEVEL,
+        goodsDescription: "Sealed bag",
+        numberOfItems: b.pkgs,
+        totalWeight: b.weight,
+        collectionName: SHOP.name,
+        collectionPhone: (SHOP.phone||"").replace(/\D/g,""),
+        deliveryName: b.name,
+        deliveryPhone: b.mobile,
+        reference: b.ref || b.bag,
+        notes: b.notes || "",
+        deliverySubAddressLine: b.unit || "",
+        tomorrow: new Date().getHours() >= CUTOFF,
+        readyHour: READY_HOUR
+      })
+    });
+    const out = await res.json();
+    if(!res.ok || !out.ok) throw new Error(out.detail || out.error || "refused");
+    b.state = "booked";
+    b.tracking = out.trackingNumber || null;
+    toast("Booked with Cyclone." + (out.trackingNumber ? " " + out.trackingNumber : ""));
+  }catch(e){
+    b.state = "failed";
+    b.error = String(e.message || e);
+    toast("Not booked: " + b.error + ". Try again, or ring " + PHONE + ".");
+  }
+  draw();
+  save();
+}
+
+function reset(){
+  ["eircode","rname","rmobile","rnotes","rref","runit"].forEach(id=>$(id).value="");
+  $("rleave").checked=false; $("err2").textContent="";
+  ["rname","rmobile","rnotes","rpkgs","rweight"].forEach(id=>$(id).classList.remove("bad"));
+  $("c-rname").textContent="0/32";
+  $("extra").hidden = true;
+  $("toggle").textContent = "Anything else? Notes, bag size, your own reference";
+  verdict.hidden=true; p2.hidden=true; $("checks").hidden=true; $("unitwrap").hidden=true;
+  $("chk-addr-row").hidden=true; lookingUpFor=null; foundLine1=null; foundPlaceId=null;
+  foundLat=null; foundLng=null; currentKey=null;
+  isBig = false; drawSize();
+}
+$("clear").onclick = () => { reset(); eir.focus(); };
+
+function draw(){
+  $("count").textContent = bookings.length
+    ? bookings.length+(bookings.length===1?" booking":" bookings") +
+      "  \u00b7  " + euro(bookings.reduce(function(s,b){ return s + (b.price || RATE); }, 0))
+    : "nothing yet";
+  const withNotes = bookings.filter(b => b.notes || b.leave);
+  const tooLong = withNotes.filter(b => (b.notes||"").length > 32);
+  if(tooLong.length){
+    $("warn").hidden = false;
+    $("warn").innerHTML = '<strong>'+tooLong.length+' note'+(tooLong.length>1?'s are':' is')+
+      ' longer than the 32 characters the file allows,</strong> so '+
+      (tooLong.length>1?'they\u2019ll':'it\u2019ll')+' be cut short. Shorten '+
+      (tooLong.length>1?'them':'it')+' or tell us on the phone:<ul>' +
+      tooLong.map(b => '<li>'+esc(b.eircode)+' '+esc(b.name)+'</li>').join("") + '</ul>';
+  } else { $("warn").hidden = true; }
+
+  if(!bookings.length){
+    $("list").innerHTML='<p class="empty">No bookings yet. Check an Eircode above to start.</p>';
+    return;
+  }
+  /* Cards rather than table rows. A table reads as software; a stack of cards
+     reads as the day's jobs, and it survives a narrow window without columns
+     collapsing into each other. */
+  $("list").innerHTML = bookings.map(function(b,i){
+    const fresh = (i === bookings.length-1 && justAdded) ? " job--fresh" : "";
+    const odd   = (b.pkgs > 1 || b.weight > 1)
+      ? '<span class="flag flag--size">'+b.pkgs+' bag'+(b.pkgs>1?'s':'')+', '+b.weight+'kg</span>' : '';
+    const leave = b.leave ? '<span class="flag">Leave authorised by customer</span>' : '';
+    /* A cargo job looks the same on the list except for this, which is the only
+       way staff can see at a glance that a different machine is coming. */
+    const size = b.big ? '<span class="flag flag--size">Cargo bike</span>' : '';
+    const state = !CREATE_BOOKING ? ''
+      : b.state === "booked"  ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>'
+      : b.state === "sending" ? '<span class="flag flag--size">Sending\u2026</span>'
+      : b.state === "failed"  ? '<span class="flag flag--bad">Not booked</span>' +
+          (b.error ? '<span class="flag flag--why">' + esc(b.error) + '</span>' : '') +
+          '<button class="b-retry" data-r="'+i+'">Try again</button>'
+      : '';
+    const notes = b.notes ? '<div class="job__notes">'+esc(b.notes)+'</div>' : '';
+    return '<div class="job'+fresh+'">' +
+      '<div class="job__top">' +
+        '<span class="bagref">'+esc(b.bag)+'</span>' +
+        '<span class="job__name">'+esc(b.name)+'</span>' +
+        '<span class="job__mob">'+esc(b.mobile)+'</span>' +
+        '<button class="b-print" data-p="'+i+'" title="Print a label for this bag">Print label</button>' +
+        '<button class="b-x" data-i="'+i+'" title="Remove">&times;</button>' +
+      '</div>' +
+      '<div class="job__addr">' +
+        (b.unit ? '<strong>'+esc(b.unit)+'</strong>, ' : '') +
+        (b.addr1 ? esc(b.addr1)+' &middot; ' : '') + esc(b.eircode) +
+      '</div>' +
+      notes +
+      ((odd||leave||state||size) ? '<div class="job__flags">'+state+size+odd+leave+'</div>' : '') +
+    '</div>';
+  }).join("");
+  $("list").querySelectorAll(".b-x").forEach(b => {
+    b.onclick = () => { bookings.splice(+b.dataset.i,1); draw(); };
+  });
+  $("list").querySelectorAll(".b-print").forEach(b => {
+    b.onclick = () => printLabel(bookings[+b.dataset.p]);
+  });
+  /* A failed booking is already on the list with everything it needs, so a
+     retry costs nothing and saves retyping a customer's details. */
+  $("list").querySelectorAll(".b-retry").forEach(b => {
+    b.onclick = () => sendBooking(bookings[+b.dataset.r]);
+  });
+}
+
+
+/* One label, one bag. The reference is set largest because it is the only thing
+   that ties this label to the bag it belongs to on a run of twenty. */
+function printLabel(b){
+  if(!b) return;
+  const line = [b.unit, b.addr1].filter(Boolean).join(", ");
+  $("sheet").innerHTML =
+    '<div class="sheet__card">' +
+      '<div class="sheet__ref">' + esc(b.bag) + '</div>' +
+      '<div class="sheet__name">' + esc(b.name) + '</div>' +
+      '<div class="sheet__addr">' + (line ? esc(line) + '<br>' : '') +
+        esc(b.eircode) + (b.area ? ' &middot; ' + esc(b.area) : '') + '</div>' +
+      '<div class="sheet__mob">' + esc(b.mobile) + '</div>' +
+      (b.notes ? '<div class="sheet__notes">' + esc(b.notes) + '</div>' : '') +
+      (b.leave ? '<div class="sheet__notes">Customer has authorised leaving it. ' +
+                 'See note above.</div>' : '') +
+      '<div class="sheet__foot">' + esc(SHOP.name) + ' &middot; ' +
+        new Date().toLocaleDateString("en-IE",{day:"numeric",month:"short",year:"numeric"}) +
+        ' &middot; Cyclone Last Mile</div>' +
+    '</div>';
+  window.print();
+}
+
+
+/* ---------- bag or suitcase ----------
+   The shop tells us, because we cannot infer it: a small parcel and a big one
+   from the same shop to the same street look identical to the system. It is an
+   operational answer, not a commercial one — the price is the same either way.
+   It decides which base the job goes to, and a rider turning up on the wrong
+   machine is the failure we are avoiding. */
+let isBig = false;
+
+function drawSize(){
+  $("sz-bag").setAttribute("aria-pressed", String(!isBig));
+  $("sz-big").setAttribute("aria-pressed", String(isBig));
+  $("rweight").max = isBig ? CARGO_MAX_KG : 4;
+  const lab = $("rweight").parentElement.querySelector(".opt");
+  if(lab) lab.textContent = isBig ? "kg, 20 max" : "kg, 4 max";
+  cargoNote();
+}
+
+/* A suitcase only goes where the cargo riders cover. Say so as soon as we know,
+   not after they have filled the rest in. */
+function cargoNote(){
+  const n = $("sz-note");
+  if(!isBig || !foundLat || !foundLng){ n.textContent = ""; return; }
+  const z = cargoZoneFor(foundLat, foundLng);
+  n.textContent = z ? "" :
+    "A suitcase is too big for that address. The cargo bikes cover the city and " +
+    "the inner suburbs only.";
+}
+
+$("sz-bag").onclick = () => { isBig = false; drawSize(); };
+$("sz-big").onclick = () => { isBig = true;  drawSize(); };
+
+/* ---------- the import file ---------- */
+function rowsForImport(){
+  return bookings.map(b => {
+    const co = (NOTES_INTO === "company" && b.notes) ? b.notes.slice(0,32) : "";
+    /* Address Line 1, Adreess Line 2 and Town are left empty on purpose: the
+       importer resolves all three from the Eircode, apartments included. */
+    return [ co, "", "", "", COUNTY,
+             b.eircode.slice(0,16), COUNTRY, (b.ref || b.bag), b.name.slice(0,32), b.mobile,
+             b.pkgs, b.weight, (SHOP_MODE === "practice" ? SERVICE_PRACTICE : SERVICE) ];
+  });
+}
+$("xlsx").onclick = () => {
+  if(!bookings.length){ toast("Nothing to download yet."); return; }
+  if(typeof XLSX === "undefined"){ toast("Couldn't load the spreadsheet library. Use Copy."); return; }
+  const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rowsForImport()]);
+  ws["!cols"] = [{wch:22},{wch:20},{wch:19},{wch:14},{wch:13},{wch:15},{wch:12},
+                 {wch:17},{wch:20},{wch:13},{wch:16},{wch:13},{wch:13}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Addresses");   /* sheet name must match */
+  const d = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, "import-"+slug+"-"+d+".xlsx");
+  toast("Downloaded "+bookings.length+" row(s).");
+};
+
+let tt;
+function toast(m){
+  const el=$("toast"); el.textContent=m; el.classList.add("on");
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove("on"),2100);
+}
+$("rpkgs").value = PACKAGES_DEFAULT;
+$("rweight").value = WEIGHT_DEFAULT;
+/* ---------- the collection time ----------
+   The nudge is only a reminder. The auto-send is the thing that actually
+   catches the mistake, because the failure we're guarding against is somebody
+   simply forgetting, and a reminder relies on the same person remembering. */
+let sentCount = 0;          /* how many of the list we've successfully sent */
+let sentAt = null;
+let lastChange = Date.now();
+
+const CUT = 13*60;                                    /* the collection time */
+const nowMins = () => { const d=new Date(); return d.getHours()*60+d.getMinutes(); };
+const unsent = () => bookings.length - sentCount;
+
+function nudge(){
+  const el = $("nudge");
+  if(!LIST_MODE){ el.hidden = true; return; }
+  const left = unsent();
+  if(!bookings.length){ el.hidden = true; return; }
+
+  if(left === 0){
+    el.hidden = false; el.className = "nudge nudge--done";
+    el.textContent = REHEARSE
+      ? "Sent at "+sentAt+". This is practice, so nothing actually left this page."
+      : "Sent at "+sentAt+". Anything you add now gets sent as well.";
+    return;
+  }
+
+  const [nh,nm] = NUDGE_FROM.split(":").map(Number);
+  const mins = nowMins();
+  const canSend = SEND_URL || REHEARSE;
+  const label = canSend ? "Send it to us" : "Download the file and send it to "+SEND_TO;
+
+  if(mins >= CUT){
+    el.hidden = false; el.className = "nudge nudge--late";
+    el.textContent = "It's past "+READY+" and "+left+" booking"+(left>1?"s haven't":" hasn't")+
+      " been sent. " + (canSend && AUTO_SEND_AFTER_SECS
+        ? "We'll send "+(left>1?"them":"it")+" automatically in a moment."
+        : label+", or ring us on "+PHONE+".");
+  }else if(mins >= nh*60+nm){
+    el.hidden = false; el.className = "nudge nudge--soon";
+    el.textContent = "Collection is at "+READY+". "+label+" when you're finished adding.";
+  }else{ el.hidden = true; }
+}
+
+async function push(auto){
+  if(!unsent()) return false;
+  if(!SEND_URL && !REHEARSE) return false;
+  const btn = $("send");
+  if(btn){ btn.disabled = true; btn.textContent = "Sending\u2026"; }
+  let ok = false;
+  try{
+    if(REHEARSE){
+      await new Promise(r => setTimeout(r, 450));      /* so it feels like a send */
+      sentCount = bookings.length;
+      sentAt = new Date().toLocaleTimeString("en-IE",{hour:"2-digit",minute:"2-digit"});
+      toast("Sent. " + bookings.length + " booking(s). Practice only, nothing left this page.");
+      if(btn){ btn.disabled = false; btn.textContent = "Send today's list"; }
+      nudge();
+      return true;
+    }
+    const res = await fetch(SEND_URL, {
+      method:"POST",
+      /* text/plain on purpose. application/json triggers a CORS preflight that
+         Google Apps Script doesn't answer, and the send fails before arriving. */
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({
+        pharmacy: slug, shop: SHOP, date: new Date().toISOString(),
+        mode: SHOP_MODE, automatic: !!auto, headers: HEADERS, rows: rowsForImport(), bookings
+      })
+    });
+    if(!res.ok) throw new Error(res.status);
+    sentCount = bookings.length;
+    sentAt = new Date().toLocaleTimeString("en-IE",{hour:"2-digit",minute:"2-digit"});
+    save();
+    toast(auto ? "Sent automatically at "+sentAt+"." : "Sent. "+bookings.length+" booking(s).");
+    ok = true;
+  }catch(e){
+    /* leave sentCount alone so it tries again on the next tick */
+    /* only now is the download worth offering: it's a fallback, not a step */
+    $("xlsx").hidden = false;
+    toast("Didn't send. Download the file and email it to "+SEND_TO+", then ring us.");
+  }
+  if(btn){ btn.disabled = false; btn.textContent = "Send today's list"; }
+  nudge();
+  return ok;
+}
+
+let sending = false;
+function tick(){
+  nudge();
+  if(!LIST_MODE) return;
+  if((!SEND_URL && !REHEARSE) || !AUTO_SEND_AFTER_SECS || sending) return;
+  if(nowMins() < CUT || !unsent()) return;
+  if((Date.now() - lastChange) / 1000 < AUTO_SEND_AFTER_SECS) return;
+  sending = true;
+  push(true).finally(() => { sending = false; });
+}
+setInterval(tick, 15000);
+
+$("toggle").onclick = () => {
+  const open = !$("extra").hidden;
+  $("extra").hidden = open;
+  $("toggle").textContent = open
+    ? "Anything else? Notes, bag size, your own reference"
+    : "Hide the extras";
+};
+/* Practice mode with no endpoint: show the real button and go through the
+   motions, so the flow can be walked end to end before anything is deployed.
+   Nothing leaves the page. In live mode a missing SEND_URL still falls back to
+   the download, because then it genuinely has to go somewhere. */
+const REHEARSE = (SHOP_MODE === "practice" && !SEND_URL);
+
+/* Everything below belongs to the old way of working: gather a list, send it at
+   1pm. Direct booking makes it redundant, so it is hidden rather than deleted.
+   Kept for a week as a fallback, then it can all come out: the Send button, the
+   nudge, the auto-send, the download, SEND_URL, SEND_TO and apps-script.gs. */
+const LIST_MODE = !CREATE_BOOKING;
+
+if(!LIST_MODE){
+  $("send").hidden = true;
+  $("xlsx").hidden = true;
+  $("nudge").hidden = true;
+}
+
+if(LIST_MODE && !SEND_URL && !REHEARSE) $("xlsx").hidden = false;
+
+if(LIST_MODE && (SEND_URL || REHEARSE)){
+  $("send").hidden = false;
+  $("send").onclick = () => {
+    if(!bookings.length){ toast("Nothing to send yet."); return; }
+    if(!unsent()){ toast("Already sent."); return; }
+    push(false);
+  };
+}
+
+restore();
+
+const _draw = draw;
+draw = function(){ lastChange = Date.now(); _draw(); nudge(); save(); };
+draw();
+
+$("rpkgs").value = PACKAGES_DEFAULT;
+$("rweight").value = WEIGHT_DEFAULT;
+</script>
+</body>
+</html>
