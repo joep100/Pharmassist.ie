@@ -413,7 +413,7 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
       <label>How big is it?</label>
       <div class="size">
         <button type="button" id="sz-bag" aria-pressed="true">
-          <b>A bag</b><span>Up to 4kg, fits in a shopping bag</span>
+          <b>A bag</b><span>Up to 3kg, fits in a shopping bag</span>
         </button>
         <button type="button" id="sz-big" aria-pressed="false">
           <b>A suitcase</b><span>Up to 20kg, one person can lift it</span>
@@ -442,8 +442,8 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
         <input id="rpkgs" type="number" min="1" max="20" step="1" inputmode="numeric">
       </div>
       <div class="f">
-        <label for="rweight">Total weight <span class="opt">kg, 4 max</span></label>
-        <input id="rweight" type="number" min="0.1" max="4" step="0.1" inputmode="decimal">
+        <label for="rweight">Total weight <span class="opt">kg, 3 max</span></label>
+        <input id="rweight" type="number" min="0.1" max="3" step="0.1" inputmode="decimal">
       </div>
       <div class="f f--wide">
         <label for="rref">Your reference <span class="opt">optional</span></label>
@@ -572,7 +572,9 @@ const COUNTRY  = "Ireland";         /* always Ireland */
 const COUNTY   = "Dublin";          /* conditional field, mandatory for some countries */
 const PACKAGES_DEFAULT = 1;
 const WEIGHT_DEFAULT   = 1;         /* kg, prefilled. Staff can change it. */
-const WEIGHT_MAX       = 4;         /* kg. Our limit, so catch it at the counter rather
+/* 3kg, matching what BIKE is rated for on the rate card. It used to be 4, which
+   meant the tool would accept a parcel the vehicle is not licensed to carry. */
+const WEIGHT_MAX       = 3;         /* kg. Our limit, so catch it at the counter rather
                                        than have the upload rejected at 1pm. */
 
 /* The import template has no column for delivery instructions, so they ride in
@@ -1447,6 +1449,13 @@ eir.addEventListener("keydown", e => { if(e.key==="Enter") check(); });
    are retired rather than reissued, and because the day's list is restored from
    storage on load, a refresh cannot reset the count either. */
 const BAG_PREFIX = (SHOP.tag || slug.slice(0,3).toUpperCase());
+/* ddmmyy, so a day's references cannot clash with yesterday's or with a
+   booking someone raised directly on the system. */
+function stamp(){
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  return p(d.getDate()) + p(d.getMonth() + 1) + String(d.getFullYear()).slice(2);
+}
+
 function nextBag(){
   const used = bookings.map(function(b){
     const m = String(b.bag || "").match(/-(\d+)$/);
@@ -1543,7 +1552,12 @@ async function sendBooking(b){
         collectionPhone: (SHOP.phone||"").replace(/\D/g,""),
         deliveryName: b.name,
         deliveryPhone: b.mobile,
-        reference: b.ref || b.bag,
+        /* FOL-1 is what staff write on the bag and read off the label, and it
+           restarts at 1 every morning. Sent as-is it can collide with a real
+           booking already on the system, so the reference that goes to Cyclone
+           carries the date: FOL-280826-1. The short form stays on the label. */
+        reference: b.ref || (BAG_PREFIX + "-" + stamp() + "-" +
+                             String(b.bag || "").split("-").pop()),
         notes: b.notes || "",
         deliverySubAddressLine: b.unit || "",
         tomorrow: new Date().getHours() >= CUTOFF,
@@ -1681,9 +1695,9 @@ let isBig = false;
 function drawSize(){
   $("sz-bag").setAttribute("aria-pressed", String(!isBig));
   $("sz-big").setAttribute("aria-pressed", String(isBig));
-  $("rweight").max = isBig ? CARGO_MAX_KG : 4;
+  $("rweight").max = isBig ? CARGO_MAX_KG : WEIGHT_MAX;
   const lab = $("rweight").parentElement.querySelector(".opt");
-  if(lab) lab.textContent = isBig ? "kg, 20 max" : "kg, 4 max";
+  if(lab) lab.textContent = isBig ? "kg, " + CARGO_MAX_KG + " max" : "kg, " + WEIGHT_MAX + " max";
   cargoNote();
 }
 
