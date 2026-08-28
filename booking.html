@@ -644,6 +644,45 @@ const PHARMACIES = {
 };
 
 const COVERED = ["D*","A94*","A96*","K67*"];
+
+/* ---------- where we will take a NEW STORE from ----------
+   Not the same as where we deliver to. Delivery reaches D24 and Blackrock,
+   which is the whole point: the customer is in the suburbs. Collections have
+   to cluster, because four shops within two hundred metres is a route and one
+   shop on its own is not.
+
+   Measured as a straight line from O'Connell Bridge. Routing keys cannot do
+   this: the last four characters of an Eircode are deliberately random rather
+   than geographic, so D02 tells you the district and nothing finer. D08 runs
+   out past Inchicore and D04 down to Booterstown, so a key-based gate would
+   let in shops no route could reach.
+
+   Widen SIGNUP_KM as each new cluster opens. */
+const CENTRE = { lat: 53.34733, lng: -6.25922 };   /* O'Connell Bridge */
+const SIGNUP_KM = 2;
+
+/* Straight-line distance in km. */
+function kmFromCentre(lat, lng){
+  const R = 6371, rad = d => d * Math.PI / 180;
+  const dLat = rad(lat - CENTRE.lat), dLng = rad(lng - CENTRE.lng);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(rad(CENTRE.lat)) * Math.cos(rad(lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/* If the address lookup gives us coordinates we measure properly. If it does
+   not, fall back to the tightest routing keys that are wholly or mostly inside
+   two kilometres, and let anything doubtful go to the waiting list rather than
+   sign up a store we cannot serve. */
+const SIGNUP_KEYS_FALLBACK = ["D01","D02"];
+
+function signupCheck(rk, lat, lng){
+  if(typeof lat === "number" && typeof lng === "number"){
+    const km = kmFromCentre(lat, lng);
+    return { ok: km <= SIGNUP_KM, km: km, how: "measured" };
+  }
+  return { ok: !!rk && SIGNUP_KEYS_FALLBACK.indexOf(rk) !== -1, km: null, how: "district" };
+}
 const OUTER = {
   D22:["Newcastle"], D24:["Brittas","Bohernabreena","Glenasmole"],
   D18:["Glencullen"], D15:["Clonee"], K67:["Lissenhall","Kilsallaghan","Ballyboughal"]
@@ -816,17 +855,24 @@ if(!SHOP){
     '</div>';
 
   /* swap between the two panels */
-  $("toreg").onclick = () => { $("panelin").hidden = true;  $("panelreg").hidden = false; $("rgshop").focus(); };
-  $("toin").onclick  = () => { $("panelreg").hidden = true; $("panelin").hidden = false;  $("code").focus(); };
+  const showReg = () => { $("panelin").hidden = true;  $("panelreg").hidden = false; $("rgshop").focus(); };
+  const showIn  = () => { $("panelreg").hidden = true; $("panelin").hidden = false;  $("code").focus(); };
+  $("toreg").onclick = showReg;
+  $("toin").onclick  = showIn;
+
+  /* Arriving from "Start today" on the landing page. Somebody who has just
+     clicked that has no code, so opening on a sign-in form would be the wrong
+     way round. */
+  if(new URLSearchParams(location.search).get("new")) showReg();
 
   /* Resolve their own address as they type it. Same endpoint the booking form
      uses, so the collection address is confirmed before we ever set them up
      and the placeId comes back with the request. */
-  let rgPlaceId = null, rgAddress = null, rgAsking = null;
+  let rgPlaceId = null, rgAddress = null, rgAsking = null, rgLat = null, rgLng = null;
   $("rgeir").addEventListener("input", async () => {
     const bare = $("rgeir").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
     $("rgeir").value = pretty(bare);
-    rgPlaceId = null; rgAddress = null;
+    rgPlaceId = null; rgAddress = null; rgLat = null; rgLng = null;
     const line = $("rgfound");
     if(bare.length !== 7 || !ADDRESS_LOOKUP){ line.hidden = true; return; }
     rgAsking = bare;
@@ -837,7 +883,13 @@ if(!SHOP){
       if(rgAsking !== bare) return;
       if(!res.ok || !a.found || !a.address){ line.hidden = true; return; }
       rgAddress = a.address; rgPlaceId = a.placeId || null;
-      line.textContent = a.address;
+      /* Coordinates may come back under any of these names, or not at all. */
+      rgLat = num(a.lat ?? a.latitude ?? (a.location && a.location.lat));
+      rgLng = num(a.lng ?? a.lon ?? a.longitude ?? (a.location && a.location.lng));
+      const chk = signupCheck(keyOf(bare), rgLat, rgLng);
+      line.textContent = a.address +
+        (chk.ok ? "" : "  \u2014 not in an area we collect from yet");
+      line.style.color = chk.ok ? "" : "var(--amber)";
     }catch(e){ line.hidden = true; }
   });
 
@@ -853,6 +905,11 @@ if(!SHOP){
       return;
     }
     $("rgerr").textContent = "";
+
+    /* Their own Eircode decides which of the two paths they take. */
+    const zoneKey = keyOf(tidy(g("rgeir")));
+    const chk = signupCheck(zoneKey, rgLat, rgLng);
+    const inZone = chk.ok;
 
     const payload = {
       shop: g("rgshop"),
@@ -873,6 +930,28 @@ if(!SHOP){
         "?subject=" + encodeURIComponent("Set us up: " + payload.shop) +
         "&body=" + encodeURIComponent(body);
     };
+    /* Outside the zone we do not take a card, because we cannot build a run
+       round them yet. Their Eircode goes on the list so we know where the next
+       cluster should be. */
+    if(!inZone){
+      $("panelreg").innerHTML =
+        '<h2>Not in your area yet</h2>' +
+        '<p>We build routes one area at a time, and we have not reached ' +
+          (zoneKey ? '<strong>' + esc(zoneKey) + '</strong>' : 'you') + ' yet. ' +
+          'We have taken your details and will come back the moment we do.</p>' +
+        '<p style="margin-top:0">Somewhere else in the city with a shop we could ' +
+          'collect from? Ring us on <strong>' + PHONE + '</strong> and we will ' +
+          'tell you straight where we are.</p>';
+      const body = "WAITING LIST\n\n" +
+        Object.keys(payload).map(k => k + ": " + (payload[k] || "-")).join("\n") +
+        "\nDistance from centre: " +
+          (chk.km === null ? "not measured, district only" : chk.km.toFixed(2) + " km");
+      window.location.href = "mailto:hello@cyclonelastmile.ie" +
+        "?subject=" + encodeURIComponent("Waiting list: " + payload.shop + " (" + (zoneKey||"?") + ")") +
+        "&body=" + encodeURIComponent(body);
+      return;
+    }
+
     if(!CARD_SETUP){ byEmail(); return; }
 
     const btn = $("rgsend");
@@ -1170,6 +1249,7 @@ function nextBag(){
   return BAG_PREFIX + "-" + (Math.max(0, ...used) + 1);
 }
 
+const num = v => (typeof v === "number" && isFinite(v)) ? v : (v && isFinite(parseFloat(v)) ? parseFloat(v) : null);
 const digits = v => String(v||"").replace(/[^\d+]/g,"").replace(/^\+353/,"0").replace(/\D/g,"");
 const mobileOk = v => /^08[3-9]\d{7}$/.test(digits(v));
 
