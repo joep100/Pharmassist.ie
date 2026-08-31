@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/foleys",      "destination": "/booking.html" },
     { "source": "/foodys",      "destination": "/booking.html" },
+    { "source": "/gear",        "destination": "/booking.html" },
     { "source": "/remedi",      "destination": "/booking.html" },
     { "source": "/susanhunter", "destination": "/booking.html" },
     { "source": "/healthwave",  "destination": "/booking.html" },
