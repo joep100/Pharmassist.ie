@@ -296,6 +296,8 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
 .size b{display:block;font-size:15.5px;font-weight:600;color:var(--head);line-height:1.2}
 .size span{display:block;font-size:12.5px;color:var(--label);margin-top:3px}
 .size__note{font-size:13.5px;color:var(--label);margin:4px 0 0;min-height:19px}
+/* A lookup that fails is not cosmetic: no placeId means no booking. */
+.bad-note{color:var(--red)}
 
 /* ---------- the printed label ----------
    Hidden on screen. When the label is printed everything else on the page is
@@ -417,7 +419,7 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
         <button type="button" id="sz-bag" aria-pressed="true">
           <b>A bag</b><span>Up to 3kg, fits in a shopping bag</span>
         </button>
-        <button type="button" id="sz-big" aria-pressed="false">
+        <button type="button" id="sz-big" aria-pressed="false" disabled>
           <b>A suitcase</b><span>Up to 20kg, one person can lift it</span>
         </button>
       </div>
@@ -635,22 +637,6 @@ const AUTO_SEND_AFTER_SECS = 90;
    a megabyte of other people's branding. */
 
 const PHARMACIES = {
-   gear: {
-    tag:"GEA",
-    placeId:"<EIRCODE>1900362919",
-    logo:"/logos/gear.png",
-    name:"Gear Jewellers",
-    address:"Unit 3, Greeg Court, Parnell Street, Dublin 1",
-    eircode:"D01 XC62",
-    phone:"01 814 8914",
-    code:"893514",
-    /* 2pm, same as Susan Hunter and Stock Design. Note Foley's is 118 metres
-       away on the same street and is on midday, so Parnell Street is two calls
-       rather than one. Worth confirming with dispatch that this is intended. */
-    sameDayUntil: 14,
-    readyBy:"2pm"
-  },
- 
   susanhunter: {
     tag:"SUH",
     code:"204118",
@@ -1366,13 +1352,18 @@ async function lookupAddress(code){
     const res = await fetch(ADDRESS_LOOKUP + "?eircode=" + encodeURIComponent(code));
     const a = await res.json();
     if(lookingUpFor !== code) return;            /* they typed on, ignore this answer */
-    if(!res.ok || !a.found){
-      row.hidden = true;
+    /* This used to hide itself silently, on the grounds that the street name was
+       a nicety. It is not any more: the placeId we need to raise the booking comes
+       back on this call, and so do the coordinates the cargo check uses. A failed
+       lookup means the booking cannot be made, so say so rather than leaving
+       staff to find out when they press Add. */
+    if(!res.ok || !a.found || !a.address){
+      out.innerHTML = 'We couldn\u2019t find that address. Ring us on <strong>' +
+                      PHONE + '</strong> and we\u2019ll take it over the phone.';
+      out.classList.add("bad-note");
       return;
     }
-    /* One line, no field labels: the API puts the street in company_name and
-       the district in address_line1, so labelled fields would read wrongly. */
-    if(!a.address){ row.hidden = true; return; }
+    out.classList.remove("bad-note");
     out.textContent = a.address;
     /* Keep the first line so it can sit beside the name in the day's list, as a
        second pair of eyes on the address before the bag goes out. */
@@ -1382,7 +1373,9 @@ async function lookupAddress(code){
     foundLng = num(a.longitude ?? a.lng ?? a.lon);
     cargoNote();
   }catch(e){
-    row.hidden = true;                            /* silent: it is a nicety, not a step */
+    out.innerHTML = 'We couldn\u2019t reach the address system. Ring us on <strong>' +
+                    PHONE + '</strong> and we\u2019ll take it over the phone.';
+    out.classList.add("bad-note");
   }
 }
 
@@ -1508,12 +1501,14 @@ $("add").onclick = () => {
       $("rweight").classList.add("bad");
     }
   }
-  /* Backstop. The suitcase button is disabled for an address outside the cargo
-     area, so this should never fire; it is here in case the address changes
-     after the choice was made. */
-  if(isBig && foundLat && foundLng && !cargoZoneFor(foundLat, foundLng)){
-    errs.push("The cargo bikes don't reach that address. Send it as a bag, or ring "+
-              "us on "+PHONE+".");
+  /* Backstop, and it fails closed too: no coordinates means no cargo booking,
+     because we cannot show the address is inside a zone. */
+  if(isBig){
+    const known = (typeof foundLat === "number" && typeof foundLng === "number");
+    if(!known || !cargoZoneFor(foundLat, foundLng)){
+      errs.push("The cargo bikes don't reach that address. Send it as a bag, or ring "+
+                "us on "+PHONE+".");
+    }
   }
   if($("rleave").checked && g("rnotes").length < 3){
     errs.push("If the customer asked us to leave it, say where in the notes.");
@@ -1727,15 +1722,21 @@ function drawSize(){
    address, stop offering it rather than letting them pick it and then refusing.
    If they had already chosen it, fall back to a bag rather than leaving them on
    a selection that cannot be booked. */
+/* Fail closed. A suitcase is only offered once we have coordinates AND they fall
+   in a cargo zone. This used to allow it whenever the coordinates were unknown,
+   which meant a slow or failed address lookup let a suitcase through to anywhere
+   — Tallaght included. Unknown is not the same as allowed. */
 function cargoNote(){
   const btn = $("sz-big"), n = $("sz-note");
   const known = (typeof foundLat === "number" && typeof foundLng === "number");
-  const ok = !known || !!cargoZoneFor(foundLat, foundLng);
+  const zone = known ? cargoZoneFor(foundLat, foundLng) : null;
+  const ok = known && !!zone;
   btn.disabled = !ok;
   if(!ok && isBig){ isBig = false; drawSize(); return; }
   n.textContent = ok ? ""
-    : "The cargo bikes cover the city and the inner suburbs, so a suitcase can't " +
-      "go to this address.";
+    : known ? "The cargo bikes cover the city and the inner suburbs, so a suitcase " +
+              "can't go to this address."
+            : "";
 }
 
 $("sz-bag").onclick = () => { isBig = false; drawSize(); };
