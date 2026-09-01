@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyclone Last Mile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@600&family=Nunito:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12161A; --head:#1D2429; --body:#646E76; --faint:#98A1A8;
+  --line:#E6E9EB; --paper:#F6F7F8; --brand:#E34C2F; --mark:#F26A4E;
+  --sans:"Geist","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --tile:340px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#fff;color:var(--body);font-family:var(--sans);font-size:19px;
+  line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:1000px;margin:0 auto;padding:0 28px}
+
+.top{border-bottom:1px solid var(--line)}
+.top__in{display:flex;align-items:center;gap:14px;padding:14px 0}
+/* Set in the page's own two typefaces, so the mark is made of the same
+   material as everything else. The orange dot is a full stop: the copy is
+   built on them, and a full stop is where a journey ends. */
+.mark{display:inline-flex;align-items:baseline;gap:9px;flex:none;text-decoration:none}
+.mark__name{font-family:"Nunito",var(--sans);font-size:31px;font-weight:700;
+  letter-spacing:-.025em;color:var(--head);
+  line-height:1}
+.mark__sub{font-family:var(--mono);font-size:12.5px;font-weight:400;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--faint)}
+.mark__dot{width:9px;height:9px;border-radius:50%;background:var(--brand);flex:none;
+  align-self:center}
+@media (max-width:700px){
+  .mark{gap:7px}
+  .mark__name{font-size:24px}
+  .mark__sub{font-size:10px;letter-spacing:.14em}
+  .mark__dot{width:7px;height:7px}
+}
+/* same treatment as the DUBLIN eyebrow: mono, letterspaced, uppercase */
+.top__links{margin-left:auto;display:flex;align-items:center;gap:20px}
+.top__link{font-family:var(--mono);font-size:11.5px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--brand);text-decoration:none}
+.top__link:hover{text-decoration:underline}
+/* The one that means "I want to start now". Solid, so it reads as the action
+   rather than a second piece of navigation. */
+.top__start{font-family:var(--mono);font-size:11.5px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:#fff;background:var(--brand);border-radius:100px;
+  padding:9px 16px;text-decoration:none;white-space:nowrap}
+.top__start:hover{background:var(--mark)}
+@media (max-width:700px){
+  .top__links{gap:11px}
+  .top__link{font-size:9.5px;letter-spacing:.08em}
+  .top__start{font-size:9.5px;letter-spacing:.08em;padding:8px 12px}
+}
+
+.kick{font-family:var(--mono);font-size:12.5px;letter-spacing:.2em;color:var(--brand);margin:0 0 14px}
+h1{font-family:"Inter",var(--sans);
+  font-size:clamp(38px,6.2vw,72px);line-height:1.02;letter-spacing:-.042em;color:var(--head);
+  font-weight:600;margin:0;max-width:24ch}
+h1 .dim{color:var(--faint)}
+h2{font-size:clamp(30px,4.6vw,54px);line-height:1.07;letter-spacing:-.035em;color:var(--head);
+  font-weight:600;margin:0 0 20px;max-width:18ch}
+.sub{font-size:clamp(17px,1.9vw,21px);line-height:1.46;color:var(--body);max-width:46ch;margin:20px 0 0}
+
+.first{min-height:calc(100vh - 92px);display:flex;flex-direction:column;
+  justify-content:center;padding:40px 0}
+.hero{padding:0 0 26px;text-align:center;display:flex;flex-direction:column;
+  align-items:center}
+
+/* ---------- the stack ----------
+   One good forward at full size; the rest fanned in behind it, overlapping,
+   at staggered heights so only their edges show. Depth rather than a row.
+   The good behind rises and grows into the centre as the stack turns. */
+.show{position:relative;height:340px;display:flex;align-items:center;
+  justify-content:center;overflow:visible}
+/* One drawing at a time in the middle. The fan of nine ranks is gone: the
+   outer ranks at 0.42 opacity turned line drawings into faint smudges. */
+.tile{position:absolute;left:auto;top:auto;width:var(--tile);height:var(--tile);
+  margin:0;padding:0;border:0;background:none;font:inherit;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:scale(.94);pointer-events:none;
+  transition:opacity 520ms cubic-bezier(.3,.7,.3,1),
+             transform 520ms cubic-bezier(.3,.7,.3,1)}
+.tile[data-on="1"]{opacity:1;transform:scale(1);pointer-events:auto}
+.tile__stage{width:100%;height:100%;border-radius:0;overflow:visible;
+  background:none;border:0;display:flex;align-items:center;justify-content:center}
+.tile svg{width:78%;height:78%}
+.tile__stage img{width:100%;height:100%;object-fit:cover;display:block;
+  filter:brightness(.972)}
+
+
+.tile:focus-visible .tile__stage{outline:2px solid var(--brand);outline-offset:6px}
+
+.say{text-align:center;min-height:38px;margin-top:14px}
+.say b{display:block;font-family:var(--mono);font-size:17px;font-weight:400;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--head)}
+.say span{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+  color:var(--faint);margin-top:5px}
+.say.turn b,.say.turn span{opacity:0;transform:translateY(6px)}
+.say b,.say span{transition:opacity 260ms ease,transform 260ms ease}
+
+.pips{display:flex;gap:9px;justify-content:center;margin-top:18px}
+.pip{width:6px;height:6px;border-radius:50%;background:var(--line);border:0;padding:0;
+  cursor:pointer;transition:background 300ms ease,transform 300ms ease}
+.pip[data-on="1"]{background:var(--brand);transform:scale(1.5)}
+
+.scene{padding:88px 0;text-align:center;display:flex;flex-direction:column;align-items:center}
+.two{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);
+  max-width:720px;margin:0 auto;width:100%}
+.two > div{padding:32px 28px 28px;text-align:left}
+.two > div:first-child{border-right:1px solid var(--line)}
+.two .hr{font-size:clamp(38px,5.6vw,58px);font-weight:600;letter-spacing:-.045em;
+  color:var(--head);line-height:.94}
+.two > div:last-child .hr{color:var(--faint)}
+.two b{display:block;font-size:18px;color:var(--head);font-weight:600;margin-top:12px}
+.two p{margin:4px 0 0;font-size:16px;line-height:1.5}
+
+.window{width:100%;max-width:620px;margin:44px auto 0}
+.window__bar{height:8px;background:var(--line);border-radius:100px;overflow:hidden}
+.window__fill{display:block;height:100%;width:50%;
+  background:linear-gradient(90deg,var(--brand),var(--mark));border-radius:100px}
+.window__marks{display:flex;justify-content:space-between;margin-top:11px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint)}
+.window__marks span:nth-child(2){color:var(--body)}
+
+.ways{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:620px;margin:36px auto 0}
+.ways span{font-size:16.5px;font-weight:500;color:#fff;background:var(--brand);border:0;
+  border-radius:100px;padding:10px 20px}
+
+.rule{text-align:center;margin:30px auto 52px;max-width:44ch}
+.rule b{display:block;font-size:clamp(18px,2vw,21px);letter-spacing:-.02em;color:var(--head);
+  font-weight:600}
+.rule span{display:block;font-size:15.5px;color:var(--body);margin-top:7px;line-height:1.5}
+
+.trybox{background:var(--paper);border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);padding:36px 0 40px;margin:0}
+.trybox .wrap{display:flex;flex-direction:column;align-items:center}
+.try__eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;color:var(--brand);
+  margin:0 0 10px;text-transform:uppercase}
+.try__lead{font-size:clamp(17px,1.9vw,20px);line-height:1.35;letter-spacing:-.02em;
+  color:var(--head);font-weight:600;margin:0;max-width:34ch;text-align:center}
+.try__sub{font-size:15px;line-height:1.45;color:var(--body);margin:10px 0 0;
+  text-align:center;max-width:46ch}
+.try{width:100%;max-width:470px;margin:24px auto 0;text-align:left;background:#fff;
+  border:1px solid var(--line);border-radius:16px;padding:21px 22px 23px;
+  box-shadow:0 1px 3px -1px rgba(18,22,26,.06),0 14px 32px -22px rgba(18,22,26,.24)}
+.try label{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+.try label em{font-style:normal;flex:none;width:19px;height:19px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:10.5px;font-weight:600;letter-spacing:0;
+  display:flex;align-items:center;justify-content:center}
+/* a step nobody has reached yet should not look finished */
+.try__rest[hidden] ~ * em{background:var(--line)}
+.try input{width:100%;font-family:var(--sans);font-size:19px;color:var(--head);background:#fff;
+  border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+.try input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(227,76,47,.16)}
+#tryeir{font-size:24px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--paper);padding:17px 20px;border-radius:13px}
+.try__row{margin-bottom:18px}
+.try__two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.verdict{display:flex;gap:11px;align-items:flex-start;margin:16px 0 0;font-size:16px}
+.verdict[hidden]{display:none}
+.verdict i{font-style:normal;font-weight:700;font-size:15px;line-height:1.4;flex:none;
+  color:var(--mark)}
+.verdict.no i{color:var(--faint)} .verdict.no b{color:var(--body)}
+.verdict b{display:block;font-size:17px;color:var(--head);font-weight:600}
+.verdict span{display:block;color:var(--body);font-size:15px;margin-top:1px}
+.why{position:relative;display:inline-flex;margin-left:2px}
+/* Deliberately not the brand orange: beside the numbered steps an orange disc
+   reads as a fourth step rather than as a question. */
+.why__btn{width:16px;height:16px;border-radius:50%;border:0;
+  background:var(--ink);color:#fff;font-family:var(--sans);font-size:10.5px;font-weight:700;
+  line-height:1;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.why__btn:hover,.why__btn[aria-expanded="true"]{background:var(--head)}
+.why__pop{position:absolute;left:-8px;top:26px;width:250px;z-index:20;background:#fff;
+  border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+  box-shadow:0 2px 6px -2px rgba(18,22,26,.10),0 18px 40px -18px rgba(18,22,26,.34);
+  font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--body);
+  letter-spacing:0;text-transform:none;font-weight:400}
+.why__pop[hidden]{display:none}
+.why__pop b{display:block;color:var(--head);font-weight:600;font-size:14.5px;margin-bottom:3px}
+.why__pop::before{content:"";position:absolute;left:11px;top:-5px;width:8px;height:8px;
+  background:#fff;border-left:1px solid var(--line);border-top:1px solid var(--line);
+  transform:rotate(45deg)}
+@media (max-width:700px){.why__pop{width:210px;left:-70px}.why__pop::before{left:81px}}
+
+.try__found{font-size:15px;color:var(--body);margin:9px 0 0;padding-left:26px}
+.try__found[hidden]{display:none}
+.try__rest[hidden]{display:none}
+.try__rest{margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
+.try__go{width:100%;font-family:var(--sans);font-size:17px;font-weight:600;color:#fff;
+  background:var(--brand);border:0;border-radius:11px;padding:15px;cursor:pointer;margin-top:6px}
+.try__go:hover{background:var(--mark)}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;
+  margin-top:18px;box-shadow:0 1px 3px -1px rgba(18,22,26,.06),
+                             0 12px 28px -20px rgba(18,22,26,.22)}
+.card[hidden]{display:none}
+.card__top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card__ref{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--brand);
+  background:#FDECE8;border-radius:6px;padding:4px 9px}
+.card__name{font-size:18px;font-weight:600;color:var(--head)}
+.card__mob{font-size:16px;color:var(--body);margin-left:auto}
+.card__addr{font-size:15.5px;color:var(--body);margin-top:6px}
+.card__flag{display:inline-block;margin-top:10px;font-size:12.5px;border-radius:100px;
+  padding:6px 11px;background:#EDF6F1;color:#1E6B45;border:1px solid #C4E0D2}
+.try__note{font-size:13.5px;color:var(--faint);margin:14px 0 0;text-align:center}
+@media (max-width:700px){.try__two{grid-template-columns:1fr}#tryeir{font-size:24px}}
+
+.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:720px;
+  width:100%;margin:44px auto 0}
+.field{border:1px solid var(--line);border-radius:12px;padding:15px 18px 17px;text-align:left}
+.field span{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--brand)}
+.field b{display:block;font-size:17px;color:var(--head);font-weight:600;margin-top:9px;
+  letter-spacing:-.01em}
+@media (max-width:700px){.fields{grid-template-columns:1fr;gap:10px;margin-top:32px}}
+
+#talk h2,.creds-sec h2{font-size:clamp(26px,3.2vw,38px);max-width:22ch}
+.creds-sec{padding-bottom:20px}
+#talk .sub{max-width:34ch}
+.creds{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--line);
+  max-width:560px;width:100%;margin:34px auto 0}
+.creds > div{padding:26px 24px 22px;text-align:left;border-right:1px solid var(--line)}
+.creds > div:last-child{border-right:0}
+.creds .big{font-size:clamp(28px,3.4vw,38px);font-weight:600;letter-spacing:-.04em;
+  color:var(--head);line-height:1.08;min-height:76px;display:flex;align-items:flex-start}
+.creds .big.sm{font-size:clamp(19px,2.1vw,23px);letter-spacing:-.028em}
+.creds b{display:block;font-size:16.5px;color:var(--head);font-weight:600;margin-top:12px}
+.creds p{margin:4px 0 0;font-size:15.5px;line-height:1.5}
+@media (max-width:700px){
+  .creds{grid-template-columns:1fr}
+  .creds > div{border-right:0;border-bottom:1px solid var(--line)}
+  .creds > div:last-child{border-bottom:0}
+}
+
+.form{width:100%;max-width:520px;margin:40px auto 0;text-align:left}
+.form label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--faint);margin:0 0 7px}
+.form .row{margin-bottom:18px}
+.form input,.form select{width:100%;font-family:var(--sans);font-size:17px;color:var(--head);
+  background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px 15px;
+  appearance:none;-webkit-appearance:none}
+.form input:focus,.form select:focus{outline:none;border-color:var(--brand)}
+.form select{background-image:linear-gradient(45deg,transparent 50%,var(--faint) 50%),
+  linear-gradient(135deg,var(--faint) 50%,transparent 50%);
+  background-position:calc(100% - 20px) 22px,calc(100% - 15px) 22px;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.form .two-up{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.send{width:100%;font-family:var(--sans);font-size:17px;font-weight:600;color:#fff;
+  background:var(--brand);border:0;border-radius:11px;padding:15px;cursor:pointer;
+  margin-top:6px;transition:background 200ms ease}
+.send:hover{background:var(--mark)}
+.form .note-sm{font-size:14px;color:var(--faint);margin:14px 0 0;text-align:center}
+@media (max-width:700px){.form .two-up{grid-template-columns:1fr}}
+
+.find input{flex:1;font-family:var(--sans);font-size:17px;color:var(--head);background:#fff;
+  border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.find input:focus{outline:none;border-color:var(--brand)}
+.find button{font-family:var(--sans);font-size:16px;font-weight:600;color:var(--head);
+  background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px 22px;cursor:pointer}
+.find button:hover{border-color:var(--brand);color:var(--brand)}
+.hits a:hover{border-color:var(--brand)}
+.hits b{display:block;font-size:17px;color:var(--head);font-weight:600}
+.hits span{display:block;font-size:14.5px;color:var(--faint);margin-top:3px}
+
+.plain{background:var(--ink);padding-bottom:88px}
+.plain h2{color:#fff}
+/* ---------- the two machines ----------
+   Nowhere else on the page does a store see what turns up. These also carry the
+   bag/suitcase distinction without a sentence about kilograms: a top box for one,
+   a box you could put a suitcase in for the other. */
+.rides{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:38px;
+  align-items:start}
+.rides figure{margin:0}
+
+.rides figcaption{margin-top:0;padding-top:14px;border-top:1px solid var(--line)}
+.rides b{display:block;font-size:17px;font-weight:600;color:var(--head);letter-spacing:-.01em}
+.rides span{display:block;font-size:15px;color:var(--body);margin-top:4px;line-height:1.45}
+@media (max-width:760px){
+  .rides{grid-template-columns:1fr;gap:30px;margin-top:32px}
+}
+.nots{display:grid;grid-template-columns:repeat(2,1fr);gap:30px 40px;margin-top:44px;
+  text-align:left;max-width:700px;width:100%}
+.nots b{display:block;font-size:18px;color:#fff;font-weight:600;margin-bottom:6px}
+.nots p{margin:0;font-size:15.5px;line-height:1.5;color:rgba(255,255,255,.58)}
+
+.foot{padding:44px 0 64px;font-size:14px;color:var(--faint);line-height:1.7;text-align:center}
+.foot a{color:var(--brand);text-decoration:none}
+
+@media (max-width:700px){
+  :root{--tile:214px}
+  .show{height:290px;margin-top:0}
+  .say{margin-top:6px;min-height:66px}
+  .say b{font-size:14px;letter-spacing:.12em}
+  .two{grid-template-columns:1fr}
+  .two > div:first-child{border-right:0;border-bottom:1px solid var(--line)}
+  .nots{grid-template-columns:1fr;gap:24px}
+  .scene,.hero{padding:60px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .show{-webkit-mask-image:none;mask-image:none;height:auto;
+    display:flex;flex-wrap:wrap;justify-content:center;gap:20px}
+  .tile{position:static;width:190px;height:190px;transform:none!important;opacity:1!important;
+    transition:none}
+  .tile__stage{box-shadow:0 1px 3px -1px rgba(18,22,26,.07)!important;transition:none}
+  .say{display:none}
+  .pips{display:none}
+  .tile__stage{transition:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top__in">
+    <a class="mark" href="#" aria-label="Cyclone Last Mile">
+      <span class="mark__name">Cyclone</span>
+      <span class="mark__sub">Last Mile</span>
+      <span class="mark__dot" aria-hidden="true"></span>
+    </a>
+    <span class="top__links">
+      <a class="top__link" href="https://www.cyclonelastmile.ie/booking.html">Find my store</a>
+      <a class="top__start" href="https://www.cyclonelastmile.ie/booking.html?new=1">Start today</a>
+    </span>
+  </div>
+</header>
+
+<div class="first">
+  <section class="hero">
+    <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+      <h1>You sell it today.<br><span class="dim">We deliver it today.</span></h1>
+      <p class="sub">From a lipstick to a laptop, we deliver it by hand, one at a time.</p>
+    </div>
+  </section>
+
+  <div class="show" id="show"></div>
+  <p class="say" id="say"><b></b><span></span></p>
+  <div class="pips" id="pips"></div>
+</div>
+
+<p class="rule">
+  <b>If it fits in a bag, we can take it.</b>
+</p>
+
+<div class="trybox">
+  <div class="wrap">
+    <p class="try__eyebrow">In store booking</p>
+    <p class="try__lead">An Eircode, a name and a mobile number is all we need.</p>
+    <p class="try__sub">For anything ordered in store, over the phone or by email. The Eircode
+      tells you straight away whether we deliver there, before you fill in anything else.</p>
+
+    <div class="try">
+      <div class="try__row">
+        <label for="tryeir"><em>1</em>Customer's Eircode</label>
+        <input id="tryeir" type="text" autocomplete="off" spellcheck="false" maxlength="8"
+               placeholder="D02 X285">
+      </div>
+
+      <div class="verdict" id="tryverdict" hidden aria-live="polite"></div>
+      <p class="try__found" id="tryfound" hidden></p>
+
+      <div class="try__rest" id="tryrest" hidden>
+        <div class="try__two">
+          <div class="try__row">
+            <label for="tryname"><em>2</em>Their name</label>
+            <input id="tryname" type="text" autocomplete="off" maxlength="32">
+          </div>
+          <div class="try__row">
+            <label for="trymob"><em>3</em>Their mobile<span class="why">
+              <button class="why__btn" type="button" id="whybtn" aria-expanded="false"
+                      aria-controls="whypop" aria-label="Why we ask for a mobile number">?</button>
+              <span class="why__pop" id="whypop" hidden role="tooltip">
+                <b>Why we need it</b>So we can text your customer when the rider is on the
+                way, and again when it is delivered. We use it for that and nothing else.
+              </span></span></label>
+            <input id="trymob" type="tel" inputmode="tel" autocomplete="off"
+                   placeholder="087 123 4567">
+          </div>
+        </div>
+        <button class="try__go" type="button" id="trygo">Book it</button>
+      </div>
+
+      <div class="card" id="trycard" hidden></div>
+      <p class="try__note" id="trynote" hidden>That is it. Nothing was booked just now, but on
+        your own page that is a delivery on this afternoon's run.</p>
+    </div>
+  </div>
+</div>
+
+<section class="scene">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <h2>The stock is already in the store.</h2>
+    <p class="sub">On a shelf, in a stockroom, behind the counter. Closer to your customer than
+      any warehouse ever will be, and most stores never use that.</p>
+  </div>
+</section>
+
+<section class="scene" style="padding-top:0">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <h2>You never leave the counter.</h2>
+    <p class="sub">Our rider comes to you. No van to run, nobody out of the store for an hour,
+      and you get on with what you are best at. Selling.</p>
+
+    <div class="rides">
+      <figure>
+        <figcaption>
+          <b>For a bag</b>
+          <span>Anywhere we cover, up to 3kg.</span>
+        </figcaption>
+      </figure>
+      <figure>
+        <figcaption>
+          <b>For something bigger</b>
+          <span>Up to 20kg, in the city and the inner suburbs.</span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="scene" style="padding-top:0">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <h2>The clock starts at midnight.</h2>
+    <p class="sub">Anything that reaches you between midnight and midday goes on today's run and
+      is delivered that afternoon. Online, over the phone, through your app, it makes no
+      difference to us.</p>
+    <div class="window">
+      <div class="window__bar"><span class="window__fill"></span></div>
+      <div class="window__marks">
+        <span>00:00</span><span>SHOP OPENS</span><span>12:00 CUTOFF</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <h2>However the order reaches you.</h2>
+    <p class="sub">Keep taking orders exactly as you do now. All we need is the time it
+      came in.</p>
+    <div class="ways">
+      <span>Over the phone</span><span>Through your website</span><span>By email</span>
+      <span>In an app</span><span>Across the counter</span>
+    </div>
+  </div>
+</section>
+
+<section class="scene plain">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <h2>Four things we don't do.</h2>
+    <div class="nots">
+      <div><b>Take your customer</b><p>No marketplace, no app for them to join, no competing
+        store.</p></div>
+      <div><b>Open the bag</b><p>You pack it and seal it. We carry it closed and prove we
+        delivered it.</p></div>
+      <div><b>Take the payment</b><p>They pay you, the way they always have. No commission,
+        no cut. Just &euro;9.95 plus VAT for the delivery, whatever it sold for.</p></div>
+      <div><b>Tie you in</b><p>No contract, no minimum. Stop whenever it suits you.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="scene creds-sec">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <h2>We have been doing this since 1988.</h2>
+    <p class="sub">Cyclone has carried same day work across Dublin for thirty seven years. This
+      is not a new venture. It is an experienced team of professional riders,
+      pointed at your counter.</p>
+    <div class="creds">
+      <div>
+        <div class="big">1988</div>
+        <b>Same city, same trade</b>
+        <p>Through three recessions and a pandemic, still here and still same day.</p>
+      </div>
+      <div>
+        <div class="big sm">ISO 9001<br>ISO 14001</div>
+        <b>Certified by the NSAI</b>
+        <p>Audited standards, held by Flexi Logistics Services Ltd.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" id="talk" style="padding-top:48px">
+  <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+    <h2>Or just tell us about your store.</h2>
+    <p class="sub">Not ready to sign up? Send us this instead and we will come back to
+      you the same day with a price and a start date.</p>
+
+    <form class="form" novalidate>
+      <div class="row">
+        <label for="shop">STORE NAME</label>
+        <input id="shop" name="shop" type="text" required>
+      </div>
+      <div class="row">
+        <label for="where">ADDRESS OR EIRCODE</label>
+        <input id="where" name="where" type="text" required>
+      </div>
+      <div class="row">
+        <label for="volume">ORDERS A WEEK, ROUGHLY</label>
+        <select id="volume" name="volume">
+          <option>Under 10</option>
+          <option>10 to 30</option>
+          <option>30 to 75</option>
+          <option>More than 75</option>
+          <option>Not sure yet</option>
+        </select>
+      </div>
+      <div class="row two-up">
+        <div>
+          <label for="who">YOUR NAME</label>
+          <input id="who" name="who" type="text" required>
+        </div>
+        <div>
+          <label for="reach">PHONE OR EMAIL</label>
+          <input id="reach" name="reach" type="text" required>
+        </div>
+      </div>
+      <button class="send" type="submit">Send</button>
+      <p class="note-sm">Or ring us on 01 425 5722.</p>
+    </form>
+  </div>
+</section>
+
+
+
+<footer class="foot"><div class="wrap">
+  <a href="tel:+35314255722">01 425 5722</a> &nbsp;&middot;&nbsp;
+  <a href="mailto:hello@cyclonelastmile.ie">hello@cyclonelastmile.ie</a><br>
+  A trading name of Flexi Logistics Services Ltd. NSAI certified to ISO 9001 and ISO 14001.
+</div></div></footer>
+
+<script>
+const S = 'stroke="#E34C2F" stroke-width="4" fill="none" stroke-linejoin="round" stroke-linecap="round"';
+const V = 'viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"';
+
+const GOODS = [
+ { title:'PHARMACIES', svg:
+   '<svg '+V+'><path d="M78 66 L78 50 Q78 40 90 40 L110 40 Q122 40 122 50 L122 66" '+S+'/>'+
+   '<path d="M56 66 L144 66 L136 160 L64 160 Z" '+S+'/>'+
+   '<path d="M100 92 L100 134 M79 113 L121 113" '+S+'/></svg>' },
+
+ { title:'BEAUTY STORES', svg:
+   '<svg '+V+'><path d="M87 84 L87 44 Q87 28 98 24 Q110 32 113 54 L113 84" '+S+'/>'+
+   '<rect x="85" y="84" width="30" height="18" '+S+'/>'+
+   '<rect x="87" y="102" width="26" height="70" '+S+'/></svg>' },
+
+ { title:'DESIGN STORES', svg:
+   '<svg '+V+'><path d="M66 56 L134 56 L150 118 L50 118 Z" '+S+'/>'+
+   '<path d="M100 118 L100 168" '+S+'/>'+
+   '<path d="M70 176 Q70 168 80 168 L120 168 Q130 168 130 176 Z" '+S+'/></svg>' },
+
+ { title:'DEPARTMENT STORES', svg:
+   '<svg '+V+'><path d="M59.3 79.1 L140.7 79.1 L140.7 95.8 L59.3 95.8 Z M64.6 95.8 L135.4 95.8 L135.4 145.9 L64.6 145.9 Z M100.0 79.1 L100.0 145.9 M100.0 79.1 Q100.0 54.1 80.2 54.1 Q68.7 54.1 71.9 65.6 Q75.0 75.0 100.0 79.1 M100.0 79.1 Q100.0 54.1 119.8 54.1 Q131.3 54.1 128.1 65.6 Q125.0 75.0 100.0 79.1" stroke="#E34C2F" stroke-width="4.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>' },
+
+ { title:'BOUTIQUES', svg:
+   '<svg '+V+'><path d="M100 44 Q100 32 92 32 Q84 32 84 40" '+S+'/>'+
+   '<path d="M100 44 L76 70 Q72 76 78 76 L122 76 Q128 76 124 70 Z" '+S+'/>'+
+   '<path d="M86 62 L78 100 M114 62 L122 100" '+S+'/>'+
+   '<path d="M78 100 Q88 108 100 126 Q112 108 122 100 L118 190 L82 190 Z" '+S+'/></svg>' },
+
+ { title:'STATIONERS', svg:
+   '<svg '+V+'><path d="M59.0 145.5 L141.0 145.5 M59.0 90.3 L59.0 145.5 M141.0 90.3 L141.0 145.5 M59.0 90.3 L69.1 90.3 M132.0 90.3 L141.0 90.3 M59.0 90.3 L100.0 122.1 L141.0 90.3" stroke="#E34C2F" stroke-width="3.3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>'+
+   '<path d="M70.8 99.5 L64.7 65.2 L125.7 54.5 L133.1 96.4" stroke="#E34C2F" stroke-width="3.3" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>' },
+
+ { title:'JEWELLERS', svg:
+   '<svg '+V+'><circle cx="100" cy="104" r="42" '+S+'/>'+
+   '<path d="M100 104 L100 78 M100 104 L120 104" '+S+'/>'+
+   '<path d="M78 68 L82 34 L118 34 L122 68" '+S+'/>'+
+   '<path d="M78 140 L82 172 L118 172 L122 140" '+S+'/></svg>' },
+
+ { title:'OPTICIANS', svg:
+   '<svg '+V+'><circle cx="62" cy="104" r="28" '+S+'/>'+
+   '<circle cx="138" cy="104" r="28" '+S+'/>'+
+   '<path d="M90 100 Q100 92 110 100" '+S+'/>'+
+   '<path d="M34 96 Q20 82 16 70 M166 96 Q180 82 184 70" '+S+'/></svg>' }];
+
+const show = document.getElementById('show');
+const say  = document.getElementById('say');
+const pips = document.getElementById('pips');
+const N = GOODS.length;
+const tiles = [];
+
+GOODS.forEach((g, i) => {
+  const b = document.createElement('button');
+  b.className = 'tile';
+  b.type = 'button';
+  b.setAttribute('aria-label', g.title);
+  b.innerHTML = '<span class="tile__stage">' + g.svg + '</span>';
+  b.addEventListener('click', () => { goTo(i); rest(); });
+  show.appendChild(b);
+  tiles.push(b);
+
+  const pip = document.createElement('button');
+  pip.className = 'pip';
+  pip.type = 'button';
+  pip.dataset.on = '0';
+  pip.setAttribute('aria-label', 'Show ' + g.title);
+  pip.addEventListener('click', () => { goTo(i); rest(); });
+  pips.appendChild(pip);
+});
+
+
+
+let at = 0, timer = null;
+const DWELL = 2600;
+
+
+function place() {
+  /* No ranks, no offsets. One tile on, the rest off. */
+  tiles.forEach((el, i) => {
+    el.dataset.on = (i === at ? '1' : '0');
+    el.tabIndex = (i === at ? 0 : -1);
+  });
+
+  const g = GOODS[at];
+  say.classList.add('turn');
+  setTimeout(() => {
+    say.querySelector('b').textContent = g.title;
+    const s = say.querySelector('span');
+    if (s) s.textContent = '';
+    say.classList.remove('turn');
+  }, 200);
+  [...pips.children].forEach((pip, i) => pip.dataset.on = (i === at ? '1' : '0'));
+}
+
+function goTo(i) { at = ((i % N) + N) % N; place(); }
+function step()  { goTo(at + 1); }
+function rest()  { clearInterval(timer); timer = setInterval(step, DWELL); }
+
+const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function start() {
+  if (still.matches) {
+    tiles.forEach(el => { el.style.transform = ''; el.style.opacity = ''; el.tabIndex = 0; });
+    return;
+  }
+  place();
+  rest();
+}
+
+/* No pause on hover. The band is full width and tall, so a cursor resting
+   anywhere near the middle of the page would stop it indefinitely and it would
+   look broken. Keyboard focus still holds it, since that is deliberate. */
+show.addEventListener('focusin',  () => clearInterval(timer));
+show.addEventListener('focusout', rest);
+document.addEventListener('visibilitychange', () =>
+  document.hidden ? clearInterval(timer) : rest());
+
+if (document.readyState === 'complete') start();
+else window.addEventListener('load', start);
+</script>
+
+
+
+<script>
+/* The booking form from the counter tool, running for real on the landing page.
+   Same Eircode validation and the same coverage list, so the answer a shop gets
+   here is the answer they would get at their own counter. Nothing is booked. */
+(function () {
+  const LETTERS = "ACDEFHKNPRTVWXY";
+  const DUBLIN = ["D01","D02","D03","D04","D05","D06","D6W","D07","D08","D09","D10","D11",
+                  "D12","D13","D14","D15","D16","D17","D18","D20","D22","D24"];
+  const COVERED = ["D","A94","A96","K67"];
+  const AREAS = {D01:"Dublin 1",D02:"Dublin 2",D03:"Clontarf",D04:"Dublin 4",D05:"Raheny",
+    D06:"Rathmines",D6W:"Terenure",D07:"Phibsborough",D08:"Dublin 8",D09:"Drumcondra",
+    D10:"Ballyfermot",D11:"Finglas",D12:"Crumlin",D13:"Baldoyle",D14:"Dundrum",
+    D15:"Blanchardstown",D16:"Ballinteer",D17:"Coolock",D18:"Sandyford",D20:"Palmerstown",
+    D22:"Clondalkin",D24:"Tallaght",A94:"Blackrock",A96:"D\u00fan Laoghaire",K67:"Swords"};
+
+  const eir = document.getElementById('tryeir');
+  const verdict = document.getElementById('tryverdict');
+  const rest = document.getElementById('tryrest');
+  const card = document.getElementById('trycard');
+  const note = document.getElementById('trynote');
+  if (!eir) return;
+
+  const bare = v => String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7);
+  const pretty = c => c.length > 3 ? c.slice(0,3) + " " + c.slice(3) : c;
+  const keyOf = c => {
+    const rk = c.slice(0,3);
+    if (rk === "D6W") return rk;
+    return (rk.length === 3 && LETTERS.includes(rk[0]) && /^[0-9]{2}$/.test(rk.slice(1)))
+      ? rk : null;
+  };
+  const covers = rk => COVERED.some(p => rk.startsWith(p));
+  const esc = s => String(s||"").replace(/[&<>"]/g,
+    c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const digits = v => String(v||"").replace(/\D/g,"");
+  const mobileOk = v => /^08[3-9]\d{7}$/.test(digits(v));
+
+  function show(kind, title, body) {
+    verdict.hidden = false;
+    verdict.className = "verdict" + (kind === "yes" ? "" : " no");
+    verdict.innerHTML = '<i aria-hidden="true">' + (kind === "yes" ? "\u2713" : "\u2014") +
+      '</i><div><b>' + title + '</b><span>' + body + '</span></div>';
+  }
+
+  /* Ask our own server for the address, exactly as the counter tool does. Never
+     blocks anything: if it is slow, missing, or the file is being opened locally
+     rather than served from the domain, the demo carries on with the area name. */
+  const LOOKUP = "/api/address";
+  let asking = null, found = null;
+
+  async function lookup(code) {
+    if (asking === code) return;
+    asking = code; found = null;
+    const line = document.getElementById('tryfound');
+    line.hidden = false;
+    line.textContent = "Checking the address\u2026";
+    try {
+      const res = await fetch(LOOKUP + "?eircode=" + encodeURIComponent(code));
+      const a = await res.json();
+      if (asking !== code) return;
+      if (!res.ok || !a.found || !a.address) { line.hidden = true; return; }
+      found = a.address;
+      line.textContent = a.address;
+    } catch (e) {
+      line.hidden = true;
+    }
+  }
+
+  function check() {
+    const code = bare(eir.value);
+    document.getElementById('tryfound').hidden = true;
+    card.hidden = true; note.hidden = true;
+    if (code.length < 3) { verdict.hidden = true; rest.hidden = true; return; }
+    const rk = keyOf(code);
+    if (!rk) {
+      show("no", "That is not a valid Eircode", "Seven characters, like D02 X285.");
+      rest.hidden = true; return;
+    }
+    const area = AREAS[rk] || rk;
+    if (!covers(rk)) {
+      show("no", "Outside the run", "We do not deliver to " + area + " addresses.");
+      rest.hidden = true; return;
+    }
+    if (rk[0] === "D" && !DUBLIN.includes(rk)) {
+      show("no", "That looks mistyped", "There is no Dublin " + rk.slice(1).replace(/^0/,"") + ".");
+      rest.hidden = true; return;
+    }
+    const done = code.length === 7;
+    /* An Eircode is unique to one property, so once all seven are in we are
+       confirming that address, not just the district it sits in. */
+    show("yes",
+      done ? "We deliver to this address in " + area : "We deliver to " + area,
+      done ? "Two things left." : "Finish the Eircode.");
+    rest.hidden = !done;
+    if (done) lookup(code); else { asking = null; found = null; }
+  }
+
+  eir.addEventListener('input', () => { eir.value = pretty(bare(eir.value)); check(); });
+
+
+  const whyBtn = document.getElementById('whybtn');
+  const whyPop = document.getElementById('whypop');
+  if (whyBtn) {
+    const setWhy = open => {
+      whyPop.hidden = !open;
+      whyBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    whyBtn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      setWhy(whyPop.hidden);
+    });
+    document.addEventListener('click', e => {
+      if (!whyPop.hidden && !whyPop.contains(e.target) && e.target !== whyBtn) setWhy(false);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') setWhy(false); });
+  }
+
+  document.getElementById('trygo').addEventListener('click', () => {
+    const name = document.getElementById('tryname').value.trim();
+    const mob  = document.getElementById('trymob').value.trim();
+    if (name.length < 2) { document.getElementById('tryname').focus(); return; }
+    if (!mobileOk(mob)) { document.getElementById('trymob').focus(); return; }
+    const code = pretty(bare(eir.value));
+    const rk = keyOf(bare(eir.value));
+    card.hidden = false;
+    card.innerHTML =
+      '<div class="card__top">' +
+        '<span class="card__ref">DEMO-1</span>' +
+        '<span class="card__name">' + esc(name) + '</span>' +
+        '<span class="card__mob">' + esc(digits(mob)) + '</span>' +
+      '</div>' +
+      '<div class="card__addr">' + esc(found || AREAS[rk] || rk) + ' \u00b7 ' + esc(code) + '</div>' +
+      '<span class="card__flag">On this afternoon\u2019s run</span>';
+    note.hidden = false;
+    card.scrollIntoView({behavior:"smooth", block:"nearest"});
+  });
+})();
+</script>
+
+<script>
+/* The enquiry form.
+
+   ENQUIRY_URL is where it posts. Left null, the form opens the person's mail
+   client with everything already filled in and addressed to us, which means it
+   works from the moment this page is live with nothing to set up.
+
+   To take submissions properly, put a Formspree endpoint or your own Vercel
+   function in ENQUIRY_URL and the mail fallback stops being used. */
+(function () {
+  const ENQUIRY_URL = null;
+  const ENQUIRY_TO  = "hello@cyclonelastmile.ie";
+
+  const form = document.querySelector('.form');
+  if (!form) return;
+  const btn = form.querySelector('.send');
+  const note = form.querySelector('.note-sm');
+  const get = n => (form.querySelector('[name="' + n + '"]') || {}).value || "";
+
+  function fail(msg) {
+    let e = form.querySelector('.form__err');
+    if (!e) {
+      e = document.createElement('p');
+      e.className = 'form__err';
+      e.style.cssText = 'font-size:13.5px;color:#A83232;margin:12px 0 0;text-align:center';
+      note.parentNode.insertBefore(e, note);
+    }
+    e.textContent = msg;
+  }
+
+  btn.addEventListener('click', async e => {
+    e.preventDefault();
+    const shop = get('shop').trim(), where = get('where').trim();
+    const who = get('who').trim(), reach = get('reach').trim();
+    if (!shop || !where || !who || !reach) {
+      fail("Fill in the store, the address, your name and how to reach you.");
+      return;
+    }
+    const body =
+      "Store: " + shop + "\n" +
+      "Address or Eircode: " + where + "\n" +
+      "Orders a week: " + get('volume') + "\n" +
+      "Name: " + who + "\n" +
+      "Phone or email: " + reach + "\n";
+
+    if (!ENQUIRY_URL) {
+      window.location.href = "mailto:" + ENQUIRY_TO +
+        "?subject=" + encodeURIComponent("Same day enquiry: " + shop) +
+        "&body=" + encodeURIComponent(body);
+      return;
+    }
+    btn.disabled = true; btn.textContent = "Sending\u2026";
+    try {
+      const res = await fetch(ENQUIRY_URL, {
+        method: "POST",
+        headers: {"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify({shop, where, volume:get('volume'), who, reach})
+      });
+      if (!res.ok) throw new Error(res.status);
+      form.innerHTML = '<p style="text-align:center;font-size:17px;color:var(--head);' +
+        'margin:0">Thanks. We will come back to you today.</p>';
+    } catch (err) {
+      btn.disabled = false; btn.textContent = "Send";
+      fail("That did not send. Ring us on 01 425 5722 and we will sort it.");
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
