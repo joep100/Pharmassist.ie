@@ -410,7 +410,8 @@ body{background:#E34C2F !important}
   border-radius:11px}
 .wz input:focus,.wz textarea:focus{border-color:#E34C2F}
 .wz textarea{min-height:84px}
-.wz .size{display:flex;flex-direction:column;gap:10px}
+.wz .size{display:none}
+#sz-note{display:none}
 .wz .size button{width:100%;text-align:left;padding:15px;border-radius:11px}
 
 .wz__status{border:1px solid #e7e4df;border-radius:12px;overflow:hidden;background:#faf8f5;
@@ -438,6 +439,8 @@ body{background:#E34C2F !important}
 .wz__go:disabled{background:#d5d1cb;cursor:default;transform:none}
 .wz__warn{color:#A32D2D;font-size:13.5px;margin:10px 0 0}
 
+.wz__packed{font-size:13px;color:#5b6167;line-height:1.5;margin:0 0 14px;
+  padding:11px 13px;background:#faf8f5;border:1px solid #e7e4df;border-radius:10px}
 .wz__recap{border:1px solid #e7e4df;border-radius:12px;overflow:hidden;margin:0 0 16px}
 .wz__recap>div{display:flex;justify-content:space-between;gap:14px;padding:11px 14px;
   border-bottom:1px solid #efece7;font-size:14.5px}
@@ -465,6 +468,18 @@ body{background:#E34C2F !important}
 .wz__tag i{font-style:normal;display:block;font-size:13px;color:#5b6167;margin-top:8px}
 
 /* the day's list, behind a toggle */
+.wz__fits{display:-webkit-box;display:flex;margin:10px -4px 0}
+.wz__fit{flex:1 1 0;margin:0 4px;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:11px 12px;
+  position:relative;text-align:center}
+.wz__fit svg{width:26px;height:26px;display:block;margin:0 auto 6px;fill:none;
+  stroke:#fff;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.wz__fit b{display:block;font-size:12.5px;font-weight:700;color:#fff;line-height:1.25}
+.wz__fit i{font-style:normal;display:block;font-size:11px;color:rgba(255,255,255,.75);
+  margin-top:2px}
+.wz__fit span{position:absolute;top:7px;right:9px;font-size:13px;font-weight:800;color:#fff}
+.wz__fit.is-no{background:rgba(0,0,0,.22);border-color:rgba(255,255,255,.2)}
+.wz__fit.is-no svg{opacity:.7}
 .wz__list{width:100%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);
   border-radius:13px;padding:14px 16px;font:inherit;display:flex;align-items:center;gap:10px;
   cursor:pointer;margin-bottom:12px;text-align:left;transition:background .18s ease}
@@ -1472,6 +1487,8 @@ const RATE = (typeof SHOP.price === "number") ? SHOP.price : PRICE;
 const RATE_BIG = (typeof SHOP.priceBig === "number") ? SHOP.priceBig : PRICE_BIG;
 /* Declared here rather than beside drawSize further down: the rate is read at
    load time, and a let declared later in the file cannot be read earlier. */
+/* Every delivery is a bag. The size machinery below is left intact but never
+   varies, so restoring the choice is a matter of putting the screen back. */
 let isBig = false;
 function rateNow(){ return isBig ? RATE_BIG : RATE; }
 function drawRate(){
@@ -2328,14 +2345,11 @@ $("rweight").value = WEIGHT_DEFAULT;
   move(fieldOf('rmobile'), sMob);
   var goMob = nav(sMob, 'Next', 'wzGoMob');
 
-  /* 4 — Size */
-  var sSize = screen('size');
-  ask(sSize, 'How big is it?', null);
-  var sizeBlock = $('sz-bag') ? $('sz-bag').closest('.f') : null;
-  move(sizeBlock, sSize);
-  var goSize = nav(sSize, 'Next', 'wzGoSize');
+  /* Size screen removed. Every delivery is a bag now, so there is nothing to
+     ask. The underlying size machinery is left in place and forced to bag
+     below, rather than ripped out, so this is one block to restore. */
 
-  /* 5 — Anything else */
+  /* 4 — Anything else */
   var sMore = screen('more');
   ask(sMore, 'Anything else?', 'All optional. Leave blank and carry on.');
   move(fieldOf('rnotes'), sMore);
@@ -2346,7 +2360,7 @@ $("rweight").value = WEIGHT_DEFAULT;
   move(fieldOf('rweight'), sMore);
   var goMore = nav(sMore, 'Next', 'wzGoMore');
 
-  /* 6 — Confirm */
+  /* 5 — Confirm */
   var sOk = screen('ok');
   ask(sOk, 'Check and confirm', 'Read the top line back before you press it.');
   var recap = document.createElement('div');
@@ -2354,11 +2368,20 @@ $("rweight").value = WEIGHT_DEFAULT;
   sOk.appendChild(recap);
   move($('chk-when-row'), sOk);
   move($('err2'), sOk);
+  /* A line rather than a tick. Staff do this thirty times a day, so a checkbox
+     would be muscle memory by Wednesday. The binding version is the packing
+     clause on the activation form, which they read once and sign. */
+  var packed = document.createElement('p');
+  packed.className = 'wz__packed';
+  packed.innerHTML = 'Pressing this confirms the order has been properly packed ' +
+    'for transit.';
+  sOk.appendChild(packed);
+
   var addBtn = $('add');
   var addRow = addBtn ? addBtn.closest('.row') : null;
   move(addRow, sOk);
 
-  /* 7 — Bag */
+  /* 6 — Bag */
   var sBag = screen('bag');
   sBag.innerHTML =
     '<div class="wz__done">' +
@@ -2453,7 +2476,6 @@ $("rweight").value = WEIGHT_DEFAULT;
   }
   requireField(goName, 'rname', 'We need a name for the message.');
   requireField(goMob, 'rmobile', 'We need a mobile for the tracking text.');
-  goSize.addEventListener('click', next);
   goMore.addEventListener('click', next);
 
   /* ---------- recap ---------- */
@@ -2518,6 +2540,22 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   /* ---------- the day's list, behind a toggle ---------- */
   var listOpen = false;
+
+  /* What fits, in two tiles. The size question is gone from the flow, so this
+     is the only place staff are told. Quiet, permanent, out of the way. */
+  var fits = document.createElement('div');
+  fits.className = 'wz__fits';
+  fits.innerHTML =
+    '<div class="wz__fit">' +
+      '<svg viewBox="0 0 24 24"><path d="M7.5 7.5h9l1 12.5h-11Z M9.8 7.5V5.6a2.2 2.2 0 0 1 4.4 0v1.9"/></svg>' +
+      '<b>Shopping bag size</b><i>up to 3kg</i><span class="ok">&#10003;</span>' +
+    '</div>' +
+    '<div class="wz__fit is-no">' +
+      '<svg viewBox="0 0 24 24"><path d="M3.5 8.5 12 5l8.5 3.5v9L12 21l-8.5-3.5Z M3.5 8.5 12 12l8.5-3.5 M12 12v9"/></svg>' +
+      '<b>Bigger than a bag</b><i>ring us first</i><span class="no">&times;</span>' +
+    '</div>';
+  wrap.appendChild(fits);
+
   var listBtn = null;
   if (listpanel) {
     wrap.appendChild(listpanel);
