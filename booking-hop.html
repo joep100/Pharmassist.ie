@@ -311,9 +311,13 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
    and nothing else. Sized to be cut out and taped or stapled to the bag. */
 .sheet{display:none}
 @media print{
+  /* The orange page background is set with !important for the screen, so it has
+     to be beaten back here or the label prints on a red page. */
+  html, body{background:#fff !important;color:#000 !important}
   body > *{display:none!important}
   body > .sheet{display:block!important}
-  .sheet{padding:0;margin:0}
+  .sheet{padding:0;margin:0;background:#fff !important}
+  .sheet__card{background:#fff !important}
   @page{margin:14mm}
 }
 .sheet__card{border:2px solid #000;border-radius:6px;padding:16px 18px;width:104mm;
@@ -1494,7 +1498,9 @@ $("shop").textContent = SHOP.name;
   };
 })();
 if(SHOP.logo){ $("shoplogo").src = SHOP.logo; $("shoplogo").alt = SHOP.name; $("shoplogo").hidden = false; }
-const SHOP_MODE = SHOP.mode || MODE;
+/* Lowercased and trimmed: the mode now comes from a spreadsheet cell, and
+   "Practice" or " practice " should not quietly mean live. */
+const SHOP_MODE = String(SHOP.mode || MODE).trim().toLowerCase();
 if(SHOP_MODE === "practice"){
   $("practice").hidden = false;
   document.title = "PRACTICE " + document.title;
@@ -1867,7 +1873,7 @@ function notify(b){
         notes: b.notes || "",
         readyBy: SHOP.readyBy || "",
         bookedAt: new Date().toISOString(),
-        practice: (SHOP.mode === "practice")
+        practice: (SHOP_MODE === "practice")
       })
     }).catch(function(){});
   }catch(e){}
