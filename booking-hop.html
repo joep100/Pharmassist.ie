@@ -1844,6 +1844,8 @@ $("add").onclick = () => {
   if(SHOP_MODE === "practice"){
     justBooked.state = "practice";
     justBooked.tracking = null;
+    draw();            /* the row was drawn a moment ago, before this was set */
+    save();
   } else if(CREATE_BOOKING){
     sendBooking(justBooked);
   }
