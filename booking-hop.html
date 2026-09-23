@@ -324,6 +324,8 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
   font-family:var(--sans);color:#000}
 .sheet__ref{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.06em;
   border-bottom:2px solid #000;padding-bottom:9px;margin-bottom:12px}
+.sheet__job{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.05em;
+  margin:-6px 0 12px;padding-bottom:10px;border-bottom:1px solid #000}
 .sheet__name{font-size:21px;font-weight:700;line-height:1.2}
 .sheet__addr{font-size:16px;line-height:1.4;margin-top:5px}
 .sheet__mob{font-size:17px;font-weight:600;margin-top:9px}
@@ -2054,6 +2056,9 @@ function printLabel(b){
   $("sheet").innerHTML =
     '<div class="sheet__card">' +
       '<div class="sheet__ref">' + esc(b.bag) + '</div>' +
+      /* The job number from our own system. The rider checks the address and
+         this, so it has to be on the label, not only on screen. */
+      (b.tracking ? '<div class="sheet__job">Job ' + esc(b.tracking) + '</div>' : '') +
       '<div class="sheet__name">' + esc(b.name) + '</div>' +
       '<div class="sheet__addr">' + (line ? esc(line) + '<br>' : '') +
         esc(b.eircode) + (b.area ? ' &middot; ' + esc(b.area) : '') + '</div>' +
