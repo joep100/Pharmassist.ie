@@ -1838,7 +1838,15 @@ $("add").onclick = () => {
   justAdded = true;
   const justBooked = bookings[bookings.length-1];
   reset(); draw();
-  if(CREATE_BOOKING) sendBooking(justBooked);
+  /* Practice means practice. The banner and the tagged row were never enough:
+     without this the booking still reached Clickacourier and a rider was
+     dispatched to a shop that thought it was rehearsing. */
+  if(SHOP_MODE === "practice"){
+    justBooked.state = "practice";
+    justBooked.tracking = null;
+  } else if(CREATE_BOOKING){
+    sendBooking(justBooked);
+  }
   toast("Added. "+bookings.length+" for collection.");
   eir.focus();
   /* The form collapses on add, so the list moves down the page and staff can
@@ -2000,6 +2008,7 @@ function draw(){
     const state = !CREATE_BOOKING ? ''
       : b.state === "booked"  ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>'
       : b.state === "sending" ? '<span class="flag flag--size">Sending\u2026</span>'
+      : b.state === "practice" ? '<span class="flag flag--size">Practice \u2014 not sent</span>'
       : b.state === "failed"  ? '<span class="flag flag--bad">Not booked</span>' +
           (b.error ? '<span class="flag flag--why">' + esc(b.error) + '</span>' : '') +
           '<button class="b-retry" data-r="'+i+'">Try again</button>'
@@ -2030,7 +2039,7 @@ function draw(){
   /* A failed booking is already on the list with everything it needs, so a
      retry costs nothing and saves retyping a customer's details. */
   $("list").querySelectorAll(".b-retry").forEach(b => {
-    b.onclick = () => sendBooking(bookings[+b.dataset.r]);
+    b.onclick = () => { if(SHOP_MODE !== "practice") sendBooking(bookings[+b.dataset.r]); };
   });
 }
 
