@@ -11,6 +11,6 @@
 
     { "source": "/hop/susanhunter",     "destination": "/booking-hop.html" },
     { "source": "/hop/irishdesignshop", "destination": "/booking-hop.html" },
-    { "source": "/hop/cyclonetest",     "destination": "/booking-hop.html" }
-  ]
+    { "source": "/hop/cyclonetest",     "destination": "/booking-hop.html" },
+    { "source": "/hop/foleys",          "destination": "/booking-hop.html" }
 }
