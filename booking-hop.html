@@ -711,6 +711,9 @@ const PRICE_BIG = 12.95;   /* a box, per shop with priceBig: in their entry */
    to serve. Sandyford, Tallaght, Dun Laoghaire and Swords. Everything else we
    cover is inside that. A96 and D18 in particular run a long way out: A96
    reaches Killiney and Ballybrack, D18 reaches Shankill. */
+/* The outer tier, at PRICE_FAR. Sandyford and Cabinteely (D18), Tallaght and
+   Firhouse (D24), Dun Laoghaire, Dalkey and Killiney (A96), Swords and the
+   airport (K67). Everything else we cover is the near rate. */
 const FAR_KEYS  = ["D18","D24","A96","K67"];
 const PRICE_FAR = 12.95;
 const PRICE_EX_VAT = true;
@@ -965,7 +968,11 @@ const PHARMACIES = {
   }
 };
 
-const COVERED = ["D*","A94*","A96*","K67*"];
+/* Every routing key we deliver to. Lifted from the zone list rather than
+   guessed: K36 is Malahide and K78 is Lucan, both of which we serve and both of
+   which the old list refused. The 15 km rule below still applies on top, so a
+   far-flung corner of any of these is still caught. */
+const COVERED = ["D*","A94*","A96*","K36*","K67*","K78*"];
 
 /* A backstop on distance, because a routing key is not always a small place.
    D24 runs from Tallaght at 10 km out to Brittas at nearly 18, and A96 from
@@ -1109,8 +1116,8 @@ const AREAS = {
   D13:"Baldoyle", D14:"Dundrum", D15:"Blanchardstown", D16:"Ballinteer",
   D17:"Coolock", D18:"Sandyford", D20:"Palmerstown", D22:"Clondalkin",
   D24:"Tallaght", A94:"Blackrock", A96:"D\u00fan Laoghaire", A98:"Bray",
-  K32:"Balbriggan", K34:"Skerries", K36:"Lusk", K45:"Rush", K56:"Donabate",
-  K67:"Swords", K78:"Lucan"
+  K32:"Balbriggan", K34:"Skerries", K36:"Malahide", K45:"Lusk", K56:"Donabate",
+  K67:"Swords", K78:"Lucan", K78:"Lucan"
 };
 
 /* Exact header row from the supplied template. Do not correct the spelling, and
