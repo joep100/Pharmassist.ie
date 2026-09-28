@@ -8,6 +8,24 @@
  * Becomes:  POST https://your-site/api/booking
  *
  * Nothing here needs editing. The key comes from CYCLONE_API_KEY in Vercel.
+ *
+ * ---------------------------------------------------------------------------
+ * CHANGED: this no longer calls CreateQuote.
+ *
+ * It used to quote first and book against the returned quoteId, because
+ * CreateBooking appeared to refuse a booking without one. Clickacourier have
+ * since confirmed that is not needed: send quoteId as an empty string and
+ * CreateBooking stands on its own.
+ *
+ * That quote step was the cause of both faults we chased:
+ *   - "vehicle BIKE does not match with id <changes every time>" was the
+ *     booking's vehicle disagreeing with the vehicle the quote was priced for.
+ *     The id was the quote's.
+ *   - "quotes null" was CreateQuote returning nothing at all, which took the
+ *     whole booking down with it even though the booking itself was fine.
+ *
+ * Prices are fixed per shop, so there was never anything to quote.
+ * ---------------------------------------------------------------------------
  */
 
 const BASE = "https://booking-api.cyclonegroup.ie/click_ext";
@@ -77,17 +95,25 @@ async function book(req, res) {
     return res.status(400).json({ error: "Missing: " + missing.join(", ") });
   }
 
-  /* When the bag will be ready. Before the shop's cutoff it's today at the
-     collection hour; after it, tomorrow. The page works out which and sends
-     `tomorrow`, because only the page knows that shop's cutoff. */
-  const ready = new Date();
-  if (b.tomorrow) ready.setDate(ready.getDate() + 1);
-  ready.setHours(Number(b.readyHour || 13), 0, 0, 0);
+  /* When the bag will be ready.
+     The page now works this out and sends collectionTime already formatted,
+     because only the page knows that shop's cut-off and collection hour. The
+     fallback below is for older callers that still send `tomorrow` and
+     `readyHour` instead. */
+  let collectionTime = b.collectionTime;
+  if (!collectionTime) {
+    const ready = new Date();
+    if (b.tomorrow) ready.setDate(ready.getDate() + 1);
+    ready.setHours(Number(b.readyHour || 14), 0, 0, 0);
+    collectionTime = stamp(ready);
+  }
 
   const booking = {
     caller:          String(b.caller).slice(0, 60),
     collection:      b.collection,
+    collectionSubAddressLine: b.collectionSubAddressLine || "",
     delivery:        b.delivery,
+    deliverySubAddressLine:   b.deliverySubAddressLine || "",
     account:         b.account,
     uuid:            b.uuid,
     vehicle:         b.vehicle || "BIKE",
@@ -95,70 +121,22 @@ async function book(req, res) {
     goodsDescription: b.goodsDescription || "Sealed bag",
     numberOfItems:   Number(b.numberOfItems || 1),
     totalWeight:     Number(b.totalWeight || 1),
-    collectionTime:  stamp(ready),
+    collectionTime:  collectionTime,
+    _return:         b._return === true,
+    insurance:       b.insurance === true,
     collectionName:  b.collectionName || "",
     collectionPhone: b.collectionPhone || "",
     deliveryName:    b.deliveryName || "",
     deliveryPhone:   b.deliveryPhone || "",
     reference:       b.reference || "",
-    notes:           b.notes || ""
+    notes:           b.notes || "",
+
+    /* Empty on purpose. See the note at the top of this file: we do not quote,
+       so there is no quote to book against. It must be present and it must be
+       an empty string - leaving it out entirely reaches Cyclone as null, which
+       is refused. */
+    quoteId:         ""
   };
-
-  if (b.deliverySubAddressLine) booking.deliverySubAddressLine = b.deliverySubAddressLine;
-
-  /* ------------------------------------------------------------------
-     CreateBooking will not take a booking on its own: it wants a quoteId,
-     even though the published spec lists that field as optional. So the
-     order is quote first, then book against it.
-
-     CreateQuote returns several options, one per vehicle. We pick the one
-     matching the vehicle asked for, and fall back to the first if there is
-     no match, because a quote for the wrong bike still beats no booking.
-     ------------------------------------------------------------------ */
-  let quote = null;
-  try {
-    const q = await fetch(BASE + "/CreateQuote", {
-      method: "POST",
-      headers: { "X-API-Key": key, "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({
-        account: booking.account,
-        uuid: booking.uuid,
-        fromPlaceId: booking.collection,
-        toPlaceId: booking.delivery
-      })
-    });
-    const qtext = await q.text();
-    let qdata = null;
-    try { qdata = qtext ? JSON.parse(qtext) : null; } catch (e) { /* not JSON */ }
-
-    const quotes = (qdata && qdata.quotes) || [];
-    if (!q.ok || !quotes.length) {
-      return res.status(502).json({
-        error: "Cyclone could not quote for that journey.",
-        status: q.status,
-        detail: (function(){
-          const m = qdata && (qdata.error_messages || qdata.errorMessages);
-          if (Array.isArray(m) && m.length) return m.join("; ");
-          return (qdata && (qdata.title || qdata.detail)) || qtext.slice(0, 300);
-        })(),
-        reply: qdata || qtext.slice(0, 1200)
-      });
-    }
-
-    const want = String(booking.vehicle || "").toUpperCase();
-    quote = quotes.find(function (x) {
-      const n = String((x.vehicle && (x.vehicle.name || x.vehicle.type)) || "").toUpperCase();
-      return n.replace(/[^A-Z]/g, "") === want.replace(/[^A-Z]/g, "");
-    }) || quotes[0];
-
-  } catch (err) {
-    return res.status(502).json({
-      error: "Could not reach the quoting service.",
-      detail: String(err && err.message ? err.message : err)
-    });
-  }
-
-  booking.quoteId = quote.uid;
 
   try {
     const upstream = await fetch(BASE + "/CreateBooking", {
@@ -197,6 +175,7 @@ async function book(req, res) {
       return res.status(502).json({
         error: "Cyclone refused the booking.",
         detail: Array.isArray(msgs) && msgs.length ? msgs.join("; ") : "No reason given.",
+        sent: booking,
         reply: data
       });
     }
@@ -206,9 +185,6 @@ async function book(req, res) {
       trackingNumber: (data && (data.tracking_number || data.trackingNumber ||
                                 data.TrackingNumber)) || null,
       collectionTime: booking.collectionTime,
-      quoteId: quote.uid,
-      quotedVehicle: (quote.vehicle && (quote.vehicle.name || quote.vehicle.type)) || null,
-      distanceMetres: quote.distance || null,
       raw: data
     });
 
