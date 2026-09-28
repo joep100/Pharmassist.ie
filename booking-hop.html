@@ -196,6 +196,7 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .flag--ok{background:var(--green-bg);color:var(--green);border-color:var(--green-br)}
 .flag--bad{background:var(--red-bg);color:var(--red);border-color:#E8C4C4;font-weight:600}
 .flag--size{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-br)}
+.flag--live{background:#17191b;color:#FFCC00;font-weight:700}
 .flag--why{background:#fff;color:var(--body);border-color:var(--line-dk);font-family:var(--mono);
   font-size:11.5px;letter-spacing:.02em}
 .b-retry{background:var(--brand);border:0;color:#fff;border-radius:100px;padding:6px 13px;
@@ -500,6 +501,10 @@ body{background:#FFCC00 !important}
   border-radius:13px;padding:14px 16px;font:inherit;display:flex;align-items:center;gap:10px;
   cursor:pointer;margin-bottom:12px;text-align:left;transition:background .18s ease}
 .wz__list:hover{background:#fff}
+/* Kept for the "All your bookings" row, parked for now to keep the screen
+   clean. Restore by appending an <a class="wz__list wz__past"> to wrap. */
+.wz__past{display:flex;align-items:center;text-decoration:none;margin-top:8px}
+.wz__past i{font-size:15px}
 .wz__list:hover span,.wz__list:hover em,.wz__list:hover i{color:#17191b}
 .wz__list span{font-size:15px;font-weight:700;color:#17191b}
 .wz__list em{font-style:normal;font-family:var(--mono);font-size:11.5px;
@@ -733,7 +738,8 @@ const CARD_SETUP = "/api/setup-card";
 
    Needs the account and uuid Cyclone gave you, and a placeId for each shop's
    own address, which is the `placeId` field in their entry below. */
-const CREATE_BOOKING = "/api/booking";         /* "/api/booking" once you're ready */
+const CREATE_BOOKING = "/api/booking";
+const STATUS_URL     = "/api/status";         /* "/api/booking" once you're ready */
 const ACCOUNT = "INTER";
 const UUID    = "46cd6c17-e266-40ea-9b9f-15d5f48efa53";
 /* BIKE, not TOP-BOX-BIKE. On the rate card BIKE is the bare 3kg documents
@@ -1543,10 +1549,41 @@ function rateNow(){
   if (isBig) return RATE_BIG;
   return isFar(currentKey) ? RATE_FAR : RATE;
 }
+/* Ask where each booked job has got to. The shop's real question during the
+   afternoon is "has that gone yet", and answering it here saves them signing in
+   to the portal. Quiet by design: a failure leaves the row as it was. */
+let statusTimer = null;
+function refreshStatus(){
+  if (!STATUS_URL || SHOP_MODE === "practice") return;
+  if (typeof bookings === "undefined" || !bookings.length) return;
+  const open = bookings.filter(b => b.tracking && b.state === "booked" &&
+                                    b.live !== "Delivered" && b.live !== "Cancelled");
+  if (!open.length) return;
+  open.forEach(function(b){
+    fetch(STATUS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackingNumber: b.tracking, uuid: SHOP.uuid || UUID })
+    })
+    .then(r => r.json())
+    .then(function(d){
+      if (!d || !d.ok || !d.description) return;
+      if (b.live === d.description) return;
+      b.live = d.description;
+      draw(); save();
+    })
+    .catch(function(){ /* leave the row alone */ });
+  });
+}
+
 function drawRate(){
   $("rate").textContent = euro(rateNow()) + (PRICE_EX_VAT ? " + VAT" : "") + " for this delivery";
 }
 drawRate();
+if (typeof refreshStatus === "function") {
+  setTimeout(refreshStatus, 4000);
+  statusTimer = setInterval(refreshStatus, 120000);
+}
 
 /* Has to run after CUTOFF exists, which is why it sits here rather than up with
    the other one-liners. */
@@ -2027,6 +2064,8 @@ function draw(){
       : b.state === "booked"  ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>'
       : b.state === "sending" ? '<span class="flag flag--size">Sending\u2026</span>'
       : b.state === "practice" ? '<span class="flag flag--size">Practice \u2014 not sent</span>'
+      : b.state === "booked" && b.live ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>' +
+          '<span class="flag flag--live">' + esc(b.live) + '</span>'
       : b.state === "failed"  ? '<span class="flag flag--bad">Not booked</span>' +
           (b.error ? '<span class="flag flag--why">' + esc(b.error) + '</span>' : '') +
           '<button class="b-retry" data-r="'+i+'">Try again</button>'
