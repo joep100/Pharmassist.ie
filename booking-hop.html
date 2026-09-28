@@ -1896,13 +1896,24 @@ function notify(b){
 
 
 /* The spec wants collectionTime as "YYYY-MM-DD HH:MM:SS". Built from the shop's
-   own ready hour, on today or tomorrow depending on their cut-off. Previously
-   the page sent `tomorrow` and `readyHour` and left /api/booking to work it
-   out, which drifted from the documented shape. */
+   own ready hour, on today or tomorrow depending on their cut-off.
+
+   COLLECTION_TIME_UTC decides which clock that string is in. We sent 14:00 and
+   the job came back showing 15:00, which is exactly Ireland's summer offset, so
+   the platform appears to read it as UTC. Sending UTC makes the two agree.
+
+   If Clickacourier confirm they want local Irish time instead, set this to
+   false. Do not hardcode an hour either way: the offset is +1 in summer and 0
+   in winter, and Date handles that on its own. */
+const COLLECTION_TIME_UTC = true;
+
 function collectionTimeISO(){
   const d = new Date();
   if (d.getHours() >= CUTOFF) d.setDate(d.getDate() + 1);
   d.setHours(READY_HOUR, 0, 0, 0);
+  if (COLLECTION_TIME_UTC){
+    return d.toISOString().slice(0, 19).replace("T", " ");
+  }
   const p = n => String(n).padStart(2, "0");
   return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
          " " + p(d.getHours()) + ":00:00";
