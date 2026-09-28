@@ -137,6 +137,9 @@ input.bad{border-color:var(--red);background:var(--red-bg)}
 .verdict[hidden]{display:none}
 .verdict svg{width:34px;height:34px;flex:none;margin-top:1px}
 .verdict h3{font-size:21px;font-weight:600;margin:0 0 3px;color:var(--head);letter-spacing:-.018em}
+/* Neutral, while the address is still being resolved. Not a yes and not a no. */
+.verdict.is-wait h3{color:var(--body)}
+.verdict.is-wait svg{color:var(--label);opacity:.7}
 .verdict p{margin:0;font-size:16px}
 .is-yes svg{color:var(--mark)} .is-yes h3{color:var(--brand)}
 .is-no svg{color:var(--slate)} .is-err svg{color:var(--red)} .is-err h3{color:var(--red)}
@@ -964,6 +967,19 @@ const PHARMACIES = {
 
 const COVERED = ["D*","A94*","A96*","K67*"];
 
+/* A backstop on distance, because a routing key is not always a small place.
+   D24 runs from Tallaght at 10 km out to Brittas at nearly 18, and A96 from
+   Dun Laoghaire at 10 to Ballybrack at 15. The key says yes to both ends, so
+   this catches the far one.
+
+   17 km keeps Dalkey (13.0), Killiney (14.1), Ballybrack (14.9), Swords (12.8)
+   and Shankill (16.0), and excludes Brittas (17.9), which is the one we do not
+   want. Measured from O'Connell Bridge.
+
+   An address beyond it is not refused outright: staff are told to ring, because
+   we will often still do it, just not automatically. */
+const MAX_KM = 17;
+
 /* ---------- where we will take a NEW STORE from ----------
    Not the same as where we deliver to. Delivery reaches D24 and Blackrock,
    which is the whole point: the customer is in the suburbs. Collections have
@@ -1690,6 +1706,22 @@ async function lookupAddress(code){
     foundPlaceId = a.placeId || null;
     foundLat = num(a.latitude ?? a.lat);
     foundLng = num(a.longitude ?? a.lng ?? a.lon);
+
+    /* The routing key said yes at three characters, but a key is not always a
+       small place: D24 runs from Tallaght at 10 km out to Brittas at nearly 18.
+       Only now, with the address resolved, can that be measured. This is the
+       first point the position exists, which is why the check lives here rather
+       than beside the district verdict. */
+    if(typeof foundLat === "number" && typeof foundLng === "number"){
+      const outKm = kmFromCentre(foundLat, foundLng);
+      if(outKm > MAX_KM){
+        addrFailed("That address is too far out",
+          "It is about " + Math.round(outKm) + " km from the city, which is beyond " +
+          "the daily run. Ring us on " + PHONE + " and we will tell you whether we " +
+          "can do it.");
+        return;
+      }
+    }
     cargoNote();
   }catch(e){
     addrFailed("We couldn\u2019t reach the address system",
@@ -1753,11 +1785,21 @@ function check(){
      Eircode becomes the PostCode column in the import file, and a three
      character postcode would sail straight through to the platform. */
   const complete = code.length === 7;
-  show("yes","We cover "+area,
-    complete ? (notes.length ? notes.join(" ") : "Fill in the details below.")
-             : (notes.length ? notes.join(" ")+" " : "") + "Finish the Eircode to book it.");
 
-  if(!complete){ p2.hidden = true; $("checks").hidden = true; return; }
+  /* Only say we cover it once the address has been resolved and measured. A
+     routing key is a big place - D24 reaches Brittas, A96 reaches Ballybrack -
+     so a yes on three characters can be taken back a second later when the
+     address turns out to be beyond the run. Better to stay neutral until we
+     actually know. */
+  if(!complete){
+    show("wait", area, (notes.length ? notes.join(" ")+" " : "") +
+                       "Finish the Eircode and we will check the address.");
+    p2.hidden = true; $("checks").hidden = true; return;
+  }
+
+  show("yes","We cover "+area,
+    notes.length ? notes.join(" ") : "Fill in the details below.");
+
 
   /* Two confirmations, because "I only gave you a postcode" is the first thing
      anyone asks. The second is deliberately future tense: this page doesn't
