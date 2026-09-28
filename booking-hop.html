@@ -972,13 +972,19 @@ const COVERED = ["D*","A94*","A96*","K67*"];
    Dun Laoghaire at 10 to Ballybrack at 15. The key says yes to both ends, so
    this catches the far one.
 
-   17 km keeps Dalkey (13.0), Killiney (14.1), Ballybrack (14.9), Swords (12.8)
-   and Shankill (16.0), and excludes Brittas (17.9), which is the one we do not
-   want. Measured from O'Connell Bridge.
+   15 km keeps Dalkey (13.0), Killiney (14.1), Ballybrack (14.9), Swords (12.8),
+   Saggart (14.2) and Howth (13.6), and excludes Shankill (16.0), Newcastle
+   (16.8) and Brittas (17.9). Measured from O'Connell Bridge.
+
+   15 is the cleanest cut available: the nearest included place is 14.2 km and
+   the nearest excluded is 16.0, so no address sits on the line. At 16 km
+   Shankill straddles it and two customers on the same road would get different
+   answers. Argus House was tried as the centre and is worse - it sits
+   south-west of the city, which pulls Brittas inside.
 
    An address beyond it is not refused outright: staff are told to ring, because
    we will often still do it, just not automatically. */
-const MAX_KM = 17;
+const MAX_KM = 15;
 
 /* ---------- where we will take a NEW STORE from ----------
    Not the same as where we deliver to. Delivery reaches D24 and Blackrock,
@@ -2012,11 +2018,14 @@ async function sendBooking(b){
         delivery: b.placeId,
         deliverySubAddressLine: b.unit || "",
         account: SHOP.account || ACCOUNT,
-        /* Follows the destination, not the parcel. Inside a cargo zone the
-           platform prices for a cargo bike; anywhere else it is the motorbike.
-           ?v=CODE on the URL overrides, for testing. */
+        /* Always BIKE. It used to send CARGO-BIKE to city centre addresses,
+           because those were the ones failing with "vehicle does not match".
+           That turned out to be the quote step rather than the vehicle, and
+           with the quote gone BIKE is accepted everywhere. One vehicle also
+           means one price per zone pair on the rate card instead of two.
+           ?v=CODE on the URL still overrides, for testing. */
         vehicle: (new URLSearchParams(location.search).get("v") || "").toUpperCase()
-                 || (b.cargoZone ? VEHICLE_CARGO : (SHOP.vehicle || VEHICLE)),
+                 || (SHOP.vehicle || VEHICLE),
         service: SHOP.service || SERVICE_LEVEL,
         goodsDescription: "Sealed bag",
         numberOfItems: b.pkgs,
