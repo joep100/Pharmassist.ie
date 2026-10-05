@@ -932,7 +932,10 @@ function shopsFromCsv(text){
     });
     if (!r.slug || !r.name || !r.tag || !r.code) continue;   /* skip half-filled rows */
     const slug = String(r.slug).toLowerCase();
-    delete r.slug;
+    /* Kept on the record rather than deleted. The status lookup needs to know
+       which shop it is asking about, and reading that back off the URL breaks
+       the moment anyone opens the file by its own name instead of /hop/<slug>. */
+    r.slug = slug;
     out[slug] = r;
   }
   if (!Object.keys(out).length) throw new Error("no usable rows in the sheet");
@@ -1650,7 +1653,7 @@ function refreshStatus(){
       headers: { "Content-Type": "application/json" },
       /* The slug, not a uuid: /api/status holds the per-shop uuids so they stay
          out of the page. */
-      body: JSON.stringify({ trackingNumber: b.tracking, shop: slug })
+      body: JSON.stringify({ trackingNumber: b.tracking, shop: SHOP.slug || slug })
     })
     .then(r => r.json())
     .then(function(d){
