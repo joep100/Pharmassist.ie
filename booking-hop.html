@@ -512,6 +512,12 @@ body{background:#FFCC00 !important}
 .wz__past i{font-size:17px}
 .wz__pastpanel{background:#fff;border:1px solid rgba(23,25,27,.14);border-radius:14px;
   padding:4px 16px 10px;margin-top:8px}
+.wz__chips{display:-webkit-box;display:flex;flex-wrap:wrap;padding:12px 0 2px;margin:0 -3px}
+.wz__chip{flex:0 0 auto;margin:0 3px 6px;background:#fff;border:1px solid rgba(23,25,27,.16);
+  border-radius:100px;padding:6px 13px;font:inherit;font-size:13px;font-weight:700;
+  color:#4a4a4a;cursor:pointer}
+.wz__chip:hover{border-color:#17191b;color:#17191b}
+.wz__chip.is-on{background:#17191b;border-color:#17191b;color:#FFCC00}
 .wz__pastsum{font-size:14px;color:#4a4a4a;padding:12px 0 10px;
   border-bottom:1px solid rgba(23,25,27,.1)}
 .wz__pastsum b{color:#17191b;font-weight:800}
@@ -2832,12 +2838,12 @@ $("rweight").value = WEIGHT_DEFAULT;
      are already signed in here, so there is nothing to type: the shop and code
      are in hand and go straight to the sheet, which checks them and returns only
      this shop's rows. */
-  var pastOpen = false, pastRows = null, pastBusy = false;
+  var pastOpen = false, pastRows = null, pastBusy = false, pastDays = 30;
 
   var past = document.createElement('button');
   past.type = 'button';
   past.className = 'wz__list wz__past';
-  past.innerHTML = '<span>Your bookings</span><em>everything before today</em><i>+</i>';
+  past.innerHTML = '<span>Your bookings</span><em>last 30 days</em><i>+</i>';
 
   var pastPanel = document.createElement('div');
   pastPanel.className = 'wz__pastpanel';
@@ -2872,12 +2878,48 @@ $("rweight").value = WEIGHT_DEFAULT;
       });
   }
 
+  /* Presets rather than a date picker: this is used one-handed at a counter, and
+     two date fields on a phone is more work than it is worth. The bookings page
+     has the full picker for anyone sitting down with an invoice. */
+  var PERIODS = [[7,'7 days'], [30,'30 days'], [90,'3 months'], [0,'All']];
+
+  function inPeriod(r){
+    if (!pastDays) return true;
+    var d = new Date(r.bookedAt).getTime();
+    if (isNaN(d)) return true;
+    return d >= Date.now() - pastDays * 86400000;
+  }
+
   function paintPast(){
-    if (!pastRows.length) {
-      pastPanel.innerHTML = '<p class="wz__pastnote">Nothing yet.</p>';
-      return;
+    var chips = '<div class="wz__chips">' + PERIODS.map(function(pr){
+      return '<button type="button" class="wz__chip' +
+        (pastDays === pr[0] ? ' is-on' : '') + '" data-d="' + pr[0] + '">' + pr[1] + '</button>';
+    }).join('') + '</div>';
+
+    function wire(){
+      pastPanel.querySelectorAll('.wz__chip').forEach(function(b){
+        b.addEventListener('click', function(){
+          pastDays = parseInt(b.dataset.d, 10);
+          var lbl = PERIODS.filter(function(x){ return x[0] === pastDays; })[0];
+          past.querySelector('em').textContent =
+            pastDays ? 'last ' + lbl[1].toLowerCase() : 'everything';
+          paintPast();
+        });
+      });
     }
-    var real = pastRows.filter(function(r){ return r.practice !== 'practice'; });
+
+    if (!pastRows.length) {
+      pastPanel.innerHTML = chips + '<p class="wz__pastnote">Nothing yet.</p>';
+      wire(); return;
+    }
+
+    var show = pastRows.filter(inPeriod);
+    if (!show.length) {
+      pastPanel.innerHTML = chips + '<p class="wz__pastnote">Nothing in this period.</p>';
+      wire(); return;
+    }
+
+    var real = show.filter(function(r){ return r.practice !== 'practice'; });
     var total = real.reduce(function(a, r){
       var n = parseFloat(String(r.fee).replace(/[^0-9.]/g, ''));
       return a + (isFinite(n) ? n : 0);
@@ -2887,7 +2929,7 @@ $("rweight").value = WEIGHT_DEFAULT;
       (real.length === 1 ? 'delivery' : 'deliveries') +
       ' &middot; <b>\u20ac' + total.toFixed(2) + '</b> before VAT</div>';
 
-    var body = pastRows.slice(0, 40).map(function(r){
+    var body = show.slice(0, 40).map(function(r){
       var d = new Date(r.bookedAt);
       var when = isNaN(d) ? '' :
         d.toLocaleDateString('en-IE', { day:'numeric', month:'short' });
@@ -2904,10 +2946,11 @@ $("rweight").value = WEIGHT_DEFAULT;
       '</div>';
     }).join('');
 
-    var more = pastRows.length > 40
-      ? '<p class="wz__pastnote">Showing the most recent 40 of ' + pastRows.length + '.</p>'
+    var more = show.length > 40
+      ? '<p class="wz__pastnote">Showing the most recent 40 of ' + show.length + '.</p>'
       : '';
-    pastPanel.innerHTML = head + body + more;
+    pastPanel.innerHTML = chips + head + body + more;
+    wire();
   }
 
   function countToday() {
