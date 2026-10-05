@@ -1784,8 +1784,13 @@ async function lookupAddress(code){
        first point the position exists, which is why the check lives here rather
        than beside the district verdict. */
     /* The named places first, because distance would let some of them through. */
-    const hay = [foundLine1, a && a.town, a && a.county, $("addr") && $("addr").value]
-      .filter(Boolean).join(" ").toLowerCase();
+    const hay = [
+      a && a.address,                      /* the full resolved string, where the townland sits */
+      a && Array.isArray(a.lines) ? a.lines.join(" ") : "",
+      a && a.town, a && a.county,
+      foundLine1,
+      $("addr") && $("addr").value
+    ].filter(Boolean).join(" ").toLowerCase();
     const hit = UPHILL.filter(function(n){ return hay.indexOf(n) !== -1; })[0];
     if(hit){
       addrFailed("Let us check that one first",
