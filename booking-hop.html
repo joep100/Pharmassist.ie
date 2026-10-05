@@ -1634,7 +1634,9 @@ function refreshStatus(){
     fetch(STATUS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trackingNumber: b.tracking, uuid: SHOP.uuid || UUID })
+      /* The slug, not a uuid: /api/status holds the per-shop uuids so they stay
+         out of the page. */
+      body: JSON.stringify({ trackingNumber: b.tracking, shop: slug })
     })
     .then(r => r.json())
     .then(function(d){
