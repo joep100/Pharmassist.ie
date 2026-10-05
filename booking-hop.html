@@ -823,7 +823,11 @@ const DEFAULT_PHARMACY = null;
    Left null, nothing is sent and nothing changes. A failure here is swallowed
    on purpose: an alert that does not arrive must never stop a booking that
    did. */
-const NOTIFY_URL = "https://eob7reyfaq6tkzg.m.pipedream.net";
+/* Every booking appends a row to the hop bookings sheet. A Google Apps Script
+   web app, so the record is ours and there is no third party to expire.
+   Failures stay swallowed: a record that does not save must never stop a
+   booking that did. */
+const NOTIFY_URL = "https://script.google.com/macros/s/AKfycby4fu6L59kRmlFnOA5Eti1DHufP54XhBFh3eUWQMDiDGbMThrSG7u1EtBEu2nOlN3ZF/exec";
 
 const SEND_URL = null;
 const SEND_TO  = "bookings@cyclonelastmile.ie";
