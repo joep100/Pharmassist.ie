@@ -488,7 +488,7 @@ body{background:#FFCC00 !important}
 .wz__tag i{font-style:normal;display:block;font-size:13px;color:#5b6167;margin-top:8px}
 
 /* the day's list, behind a toggle */
-.wz__fits{display:-webkit-box;display:flex;margin:10px -4px 0}
+.wz__fits{display:-webkit-box;display:flex;margin:10px -4px 14px}
 .wz__fit{flex:1 1 0;margin:0 4px;background:#fff;
   border:1px solid rgba(23,25,27,.10);border-radius:12px;padding:11px 12px;
   position:relative;text-align:center}
@@ -501,13 +501,13 @@ body{background:#FFCC00 !important}
 .wz__fit.is-no{background:#FBFAF7;border-color:rgba(23,25,27,.08)}
 .wz__fit.is-no svg{opacity:.7}
 .wz__list{width:100%;background:#fff;border:1px solid rgba(23,25,27,.10);
-  border-radius:13px;padding:14px 16px;font:inherit;display:flex;align-items:center;gap:10px;
+  border-radius:13px;padding:14px 16px;margin-bottom:8px;font:inherit;display:flex;align-items:center;gap:10px;
   cursor:pointer;margin-bottom:12px;text-align:left;transition:background .18s ease}
 .wz__list:hover{background:#17191b;border-color:#17191b}
 .wz__list:hover span,.wz__list:hover em,.wz__list:hover i{color:#FFCC00}
 /* Kept for the "All your bookings" row, parked for now to keep the screen
    clean. Restore by appending an <a class="wz__list wz__past"> to wrap. */
-.wz__past{display:flex;align-items:center;text-decoration:none;margin-top:8px;
+.wz__past{display:flex;align-items:center;text-decoration:none;margin-top:0;
   font:inherit;cursor:pointer;text-align:left}
 .wz__past i{font-size:17px}
 .wz__pastpanel{background:#fff;border:1px solid rgba(23,25,27,.14);border-radius:14px;
@@ -518,6 +518,9 @@ body{background:#FFCC00 !important}
 .wz__pastrow{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
   padding:11px 0;border-bottom:1px solid rgba(23,25,27,.07)}
 .wz__pastrow:last-child{border-bottom:0}
+.wz__pastm{min-width:0}
+.wz__pastrow u{display:block;font-family:var(--mono);font-size:11.5px;color:#9a9c90;
+  letter-spacing:.05em;text-decoration:none;margin-bottom:2px}
 .wz__pastrow b{display:block;font-size:15px;font-weight:800;color:#17191b;line-height:1.3}
 .wz__pastrow em{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.05em;
   text-transform:uppercase;color:#8a5a00;background:#fff6e5;border-radius:100px;
@@ -527,7 +530,7 @@ body{background:#FFCC00 !important}
   white-space:nowrap}
 .wz__pastfee span{font-weight:400;font-size:12px;color:#6e6e6e;margin-top:1px}
 .wz__pastnote{font-size:13.5px;color:#6e6e6e;padding:12px 0;margin:0}
-.wz__list:hover span,.wz__list:hover em,.wz__list:hover i{color:#17191b}
+/* superseded: the row inverts, so the text goes yellow with it */
 .wz__list span{font-size:15px;font-weight:700;color:#17191b}
 .wz__list em{font-style:normal;font-family:var(--mono);font-size:11.5px;
   color:#6b6d5f;letter-spacing:.06em;margin-left:auto}
@@ -2889,8 +2892,11 @@ $("rweight").value = WEIGHT_DEFAULT;
       var when = isNaN(d) ? '' :
         d.toLocaleDateString('en-IE', { day:'numeric', month:'short' });
       var fee = parseFloat(String(r.fee).replace(/[^0-9.]/g, ''));
+      var ref = [r.reference, r.tracking ? 'job ' + r.tracking : ''].filter(Boolean).join(' \u00b7 ');
       return '<div class="wz__pastrow">' +
-        '<div><b>' + esc(r.customer || '\u2014') + '</b>' +
+        '<div class="wz__pastm">' +
+          (ref ? '<u>' + esc(ref) + '</u>' : '') +
+          '<b>' + esc(r.customer || '\u2014') + '</b>' +
           (r.practice === 'practice' ? ' <em>practice</em>' : '') +
           '<span>' + esc(r.address || '') + '</span></div>' +
         '<div class="wz__pastfee">' + (isFinite(fee) ? '\u20ac' + fee.toFixed(2) : '') +
