@@ -511,6 +511,9 @@ body{background:#FFCC00 !important}
 .wz__fit.is-wait{opacity:.6}
 .wz__fit{cursor:pointer;font:inherit;text-align:center}
 .wz__fit.is-yes{background:#fff;border-color:rgba(23,25,27,.1)}
+.wz__fit.is-ask{background:#fff;border-color:rgba(23,25,27,.28);border-style:dashed}
+.wz__fit.is-ask em.wz__fitp{color:#17191b}
+.wz__ask{font-size:13.5px;line-height:1.5;color:#6b6d5f;margin:8px 2px 0;text-align:center}
 .wz__fit.is-on{background:#17191b;border-color:#17191b}
 .wz__fit.is-on b{color:#fff}
 .wz__fit.is-on i{color:rgba(255,255,255,.72)}
@@ -1658,6 +1661,11 @@ const RATE_BIG = (typeof SHOP.priceBig === "number") ? SHOP.priceBig : PRICE_BIG
 /* Every delivery is a bag. The size machinery below is left intact but never
    varies, so restoring the choice is a matter of putting the screen back. */
 let isBig = false;
+/* Null until they tap, but only where tapping is a real choice. Where no cargo
+   bike goes there is nothing to decide, so the bag is simply assumed. A bike
+   sent for something that will not go on one is a wasted journey and a parcel
+   still sitting in the shop, which is worth more than a tap. */
+let sizePicked = false;
 const RATE_FAR = (typeof SHOP.priceFar === "number") ? SHOP.priceFar : PRICE_FAR;
 /* Declared here rather than further down: the rate is drawn at load time and
    reads it, and a let declared later cannot be read earlier. */
@@ -1802,6 +1810,7 @@ async function doCancel(i){
 function chooseSize(wantBig){
   if (wantBig && $("sz-big") && $("sz-big").disabled) return;
   isBig = !!wantBig;
+  sizePicked = true;
   if (typeof drawSize === "function") drawSize();
   paintFits();
 }
@@ -1829,16 +1838,25 @@ function paintFits(){
   const bigOff = far || ($("sz-big") && $("sz-big").disabled);
   if (bigOff && isBig) { isBig = false; if (typeof drawSize === "function") drawSize(); }
 
-  bag.className = "wz__fit " + (isBig ? "is-yes" : "is-on");
+  /* Where there is no cargo bike there is no choice to make, so the bag is
+     taken as read and the tile shows selected. */
+  const mustPick = !bigOff && !sizePicked;
+
+  bag.className = "wz__fit " + (mustPick ? "is-ask" : (isBig ? "is-yes" : "is-on"));
   if (bagP) bagP.innerHTML = near;
 
   if (bigOff) {
     big.className = "wz__fit is-no";
     if (bigP) bigP.innerHTML = far ? "not out this far" : "not on this round";
   } else {
-    big.className = "wz__fit " + (isBig ? "is-on" : "is-yes");
+    big.className = "wz__fit " + (mustPick ? "is-ask" : (isBig ? "is-on" : "is-yes"));
     if (bigP) bigP.innerHTML = euro(PRICE_BIG);
   }
+
+  const ask = $("fitAsk");
+  if (ask) ask.hidden = !mustPick;
+  const add = $("add");
+  if (add) add.disabled = mustPick;
 }
 
 function drawRate(){
@@ -2350,7 +2368,8 @@ function reset(){
   $("chk-addr-row").hidden=true; lookingUpFor=null; foundLine1=null; foundPlaceId=null;
   foundLat=null; foundLng=null; currentKey=null;
   if (typeof window.showRate === "function") window.showRate();
-  isBig = false; drawSize();
+  isBig = false; sizePicked = false; drawSize();
+  if (typeof paintFits === "function") paintFits();
 }
 $("clear").onclick = () => { reset(); eir.focus(); };
 
@@ -3059,7 +3078,14 @@ $("rweight").value = WEIGHT_DEFAULT;
       '<b>Your big bag</b><i>boots in a box, a framed print, anything needing two hands</i>' +
       '<em class="wz__fitp" id="fitBigP">&euro;12.95 &middot; city only</em>' +
     '</button>';
+  var ask = document.createElement('p');
+  ask.className = 'wz__ask';
+  ask.id = 'fitAsk';
+  ask.hidden = true;
+  ask.textContent = 'Which one is it? A bike cannot take a big bag, so we need to know before we send somebody.';
+
   wrap.appendChild(fits);
+  wrap.appendChild(ask);
 
 
   var listBtn = null;
