@@ -156,6 +156,10 @@ button{font-family:var(--sans);font-size:17px;font-weight:600;cursor:pointer;bor
   background:#fff;color:var(--head);text-decoration:none;display:inline-block;
   text-align:center;transition:.15s}
 .b-ghost:hover{border-color:var(--brand);color:var(--brand)}
+.b-cancel{background:none;border:1px solid rgba(23,25,27,.22);border-radius:9px;
+  color:var(--label);padding:6px 12px;font:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;order:98;margin-left:auto}
+.b-cancel:hover{border-color:var(--red);color:var(--red)}
 .b-x{background:none;border:0;color:var(--label);padding:4px 10px;font-size:22px;line-height:1;
   order:99}
 .b-x:hover{color:var(--red)}
@@ -1713,6 +1717,55 @@ function atTime(iso){
   return same ? hm : d.toLocaleDateString("en-IE", { day: "numeric", month: "short" }) + ", " + hm;
 }
 
+/* Cancelling is offered only while the parcel is still ours to pull back. Once
+   a rider has it, a button would promise something we cannot do from here, so
+   the row says ring us instead. */
+function cancellable(b){
+  if (b.state !== "booked" || !b.tracking) return false;
+  if (SHOP_MODE === "practice") return false;
+  const live = String(b.live || "").toLowerCase();
+  if (!live) return true;                                   /* nothing from them yet */
+  return /on the way|collection at/.test(live);             /* not yet picked up */
+}
+
+function cancelBtn(b, i){
+  if (b.cancelling) return '<span class="flag flag--size">Cancelling\u2026</span>';
+  if (!cancellable(b)) return '';
+  return '<button class="b-cancel" data-c="'+i+'">Cancel</button>';
+}
+
+async function doCancel(i){
+  const b = bookings[i];
+  if (!b || !b.tracking) return;
+  const who = b.name ? " for " + b.name : "";
+  if (!confirm("Cancel this delivery" + who + "?\n\nWe will pull the job and nobody will " +
+               "collect it. This cannot be undone.")) return;
+
+  b.cancelling = true; draw();
+  try {
+    const res = await fetch("/api/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackingNumber: b.tracking, shop: SHOP.slug || slug })
+    });
+    const d = await res.json().catch(() => ({}));
+    b.cancelling = false;
+    if (res.ok && d.ok) {
+      b.live = "Cancelled";
+      b.liveAt = new Date().toISOString();
+      b.filed = false;                                      /* let it write to the sheet */
+      draw(); save();
+    } else {
+      alert(d.detail || d.error ||
+        "We could not cancel that one. Ring 01 425 5722 and we will sort it.");
+      draw();
+    }
+  } catch (e) {
+    b.cancelling = false; draw();
+    alert("Could not reach us just now. Ring 01 425 5722 and we will cancel it for you.");
+  }
+}
+
 function drawRate(){
   $("rate").textContent = euro(rateNow()) + (PRICE_EX_VAT ? " + VAT" : "") + " for this delivery";
 }
@@ -2266,7 +2319,7 @@ function draw(){
            record, so an X there promises a cancellation we cannot do - and a
            shop would reasonably read it as one. Something that failed or was
            only practice can be cleared, because nothing happened. */
-        ((b.state === "booked") ? ''
+        ((b.state === "booked") ? cancelBtn(b, i)
           : '<button class="b-x" data-i="'+i+'" title="Clear from this list">&times;</button>') +
       '</div>' +
       '<div class="job__addr">' +
@@ -2277,6 +2330,9 @@ function draw(){
       ((odd||leave||state||size) ? '<div class="job__flags">'+state+size+odd+leave+'</div>' : '') +
     '</div>';
   }).join("");
+  $("list").querySelectorAll(".b-cancel").forEach(b => {
+    b.onclick = () => doCancel(+b.dataset.c);
+  });
   $("list").querySelectorAll(".b-x").forEach(b => {
     b.onclick = () => { bookings.splice(+b.dataset.i,1); draw(); save(); };
   });
