@@ -6,7 +6,7 @@
 <title>hop — in store booking</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -602,7 +602,10 @@ body{background:#FFCC00 !important}
 /* Matching the site: Nunito carries the headings, Inter does the reading, and
    IBM Plex Mono stays on anything a person reads back character by character -
    Eircodes, codes, job numbers. */
-body,p,li,span,div,a,td,th,label,button,input,select,textarea{
+/* Inter reads the body text; Nunito carries anything that speaks up. --sans is
+   left as Nunito because older rules lean on it, and those are all headings or
+   buttons, which this list does not override. */
+body,p,li,span,div,a,td,th,label,select,textarea,input{
   font-family:"Inter",system-ui,-apple-system,sans-serif}
 h1,h2,h3,h4,b,strong,.wz__q,.wz__list span,.wz__fit b,.wz__pastrow b,.wz__pastfee,
 .btn,.wz__next,.gate h1,.gate h2{font-family:"Nunito",system-ui,sans-serif}
@@ -2834,6 +2837,18 @@ $("rweight").value = WEIGHT_DEFAULT;
   move($('verdict'), statusBox);
   var addrRow = $('chk-addr-row');
   if (addrRow) statusBox.appendChild(addrRow);
+
+  /* An Eircode points at a building, and the name attached to it can be years
+     behind whoever is in it now. Shown only when the first line reads as a name
+     rather than a number, which is when somebody doubts the lookup. */
+  var stale = document.createElement('p');
+  stale.className = 'wz__stale';
+  stale.id = 'addrStale';
+  stale.hidden = true;
+  stale.innerHTML = 'The business name on an Eircode can be out of date &mdash; ' +
+    'the street address is still right. Put the shop or company name in the notes ' +
+    'if it will help the rider find the door.';
+  sEir.appendChild(stale);
 
   /* The price for this address, once the zone is known. Two tiers, so staff
      should see which one applies before they promise anything. */
