@@ -1842,7 +1842,14 @@ function paintFits(){
 }
 
 function drawRate(){
-  $("rate").textContent = euro(rateNow()) + (PRICE_EX_VAT ? " + VAT" : "") + " for this delivery";
+  /* The size is named here as well as on the tiles. The tiles sit further up the
+     page and a shop working through a batch will not look at them each time, so
+     the line they read at the moment of booking says which it is. */
+  const size = isBig ? "Big bag" : "Standard bag";
+  const where = currentKey && typeof AREAS === "object" && AREAS[currentKey]
+    ? " \u00b7 " + AREAS[currentKey] : "";
+  $("rate").textContent = size + " \u00b7 " + euro(rateNow()) +
+    (PRICE_EX_VAT ? " + VAT" : "") + where;
 }
 drawRate();
 if (typeof refreshStatus === "function") {
@@ -2292,7 +2299,7 @@ async function sendBooking(b){
         vehicle: (new URLSearchParams(location.search).get("v") || "").toUpperCase()
                  || (isBig ? VEHICLE_CARGO : (SHOP.vehicle || VEHICLE)),
         service: SHOP.service || SERVICE_LEVEL,
-        goodsDescription: "Sealed bag",
+        goodsDescription: isBig ? "Sealed bag, large" : "Sealed bag",
         numberOfItems: b.pkgs,
         totalWeight: b.weight,
         collectionTime: collectionTimeISO(),
