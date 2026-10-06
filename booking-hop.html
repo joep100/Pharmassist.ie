@@ -1800,7 +1800,7 @@ function paintFits(){
   }
 
   const far = FAR_KEYS.indexOf(currentKey) !== -1;
-  const near = money(far ? PRICE_FAR : PRICE);
+  const near = euro(far ? PRICE_FAR : PRICE);
 
   bag.className = "wz__fit is-yes";
   if (bagP) bagP.innerHTML = near;
@@ -1810,7 +1810,7 @@ function paintFits(){
     if (bigP) bigP.innerHTML = "not out this far";
   } else {
     big.className = "wz__fit is-yes";
-    if (bigP) bigP.innerHTML = money(PRICE_FAR);
+    if (bigP) bigP.innerHTML = euro(PRICE_BIG);
   }
 }
 
