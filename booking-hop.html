@@ -1867,6 +1867,7 @@ function paintFits(){
   if (add) add.disabled = mustPick;
   const why = $("wzWhyOff");
   if (why) why.hidden = !mustPick;
+  if (typeof window.hopRecap === "function") window.hopRecap();
 }
 
 function drawRate(){
@@ -3022,6 +3023,11 @@ $("rweight").value = WEIGHT_DEFAULT;
   goMore.addEventListener('click', next);
 
   /* ---------- recap ---------- */
+  /* On window so the size tiles can refresh it. They live outside this closure,
+     and somebody can scroll up and change their mind while the confirm screen is
+     showing - which left the recap saying "Not chosen yet" after they had. */
+  window.hopRecap = function(){ if (order[at] === 'ok') drawRecap(); };
+
   function drawRecap() {
     function v(id) { var e = $(id); return e ? e.value.trim() : ''; }
     var found = $('chk-found');
