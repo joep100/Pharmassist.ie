@@ -1657,9 +1657,16 @@ function refreshStatus(){
     })
     .then(r => r.json())
     .then(function(d){
-      if (!d || !d.ok || !d.description) return;
-      if (b.live === d.description) return;
-      b.live = d.description;
+      if (!d || !d.ok) return;
+      /* Nothing from them yet means the job is booked and sitting on today's
+         round. That is our own schedule rather than a claim about where the
+         parcel is, so it is honest to say it - and a shop asking "where is it"
+         would rather read that than a blank. */
+      const next = d.description ||
+        (READY_HOUR ? "Collection at " + (READY_HOUR > 12 ? (READY_HOUR - 12) + "pm"
+                                                          : READY_HOUR + "am") : null);
+      if (!next || b.live === next) return;
+      b.live = next;
       draw(); save();
     })
     .catch(function(){ /* leave the row alone */ });
