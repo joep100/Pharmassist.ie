@@ -539,6 +539,7 @@ body{background:#FFCC00 !important}
 .wz__pastfee span{font-weight:400;font-size:12px;color:#6e6e6e;margin-top:1px}
 .wz__pastst{display:block;font-size:11px;font-weight:800;letter-spacing:.03em;
   color:#1C6E45;margin-top:3px}
+.wz__pastst span{font-weight:400;color:#6e6e6e;font-family:"IBM Plex Mono",ui-monospace,monospace}
 .wz__pastnote{font-size:13.5px;color:#6e6e6e;padding:12px 0;margin:0}
 /* superseded: the row inverts, so the text goes yellow with it */
 .wz__list span{font-size:15px;font-weight:700;color:#17191b}
@@ -3023,7 +3024,9 @@ $("rweight").value = WEIGHT_DEFAULT;
           '<span>' + esc(r.address || '') + '</span></div>' +
         '<div class="wz__pastfee">' + (isFinite(fee) ? '\u20ac' + fee.toFixed(2) : '') +
           '<span>' + when + '</span>' +
-          (r.status ? '<b class="wz__pastst">' + esc(r.status) + '</b>' : '') +
+          (r.status ? '<b class="wz__pastst">' + esc(r.status) +
+             (r.statusAt ? ' <span>' + esc(atTime(r.statusAt)) + '</span>' : '') +
+           '</b>' : '') +
         '</div>' +
       '</div>';
     }).join('');
