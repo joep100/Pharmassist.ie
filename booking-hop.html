@@ -200,6 +200,8 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .flag--bad{background:var(--red-bg);color:var(--red);border-color:#E8C4C4;font-weight:600}
 .flag--size{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-br)}
 .flag--live{background:#17191b;color:#FFCC00;font-weight:700}
+.flag--live i{font-style:normal;font-weight:400;color:rgba(255,255,255,.62);
+  margin-left:7px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.92em}
 .flag--why{background:#fff;color:var(--body);border-color:var(--line-dk);font-family:var(--mono);
   font-size:11.5px;letter-spacing:.02em}
 .b-retry{background:var(--brand);border:0;color:#fff;border-radius:100px;padding:6px 13px;
@@ -535,6 +537,8 @@ body{background:#FFCC00 !important}
 .wz__pastfee{flex:none;text-align:right;font-size:15px;font-weight:800;color:#17191b;
   white-space:nowrap}
 .wz__pastfee span{font-weight:400;font-size:12px;color:#6e6e6e;margin-top:1px}
+.wz__pastst{display:block;font-size:11px;font-weight:800;letter-spacing:.03em;
+  color:#1C6E45;margin-top:3px}
 .wz__pastnote{font-size:13.5px;color:#6e6e6e;padding:12px 0;margin:0}
 /* superseded: the row inverts, so the text goes yellow with it */
 .wz__list span{font-size:15px;font-weight:700;color:#17191b}
@@ -1665,12 +1669,43 @@ function refreshStatus(){
       const next = d.description ||
         (READY_HOUR ? "Collection at " + (READY_HOUR > 12 ? (READY_HOUR - 12) + "pm"
                                                           : READY_HOUR + "am") : null);
-      if (!next || b.live === next) return;
-      b.live = next;
+      /* The time it happened, kept beside the words. A shop asking "when was
+         that delivered" should not have to ring to find out. */
+      const at = d.at || null;
+      if ((!next || b.live === next) && b.liveAt === at) return;
+      b.live = next; b.liveAt = at;
+
+      /* Once a job is delivered or cancelled nothing more will happen to it, so
+         the outcome is written back to the sheet and the history carries it
+         without ever asking Clickacourier again. Written once: b.filed stops a
+         second poll repeating it. */
+      const done = /^(delivered|cancelled|could not deliver)/i.test(next || "");
+      if (done && !b.filed && NOTIFY_URL) {
+        b.filed = true;
+        fetch(NOTIFY_URL + "?update=1", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          keepalive: true,
+          body: JSON.stringify({ tracking: b.tracking, status: next, statusAt: at })
+        }).catch(function(){ b.filed = false; });
+      }
+
       draw(); save();
     })
     .catch(function(){ /* leave the row alone */ });
   });
+}
+
+/* A time a person reads at a glance: the clock if it happened today, the day
+   and the clock if it did not. */
+function atTime(iso){
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const hm = d.toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const today = new Date();
+  const same = d.getDate() === today.getDate() && d.getMonth() === today.getMonth()
+            && d.getFullYear() === today.getFullYear();
+  return same ? hm : d.toLocaleDateString("en-IE", { day: "numeric", month: "short" }) + ", " + hm;
 }
 
 function drawRate(){
@@ -2207,7 +2242,8 @@ function draw(){
          These used to be two branches and the plain one came first, so it always
          matched and the live pill was never reached. */
       : b.state === "booked"  ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>' +
-          (b.live ? '<span class="flag flag--live">' + esc(b.live) + '</span>' : '')
+          (b.live ? '<span class="flag flag--live">' + esc(b.live) +
+             (b.liveAt ? '<i>' + esc(atTime(b.liveAt)) + '</i>' : '') + '</span>' : '')
       : b.state === "sending" ? '<span class="flag flag--size">Sending\u2026</span>'
       : b.state === "practice" ? '<span class="flag flag--size">Practice \u2014 not sent</span>'
       : b.state === "failed"  ? '<span class="flag flag--bad">Not booked</span>' +
@@ -2986,7 +3022,9 @@ $("rweight").value = WEIGHT_DEFAULT;
           (r.practice === 'practice' ? ' <em>practice</em>' : '') +
           '<span>' + esc(r.address || '') + '</span></div>' +
         '<div class="wz__pastfee">' + (isFinite(fee) ? '\u20ac' + fee.toFixed(2) : '') +
-          '<span>' + when + '</span></div>' +
+          '<span>' + when + '</span>' +
+          (r.status ? '<b class="wz__pastst">' + esc(r.status) + '</b>' : '') +
+        '</div>' +
       '</div>';
     }).join('');
 
