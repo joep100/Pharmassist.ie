@@ -428,6 +428,8 @@ body{background:#FFCC00 !important}
 .wz__s.is-on{display:block}
 .wz__q{font-size:25px;font-weight:800;letter-spacing:-.035em;margin:6px 0 5px;color:#17191b;
   line-height:1.18}
+.wz__stale{font-size:13px;line-height:1.5;color:#6b6d5f;margin:8px 2px 0;
+  padding-left:11px;border-left:2px solid rgba(23,25,27,.16)}
 .wz__hint{font-size:14px;color:#5b6167;margin:0 0 20px;line-height:1.5}
 
 .wz .f{margin:0 0 16px;max-width:none}
@@ -1988,6 +1990,17 @@ async function lookupAddress(code){
     /* Keep the first line so it can sit beside the name in the day's list, as a
        second pair of eyes on the address before the bag goes out. */
     foundLine1 = (a.lines && a.lines.length) ? a.lines[0] : (a.address.split(",")[0] || null);
+
+    /* An Eircode points at a building, and the name attached to it can be years
+       behind the business in it. The address is right; the name may not be. Only
+       shown when the first line looks like a name rather than a number, because
+       that is when somebody doubts it. */
+    const stale = $("addrStale");
+    if (stale) {
+      const l1 = String(foundLine1 || "").trim();
+      const looksLikeAName = l1 && !/^\d/.test(l1) && !/^(flat|apt|unit|no\.?)\b/i.test(l1);
+      stale.hidden = !looksLikeAName;
+    }
     foundPlaceId = a.placeId || null;
     foundLat = num(a.latitude ?? a.lat);
     foundLng = num(a.longitude ?? a.lng ?? a.lon);
