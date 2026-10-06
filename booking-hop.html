@@ -1720,7 +1720,15 @@ function atTime(iso){
 /* Cancelling is offered only while the parcel is still ours to pull back. Once
    a rider has it, a button would promise something we cannot do from here, so
    the row says ring us instead. */
+/* Off for now. CancelBooking answers "Booking <n> cannot be cancelled" even on
+   a job that has not been dispatched, and Clickacourier have not yet said under
+   what conditions it succeeds. A button that always fails is worse than none:
+   a shop presses it, gets an error, and trusts the tool a little less.
+   Set this to true once they confirm it works. */
+const CANCEL_ON = false;
+
 function cancellable(b){
+  if (!CANCEL_ON) return false;
   if (b.state !== "booked" || !b.tracking) return false;
   if (SHOP_MODE === "practice") return false;
   const live = String(b.live || "").toLowerCase();
