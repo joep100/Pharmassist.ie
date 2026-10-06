@@ -406,10 +406,16 @@ body{background:#FFCC00 !important}
 .wz .practice strong::before{display:none}
 .wz .practice span{display:none}
 
-.wz__rail{height:3px;background:#efece7}
-.wz__rail i{display:block;height:3px;background:#17191b;width:0;transition:width .2s ease}
+/* Twice the height and a darker track. Yellow fill was tried and vanished - the
+   page behind it is the same colour. Black on light reads at a glance, which is
+   what somebody working through a batch needs. */
+.wz__rail{height:6px;background:#e7e2d9}
+.wz__rail i{display:block;height:6px;background:#17191b;width:0;
+  transition:width .25s ease}
 
 .wz__head{display:flex;align-items:center;gap:12px;padding:14px 18px 0;min-height:34px}
+.wz__step{font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  color:#9a9c90;font-family:"IBM Plex Mono",ui-monospace,monospace;margin-left:auto}
 .wz__back{background:none;border:0;font:inherit;font-size:19px;line-height:1;color:#8a9096;
   cursor:pointer;padding:3px 8px;border-radius:8px;transition:background .15s ease}
 .wz__back:hover{background:#f4f2ef;color:#17191b}
