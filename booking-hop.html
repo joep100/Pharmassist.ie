@@ -2203,11 +2203,13 @@ function draw(){
        way staff can see at a glance that a different machine is coming. */
     const size = b.big ? '<span class="flag flag--size">Cargo bike</span>' : '';
     const state = !CREATE_BOOKING ? ''
-      : b.state === "booked"  ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>'
+      /* One branch for booked, with the live pill appended when there is one.
+         These used to be two branches and the plain one came first, so it always
+         matched and the live pill was never reached. */
+      : b.state === "booked"  ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>' +
+          (b.live ? '<span class="flag flag--live">' + esc(b.live) + '</span>' : '')
       : b.state === "sending" ? '<span class="flag flag--size">Sending\u2026</span>'
       : b.state === "practice" ? '<span class="flag flag--size">Practice \u2014 not sent</span>'
-      : b.state === "booked" && b.live ? '<span class="flag flag--ok">Booked'+(b.tracking?' '+esc(b.tracking):'')+'</span>' +
-          '<span class="flag flag--live">' + esc(b.live) + '</span>'
       : b.state === "failed"  ? '<span class="flag flag--bad">Not booked</span>' +
           (b.error ? '<span class="flag flag--why">' + esc(b.error) + '</span>' : '') +
           '<button class="b-retry" data-r="'+i+'">Try again</button>'
