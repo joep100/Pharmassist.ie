@@ -471,6 +471,8 @@ body{background:#FFCC00 !important}
 .wz__go:disabled{background:#d5d1cb;cursor:default;transform:none}
 .wz__warn{color:#A32D2D;font-size:13.5px;margin:10px 0 0}
 
+.wz__whyoff{font-size:14px;line-height:1.5;color:#8a5a00;background:#fff6e5;
+  border:1px solid #f3dfae;border-radius:11px;padding:11px 14px;margin:0 0 12px}
 .wz__packed{font-size:13px;color:#5b6167;line-height:1.5;margin:0 0 14px;
   padding:11px 13px;background:#faf8f5;border:1px solid #e7e4df;border-radius:10px}
 .wz__recap{border:1px solid #e7e4df;border-radius:12px;overflow:hidden;margin:0 0 16px}
@@ -1863,6 +1865,8 @@ function paintFits(){
   if (ask) ask.hidden = !mustPick;
   const add = $("add");
   if (add) add.disabled = mustPick;
+  const why = $("wzWhyOff");
+  if (why) why.hidden = !mustPick;
 }
 
 function drawRate(){
@@ -2872,9 +2876,9 @@ $("rweight").value = WEIGHT_DEFAULT;
   move(fieldOf('rmobile'), sMob);
   var goMob = nav(sMob, 'Next', 'wzGoMob');
 
-  /* Size screen removed. Every delivery is a bag now, so there is nothing to
-     ask. The underlying size machinery is left in place and forced to bag
-     below, rather than ripped out, so this is one block to restore. */
+  /* No size screen: the choice is made on the tiles above the wizard, where the
+     price for this destination is already showing. Where no cargo bike goes
+     there is nothing to ask and the bag is assumed. */
 
   /* 4 — Anything else */
   var sMore = screen('more');
@@ -2889,7 +2893,7 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   /* 5 — Confirm */
   var sOk = screen('ok');
-  ask(sOk, 'Check and confirm', 'Read the top line back before you press it.');
+  ask(sOk, 'Check and confirm', 'Check the address and the mobile number.');
   var recap = document.createElement('div');
   recap.className = 'wz__recap';
   sOk.appendChild(recap);
@@ -2898,6 +2902,16 @@ $("rweight").value = WEIGHT_DEFAULT;
   /* A line rather than a tick. Staff do this thirty times a day, so a checkbox
      would be muscle memory by Wednesday. The binding version is the packing
      clause on the activation form, which they read once and sign. */
+  /* The tiles explain themselves where they sit, but by this screen they are
+     scrolled away. A disabled button with no reason beside it is the kind of
+     thing somebody rings about. */
+  var whyOff = document.createElement('p');
+  whyOff.className = 'wz__whyoff';
+  whyOff.id = 'wzWhyOff';
+  whyOff.hidden = true;
+  whyOff.innerHTML = 'Pick a bag size first &mdash; scroll up to the two boxes above.';
+  sOk.appendChild(whyOff);
+
   var packed = document.createElement('p');
   packed.className = 'wz__packed';
   packed.innerHTML = 'Pressing this confirms the order has been properly packed ' +
@@ -2934,7 +2948,15 @@ $("rweight").value = WEIGHT_DEFAULT;
     $('wzCount').textContent = at < order.length - 1
       ? 'Step ' + (at + 1) + ' of ' + (order.length - 1) : '';
     $('wzFill').style.width = Math.round((at / (order.length - 1)) * 100) + '%';
-    if (at === 5) drawRecap();
+    /* order is zero-indexed, so the confirm screen is 4. It read 5 before,
+       which is the "Booked" screen - the recap was being drawn after the
+       booking had already gone, where nobody would ever see it. Found by
+       name rather than number so renumbering cannot break it again. */
+    if (order[at] === 'ok') {
+      drawRecap();
+      var w = $('wzWhyOff'), ab = $('add');
+      if (w) w.hidden = !(ab && ab.disabled);
+    }
     /* The list is never on screen during a booking, including the first
        screen. It shows on the bag screen, and otherwise only when asked for. */
     if (listpanel) {
@@ -3013,6 +3035,14 @@ $("rweight").value = WEIGHT_DEFAULT;
     var to = [v('runit'), found ? found.textContent.trim() : '', v('eircode')]
       .filter(Boolean).join(', ');
     var rows = [['Customer', v('rname')], ['Mobile', v('rmobile')], ['To', to]];
+    /* The size is part of what they are confirming, and the tiles are a long way
+       up the page by now. */
+    var bigOff = $('sz-big') && $('sz-big').disabled;
+    if (!bigOff) {
+      rows.push(['Bag', sizePicked ? (isBig ? 'Big bag \u00b7 ' + euro(PRICE_BIG)
+                                            : 'Standard bag \u00b7 ' + euro(rateNow()))
+                                   : 'Not chosen yet']);
+    }
     if (v('rnotes')) rows.push(['Notes', v('rnotes')]);
     if (v('rref')) rows.push(['Your ref', v('rref')]);
     recap.innerHTML = rows.map(function (r) {
