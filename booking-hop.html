@@ -29,6 +29,18 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
   font-size:18px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:980px;margin:0 auto;padding:26px 22px 90px}
 
+/* One column on a phone, two at a desk. Exactly two children, so nothing else
+   on the page is affected: the booking on the left, the record of bookings on
+   the right where it can be read without opening anything. */
+.wz__cols{display:block}
+@media(min-width:920px){
+  .wrap{max-width:1180px}
+  .wz__cols{display:-webkit-box;display:flex;align-items:flex-start;gap:28px}
+  .wz__main{flex:1 1 auto;min-width:0;max-width:620px}
+  .wz__side{flex:0 0 360px;min-width:0;position:sticky;top:26px}
+  .wz__side .wz__list{margin-bottom:8px}
+}
+
 .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
 /* The wordmark, and the only place Nunito is used. Everything else on the page
    stays on Inter: the counter type was sized against Inter's metrics. */
@@ -3124,7 +3136,7 @@ $("rweight").value = WEIGHT_DEFAULT;
   }
 
   /* ---------- the day's list, behind a toggle ---------- */
-  var listOpen = false;
+  var listOpen = window.matchMedia('(min-width:920px)').matches;
 
   /* What fits, in two tiles. The size question is gone from the flow, so this
      is the only place staff are told. Quiet, permanent, out of the way. */
@@ -3180,6 +3192,27 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   wrap.appendChild(past);
   wrap.appendChild(pastPanel);
+
+  /* Two columns on a wide screen. The job is somebody at a desk working through
+     last night's orders, so the list of what they have already done belongs
+     beside the form rather than behind a button. Below 920px this does nothing
+     and the page stacks exactly as it did on a phone. */
+  var main = document.createElement('div');
+  main.className = 'wz__main';
+  var side = document.createElement('aside');
+  side.className = 'wz__side';
+
+  /* Everything that is the booking goes left; everything that is a record of
+     bookings goes right. Anything else on the page is left where it was, so
+     this cannot disturb the header or the footer. */
+  [shell, fits, ask].forEach(function (el) { if (el) main.appendChild(el); });
+  [listBtn, listpanel, past, pastPanel].forEach(function (el) { if (el) side.appendChild(el); });
+
+  var cols = document.createElement('div');
+  cols.className = 'wz__cols';
+  cols.appendChild(main);
+  cols.appendChild(side);
+  wrap.appendChild(cols);
 
   past.addEventListener('click', function(){
     pastOpen = !pastOpen;
