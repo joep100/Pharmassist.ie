@@ -2258,7 +2258,12 @@ function draw(){
         '<span class="job__name">'+esc(b.name)+'</span>' +
         '<span class="job__mob">'+esc(b.mobile)+'</span>' +
         '<button class="b-print" data-p="'+i+'" title="Print a label for this bag">Print label</button>' +
-        '<button class="b-x" data-i="'+i+'" title="Remove">&times;</button>' +
+        /* No X on a job that went. It exists at Clickacourier and in our own
+           record, so an X there promises a cancellation we cannot do - and a
+           shop would reasonably read it as one. Something that failed or was
+           only practice can be cleared, because nothing happened. */
+        ((b.state === "booked") ? ''
+          : '<button class="b-x" data-i="'+i+'" title="Clear from this list">&times;</button>') +
       '</div>' +
       '<div class="job__addr">' +
         (b.unit ? '<strong>'+esc(b.unit)+'</strong>, ' : '') +
@@ -2269,7 +2274,7 @@ function draw(){
     '</div>';
   }).join("");
   $("list").querySelectorAll(".b-x").forEach(b => {
-    b.onclick = () => { bookings.splice(+b.dataset.i,1); draw(); };
+    b.onclick = () => { bookings.splice(+b.dataset.i,1); draw(); save(); };
   });
   $("list").querySelectorAll(".b-print").forEach(b => {
     b.onclick = () => printLabel(bookings[+b.dataset.p]);
