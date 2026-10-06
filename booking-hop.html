@@ -540,7 +540,11 @@ body{background:#FFCC00 !important}
 .wz__pastst{display:block;font-size:11px;font-weight:800;letter-spacing:.03em;
   color:#1C6E45;margin-top:3px}
 .wz__pastst span{font-weight:400;color:#6e6e6e;font-family:"IBM Plex Mono",ui-monospace,monospace}
-.wz__pastnote{font-size:13.5px;color:#6e6e6e;padding:12px 0;margin:0}
+.wz__pastnote{font-size:13.5px;color:#6e6e6e;padding:8px 0 12px;margin:0;text-align:center}
+.wz__more{display:block;width:100%;margin:12px 0 0;background:#fff;
+  border:1px solid rgba(23,25,27,.2);border-radius:11px;padding:11px;
+  font:inherit;font-size:14.5px;font-weight:800;color:#17191b;cursor:pointer}
+.wz__more:hover{background:#17191b;color:#FFCC00;border-color:#17191b}
 /* superseded: the row inverts, so the text goes yellow with it */
 .wz__list span{font-size:15px;font-weight:700;color:#17191b}
 .wz__list em{font-style:normal;font-family:var(--mono);font-size:11.5px;
@@ -2924,12 +2928,12 @@ $("rweight").value = WEIGHT_DEFAULT;
      are already signed in here, so there is nothing to type: the shop and code
      are in hand and go straight to the sheet, which checks them and returns only
      this shop's rows. */
-  var pastOpen = false, pastRows = null, pastBusy = false, pastDays = 30;
+  var pastOpen = false, pastRows = null, pastBusy = false, pastDays = 7, pastShown = 20;
 
   var past = document.createElement('button');
   past.type = 'button';
   past.className = 'wz__list wz__past';
-  past.innerHTML = '<span>Your bookings</span><em>last 30 days</em><i>+</i>';
+  past.innerHTML = '<span>Your bookings</span><em>last 7 days</em><i>+</i>';
 
   var pastPanel = document.createElement('div');
   pastPanel.className = 'wz__pastpanel';
@@ -2967,12 +2971,24 @@ $("rweight").value = WEIGHT_DEFAULT;
   /* Presets rather than a date picker: this is used one-handed at a counter, and
      two date fields on a phone is more work than it is worth. The bookings page
      has the full picker for anyone sitting down with an invoice. */
-  var PERIODS = [[7,'7 days'], [30,'30 days'], [90,'3 months'], [0,'All']];
+  /* Today and yesterday are different questions from "the last week", so they
+     get their own chips. -1 means today, -2 means yesterday. */
+  var PERIODS = [[-1,'Today'], [-2,'Yesterday'], [7,'7 days'], [30,'30 days'],
+                 [90,'3 months'], [0,'All']];
+  var PAGE = 20;
+
+  function dayStart(offset){
+    var d = new Date(); d.setHours(0,0,0,0);
+    d.setDate(d.getDate() - offset);
+    return d.getTime();
+  }
 
   function inPeriod(r){
     if (!pastDays) return true;
     var d = new Date(r.bookedAt).getTime();
     if (isNaN(d)) return true;
+    if (pastDays === -1) return d >= dayStart(0);
+    if (pastDays === -2) return d >= dayStart(1) && d < dayStart(0);
     return d >= Date.now() - pastDays * 86400000;
   }
 
@@ -2986,11 +3002,17 @@ $("rweight").value = WEIGHT_DEFAULT;
       pastPanel.querySelectorAll('.wz__chip').forEach(function(b){
         b.addEventListener('click', function(){
           pastDays = parseInt(b.dataset.d, 10);
-          var lbl = PERIODS.filter(function(x){ return x[0] === pastDays; })[0];
+          pastShown = PAGE;
+          var lbl = PERIODS.filter(function(x){ return x[0] === pastDays; })[0][1];
           past.querySelector('em').textContent =
-            pastDays ? 'last ' + lbl[1].toLowerCase() : 'everything';
+            pastDays === -1 ? 'today' : pastDays === -2 ? 'yesterday'
+            : pastDays ? 'last ' + lbl.toLowerCase() : 'everything';
           paintPast();
         });
+      var more = pastPanel.querySelector('.wz__more');
+      if (more) more.addEventListener('click', function(){
+        pastShown += PAGE; paintPast();
+      });
       });
     }
 
@@ -3015,7 +3037,7 @@ $("rweight").value = WEIGHT_DEFAULT;
       (real.length === 1 ? 'delivery' : 'deliveries') +
       ' &middot; <b>\u20ac' + total.toFixed(2) + '</b> before VAT</div>';
 
-    var body = show.slice(0, 40).map(function(r){
+    var body = show.slice(0, pastShown).map(function(r){
       var d = new Date(r.bookedAt);
       var when = isNaN(d) ? '' :
         d.toLocaleDateString('en-IE', { day:'numeric', month:'short' });
@@ -3036,8 +3058,13 @@ $("rweight").value = WEIGHT_DEFAULT;
       '</div>';
     }).join('');
 
-    var more = show.length > 40
-      ? '<p class="wz__pastnote">Showing the most recent 40 of ' + show.length + '.</p>'
+    /* Twenty at a time. The totals above are the whole period either way, so a
+       shop checking an invoice never has to load three hundred rows to read a
+       number that is already on screen. */
+    var more = show.length > pastShown
+      ? '<button type="button" class="wz__more">Show ' +
+          Math.min(PAGE, show.length - pastShown) + ' more</button>' +
+        '<p class="wz__pastnote">' + pastShown + ' of ' + show.length + ' shown</p>'
       : '';
     pastPanel.innerHTML = chips + head + body + more;
     wire();
