@@ -2282,14 +2282,15 @@ async function sendBooking(b){
         delivery: b.placeId,
         deliverySubAddressLine: b.unit || "",
         account: SHOP.account || ACCOUNT,
-        /* Always BIKE. It used to send CARGO-BIKE to city centre addresses,
-           because those were the ones failing with "vehicle does not match".
-           That turned out to be the quote step rather than the vehicle, and
-           with the quote gone BIKE is accepted everywhere. One vehicle also
-           means one price per zone pair on the rate card instead of two.
-           ?v=CODE on the URL still overrides, for testing. */
+        /* The shop's choice, not the destination's. They pick a bag or a big
+           bag on the tiles, and that is what gets sent - so the vehicle, the
+           price they were shown and the rate card all say the same thing.
+
+           Cargo bikes do not go to the outer tier, and the tiles refuse a big
+           bag to those addresses, so a CB job can only ever be for a zone that
+           has a CB rate. ?v=CODE on the URL still overrides, for testing. */
         vehicle: (new URLSearchParams(location.search).get("v") || "").toUpperCase()
-                 || (SHOP.vehicle || VEHICLE),
+                 || (isBig ? VEHICLE_CARGO : (SHOP.vehicle || VEHICLE)),
         service: SHOP.service || SERVICE_LEVEL,
         goodsDescription: "Sealed bag",
         numberOfItems: b.pkgs,
