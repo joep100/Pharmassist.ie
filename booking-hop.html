@@ -1988,6 +1988,10 @@ async function lookupAddress(code){
       }
     }
     cargoNote();
+    /* The cargo zone is only known once the address resolves, and the tiles
+       painted before that - so they are repainted here, now that we know
+       whether a cargo bike can reach it. */
+    if (typeof paintFits === "function") paintFits();
   }catch(e){
     addrFailed("We couldn\u2019t reach the address system",
       "This is our end, not yours. Ring us on " + PHONE + " and we will take the " +
