@@ -503,8 +503,17 @@ body{background:#FFCC00 !important}
 .wz__fit b{display:block;font-size:12.5px;font-weight:700;color:#17191b;line-height:1.25}
 .wz__fit i{font-style:normal;display:block;font-size:11px;color:#6b6d5f;
   margin-top:2px}
+.wz__fit em.wz__fitp{display:block;font-style:normal;font-size:13.5px;font-weight:800;color:#17191b;
+  margin-top:7px;padding-top:7px;border-top:1px solid rgba(23,25,27,.1)}
 .wz__fit span{position:absolute;top:7px;right:9px;font-size:13px;font-weight:800;color:#17191b}
-.wz__fit.is-no{background:#FBFAF7;border-color:rgba(23,25,27,.08)}
+/* Three states: waiting on an address, available, not available here. */
+.wz__fit{transition:background .18s ease, border-color .18s ease, opacity .18s ease}
+.wz__fit.is-wait{opacity:.6}
+.wz__fit.is-yes{background:#fff;border-color:rgba(23,25,27,.1)}
+.wz__fit.is-yes em.wz__fitp{color:#1C6E45}
+.wz__fit.is-no{background:#FBFAF7;border-color:rgba(23,25,27,.07);opacity:.72}
+.wz__fit.is-no b,.wz__fit.is-no i{color:#9a9c90}
+.wz__fit.is-no em.wz__fitp{color:#A32D2D}
 .wz__fit.is-no svg{opacity:.7}
 .wz__list{width:100%;background:#fff;border:1px solid rgba(23,25,27,.10);
   border-radius:13px;padding:14px 16px;margin-bottom:8px;font:inherit;display:flex;align-items:center;gap:10px;
@@ -1774,6 +1783,37 @@ async function doCancel(i){
   }
 }
 
+/* The tiles sit under the Eircode, so by the time anybody reads them the
+   address is known. Until then they are both muted: neither a promise nor a
+   refusal, just not answered yet. Once it resolves, the one that applies comes
+   forward with the real price and the one that does not goes quiet. */
+function paintFits(){
+  const bag = $("fitBag"), big = $("fitBig");
+  if (!bag || !big) return;
+  const bagP = $("fitBagP"), bigP = $("fitBigP");
+
+  if (!currentKey) {
+    bag.className = "wz__fit is-wait"; big.className = "wz__fit is-wait";
+    if (bagP) bagP.innerHTML = "from &euro;9.95";
+    if (bigP) bigP.innerHTML = "&euro;12.95 &middot; city only";
+    return;
+  }
+
+  const far = FAR_KEYS.indexOf(currentKey) !== -1;
+  const near = money(far ? PRICE_FAR : PRICE);
+
+  bag.className = "wz__fit is-yes";
+  if (bagP) bagP.innerHTML = near;
+
+  if (far) {
+    big.className = "wz__fit is-no";
+    if (bigP) bigP.innerHTML = "not out this far";
+  } else {
+    big.className = "wz__fit is-yes";
+    if (bigP) bigP.innerHTML = money(PRICE_FAR);
+  }
+}
+
 function drawRate(){
   $("rate").textContent = euro(rateNow()) + (PRICE_EX_VAT ? " + VAT" : "") + " for this delivery";
 }
@@ -1976,6 +2016,7 @@ function check(){
     notes.push("If this is in "+listPlaces(OUTER[rk])+", ring us first. Those are outside the run.");
   currentKey = rk;
   if (typeof drawRate === "function") drawRate();
+  if (typeof paintFits === "function") paintFits();
   if (typeof window.showRate === "function") window.showRate();
 
   /* Answer as soon as the routing key is in, because that's the fast yes staff
@@ -2966,13 +3007,15 @@ $("rweight").value = WEIGHT_DEFAULT;
   var fits = document.createElement('div');
   fits.className = 'wz__fits';
   fits.innerHTML =
-    '<div class="wz__fit">' +
+    '<div class="wz__fit is-wait" id="fitBag">' +
       '<svg viewBox="0 0 24 24"><path d="M7.5 7.5h9l1 12.5h-11Z M9.8 7.5V5.6a2.2 2.2 0 0 1 4.4 0v1.9"/></svg>' +
-      '<b>Fits your own bag</b><i>up to 3kg</i><span class="ok">&#10003;</span>' +
+      '<b>Your standard bag</b><i>a dress, a jumper, shoes in tissue, a bottle, books</i>' +
+      '<em class="wz__fitp" id="fitBagP">from &euro;9.95</em>' +
     '</div>' +
-    '<div class="wz__fit is-no">' +
+    '<div class="wz__fit is-wait" id="fitBig">' +
       '<svg viewBox="0 0 24 24"><path d="M3.5 8.5 12 5l8.5 3.5v9L12 21l-8.5-3.5Z M3.5 8.5 12 12l8.5-3.5 M12 12v9"/></svg>' +
-      '<b>Bigger than a bag</b><i>ring us first</i><span class="no">&times;</span>' +
+      '<b>Your big bag</b><i>boots in a box, a framed print, anything needing two hands</i>' +
+      '<em class="wz__fitp" id="fitBigP">&euro;12.95 &middot; city only</em>' +
     '</div>';
   wrap.appendChild(fits);
 
