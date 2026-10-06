@@ -2289,17 +2289,20 @@ async function sendBooking(b){
         delivery: b.placeId,
         deliverySubAddressLine: b.unit || "",
         account: SHOP.account || ACCOUNT,
-        /* The shop's choice, not the destination's. They pick a bag or a big
-           bag on the tiles, and that is what gets sent - so the vehicle, the
-           price they were shown and the rate card all say the same thing.
+        /* b.big, not isBig. The choice is stored on the booking when it is
+           added to the list; isBig is the form's current state, and the form is
+           cleared before this runs - so reading it here always said bag.
+
+           The shop's choice, not the destination's: the vehicle, the price they
+           were shown and the rate card all say the same thing.
 
            Cargo bikes do not go to the outer tier, and the tiles refuse a big
            bag to those addresses, so a CB job can only ever be for a zone that
            has a CB rate. ?v=CODE on the URL still overrides, for testing. */
         vehicle: (new URLSearchParams(location.search).get("v") || "").toUpperCase()
-                 || (isBig ? VEHICLE_CARGO : (SHOP.vehicle || VEHICLE)),
+                 || (b.big ? VEHICLE_CARGO : (SHOP.vehicle || VEHICLE)),
         service: SHOP.service || SERVICE_LEVEL,
-        goodsDescription: isBig ? "Sealed bag, large" : "Sealed bag",
+        goodsDescription: b.big ? "Sealed bag, large" : "Sealed bag",
         numberOfItems: b.pkgs,
         totalWeight: b.weight,
         collectionTime: collectionTimeISO(),
