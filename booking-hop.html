@@ -35,6 +35,9 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
 .wz__cols{display:block}
 @media(min-width:980px){
   .wrap{max-width:1160px}
+  .wz__home img{height:76px}
+  .wz__who{font-size:15px}
+  .wz__who b{font-size:23px}
   .wz__cols{display:-webkit-box;display:flex;align-items:flex-start;gap:26px}
   .wz__main{flex:1 1 560px;min-width:520px;max-width:640px}
   .wz__side{flex:1 1 320px;min-width:300px;max-width:380px;position:sticky;top:26px}
@@ -399,14 +402,18 @@ body{background:#FFCC00 !important}
   box-shadow:0 14px 34px -22px rgba(60,48,0,.4);margin-bottom:12px}
 
 /* shop identity, on the orange above the card */
-.wz__hat{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:0 4px 12px}
+/* Bigger across the board. This was sized for a phone held close; the real use
+   is somebody at a desk, and at that distance it was all too small to read
+   without leaning in. */
+.wz__hat{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:0 4px 18px}
 .wz__hat img{height:38px;width:auto;display:block}
+.wz__home img{display:block;height:62px;width:auto}
 .wz__home{flex:none;display:block;border-radius:7px;padding:3px;margin:-3px;
   transition:opacity .15s ease}
 .wz__home:hover{opacity:.75}
-.wz__who{color:#17191b;text-align:right;font-size:11.5px;line-height:1.35;opacity:.85}
-.wz__who b{display:block;font-size:14px;font-weight:800;opacity:1;letter-spacing:-.01em;color:#17191b}
+.wz__who{color:#17191b;text-align:right;font-size:14px;line-height:1.4;opacity:.85}
+.wz__who b{display:block;font-size:20px;font-weight:800;opacity:1;letter-spacing:-.015em;color:#17191b}
 .wz__out{flex:none;background:transparent;border:1px solid rgba(23,25,27,.35);
   color:#17191b;border-radius:8px;padding:6px 12px;font:inherit;font-size:11.5px;
   font-weight:700;cursor:pointer;margin-left:12px;white-space:nowrap;
@@ -3356,7 +3363,16 @@ $("rweight").value = WEIGHT_DEFAULT;
   }
   var listEl = $('list');
   if (listEl) new MutationObserver(paintList).observe(listEl, { childList: true, subtree: true });
+  /* Open on a wide screen, where the column beside the form is there to be read.
+     paintList runs once at setup, so this is the point the default takes hold. */
   paintList();
+
+  if (window.matchMedia('(min-width:980px)').matches && pastOpen === false) {
+    pastOpen = true;
+    pastPanel.style.display = '';
+    past.querySelector('i').innerHTML = '&#8211;';
+    if (pastRows === null && !pastBusy) fetchPast();
+  }
 
   show(0);
 })();
