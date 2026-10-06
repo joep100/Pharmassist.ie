@@ -471,8 +471,8 @@ body{background:#FFCC00 !important}
 .wz__go:disabled{background:#d5d1cb;cursor:default;transform:none}
 .wz__warn{color:#A32D2D;font-size:13.5px;margin:10px 0 0}
 
-.wz__whyoff{font-size:14px;line-height:1.5;color:#8a5a00;background:#fff6e5;
-  border:1px solid #f3dfae;border-radius:11px;padding:11px 14px;margin:0 0 12px}
+.wz__whyoff{font-size:14.5px;font-weight:700;line-height:1.5;color:#17191b;
+  background:#FFCC00;border-radius:11px;padding:12px 15px;margin:0 0 12px}
 .wz__packed{font-size:13px;color:#5b6167;line-height:1.5;margin:0 0 14px;
   padding:11px 13px;background:#faf8f5;border:1px solid #e7e4df;border-radius:10px}
 .wz__recap{border:1px solid #e7e4df;border-radius:12px;overflow:hidden;margin:0 0 16px}
@@ -2899,9 +2899,6 @@ $("rweight").value = WEIGHT_DEFAULT;
   sOk.appendChild(recap);
   move($('chk-when-row'), sOk);
   move($('err2'), sOk);
-  /* A line rather than a tick. Staff do this thirty times a day, so a checkbox
-     would be muscle memory by Wednesday. The binding version is the packing
-     clause on the activation form, which they read once and sign. */
   /* The tiles explain themselves where they sit, but by this screen they are
      scrolled away. A disabled button with no reason beside it is the kind of
      thing somebody rings about. */
@@ -2912,11 +2909,7 @@ $("rweight").value = WEIGHT_DEFAULT;
   whyOff.innerHTML = 'Pick a bag size first &mdash; scroll up to the two boxes above.';
   sOk.appendChild(whyOff);
 
-  var packed = document.createElement('p');
-  packed.className = 'wz__packed';
-  packed.innerHTML = 'Pressing this confirms the order has been properly packed ' +
-    'for transit.';
-  sOk.appendChild(packed);
+
 
   var addBtn = $('add');
   var addRow = addBtn ? addBtn.closest('.row') : null;
