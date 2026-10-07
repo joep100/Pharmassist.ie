@@ -464,6 +464,18 @@ body{background:#FFCC00 !important}
 .wz__stale{font-size:14px;line-height:1.55;color:#17191b;background:#FFF3C4;
   border:1px solid #F0DC8A;border-radius:12px;padding:12px 15px;margin:14px 0 16px}
 .wz__stale b{font-weight:800}
+.wz__fix{margin:10px 0 2px}
+.wz__fixopen{background:none;border:0;padding:4px 2px;font:inherit;font-size:13.5px;
+  font-weight:800;color:#6b6d5f;cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px}
+.wz__fixopen:hover,.wz__fixopen.is-on{color:#17191b}
+.wz__fixbox{margin-top:8px}
+.wz__fixbox label{display:block;font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+  font-weight:700;color:#9a9c90;margin-bottom:6px}
+.wz__fixbox input{width:100%;border:1.5px solid #d8d4ce;border-radius:11px;
+  padding:12px 14px;font:inherit;font-size:16px}
+.wz__fixbox input:focus{outline:0;border-color:#17191b}
+.wz__fixnote{font-size:12.5px;line-height:1.5;color:#9a9c90;margin:7px 2px 0}
 .wz__hint{font-size:14px;color:#5b6167;margin:0 0 20px;line-height:1.5}
 
 .wz .f{margin:0 0 16px;max-width:none}
@@ -2051,6 +2063,8 @@ async function lookupAddress(code){
        behind the business in it. The address is right; the name may not be. Only
        shown when the first line looks like a name rather than a number, because
        that is when somebody doubts it. */
+    const fw = document.querySelector('.wz__fix');
+    if (fw) fw.hidden = false;
     const stale = $("addrStale");
     if (stale) {
       const l1 = String(foundLine1 || "").trim();
@@ -2280,7 +2294,12 @@ $("add").onclick = () => {
     eircode: pretty(tidy(eir.value)), area: AREAS[currentKey]||currentKey,
     far: isFar(currentKey),
     name:g("rname"), mobile:digits(g("rmobile")),
-    notes:g("rnotes"), leave:$("rleave").checked, ref:g("rref"),
+    /* The address correction rides with the notes, because that is the field
+       that prints on the job. Theirs first, ours after, so nothing they typed is
+       pushed out of sight. */
+    notes: [g("rnotes"), (typeof window.hopAddrFix === "function" ? window.hopAddrFix() : "")]
+             .filter(Boolean).join(" \u00b7 "),
+    leave:$("rleave").checked, ref:g("rref"),
     addr1: foundLine1,
     placeId: foundPlaceId,
     /* The zone the delivery falls in, or null. Clickacourier prices a city
@@ -2448,6 +2467,10 @@ function reset(){
   $("chk-addr-row").hidden=true; lookingUpFor=null; foundLine1=null; foundPlaceId=null;
   foundLat=null; foundLng=null; currentKey=null;
   if (typeof window.showRate === "function") window.showRate();
+  if ($("wzFixText")) $("wzFixText").value = "";
+  if ($("wzFixBox")) $("wzFixBox").hidden = true;
+  if ($("wzFixOpen")) $("wzFixOpen").classList.remove("is-on");
+  if (document.querySelector(".wz__fix")) document.querySelector(".wz__fix").hidden = true;
   isBig = false; sizePicked = false; drawSize();
   if (typeof paintFits === "function") paintFits();
 }
@@ -2913,6 +2936,43 @@ $("rweight").value = WEIGHT_DEFAULT;
   if (unitwrap && stale.parentNode) {
     stale.parentNode.insertBefore(unitwrap, stale.nextSibling);
   }
+
+  /* A correction, not an edit. The booking carries the Eircode's place id, not
+     the text on screen, so letting anybody type over the address would look like
+     it had worked and quietly change nothing. This writes to the notes, which
+     print on the job and reach the rider. */
+  var fixWrap = document.createElement('div');
+  fixWrap.className = 'wz__fix';
+  fixWrap.hidden = true;
+  fixWrap.innerHTML =
+    '<button type="button" class="wz__fixopen" id="wzFixOpen">Not quite right?</button>' +
+    '<div class="wz__fixbox" id="wzFixBox" hidden>' +
+      '<label for="wzFixText">What should the rider know?</label>' +
+      '<input id="wzFixText" type="text" maxlength="80" autocomplete="off" ' +
+        'placeholder="Now Murphy&rsquo;s Pharmacy, blue door">' +
+      '<p class="wz__fixnote">This goes in the notes with the job. The address ' +
+        'itself comes from the Eircode and does not change.</p>' +
+    '</div>';
+
+  function placeFix(){
+    var row = $('chk-addr-row');
+    if (row && row.parentNode) row.parentNode.insertBefore(fixWrap, row.nextSibling);
+  }
+  placeFix();
+
+  $('wzFixOpen').addEventListener('click', function(){
+    var box = $('wzFixBox');
+    box.hidden = !box.hidden;
+    this.classList.toggle('is-on', !box.hidden);
+    if (!box.hidden) $('wzFixText').focus();
+  });
+
+  /* Folded into the notes when the booking is made, kept separate until then so
+     anything the shop typed themselves is not disturbed. */
+  window.hopAddrFix = function(){
+    var v = $('wzFixText') ? $('wzFixText').value.trim() : '';
+    return v;
+  };
 
   /* The price for this address, once the zone is known. Two tiers, so staff
      should see which one applies before they promise anything. */
