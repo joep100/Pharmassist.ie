@@ -561,6 +561,7 @@ body{background:#FFCC00 !important}
 
 /* the day's list, behind a toggle */
 .wz__fits{display:-webkit-box;display:flex;margin:10px -4px 14px}
+.wz__fit[hidden]{display:none}
 .wz__fit{flex:1 1 0;margin:0 4px;background:#fff;
   box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20);
   border:1px solid rgba(23,25,27,.10);border-radius:12px;padding:11px 12px;
@@ -2033,6 +2034,10 @@ function paintFits(){
   bag.className = "wz__fit " + (mustPick ? "is-ask" : (isBig ? "is-yes" : "is-on"));
   if (bagP) bagP.innerHTML = near;
 
+  /* Where no cargo bike goes, the tile goes too. An option that cannot be taken
+     is noise on a screen somebody uses twenty times a morning. The standard bag
+     then has the row to itself. */
+  big.hidden = !!bigOff;
   if (bigOff) {
     big.className = "wz__fit is-no";
     if (bigP) bigP.innerHTML = far ? "not out this far" : "not on this round";
