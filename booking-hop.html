@@ -29,22 +29,13 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
   font-size:18px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:980px;margin:0 auto;padding:26px 22px 90px}
 
-/* One column on a phone, two at a desk. The left column is given a floor it
-   cannot shrink past - without that it collapsed to a sliver and the size tiles
-   became vertical strips, which is what happened the first time. */
-.wz__cols{display:block}
+/* One column throughout, a little wider at a desk than on a phone. */
 @media(min-width:980px){
   .wrap{max-width:560px}
+  .wz__hat{padding-bottom:38px}
   .wz__home img{height:76px}
   .wz__who{font-size:15px}
   .wz__who b{font-size:23px}
-  .wz__cols{display:-webkit-box;display:flex;align-items:flex-start;gap:26px}
-  .wz__main{flex:1 1 560px;min-width:520px;max-width:640px}
-  .wz__side{flex:1 1 320px;min-width:300px;max-width:380px;position:sticky;top:26px}
-  .wz__side .wz__list{margin-bottom:8px}
-}
-@media(max-width:979px){
-  .wz__main,.wz__side{min-width:0;max-width:none}
 }
 
 
@@ -401,7 +392,7 @@ body{background:#FFCC00 !important}
   body{
     background:
       radial-gradient(90% 60% at 50% -8%, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 62%),
-      radial-gradient(120% 90% at 50% 110%, rgba(140,98,0,.20) 0%, rgba(140,98,0,0) 55%),
+      radial-gradient(130% 95% at 50% 112%, rgba(120,84,0,.38) 0%, rgba(120,84,0,0) 58%),
       #FFCC00 !important;
     background-attachment:fixed !important;
   }
@@ -419,15 +410,17 @@ body{background:#FFCC00 !important}
 }
 .top{display:none}
 
-.wz{background:#fff;border:0;border-radius:18px;overflow:hidden;
-  box-shadow:0 14px 34px -22px rgba(60,48,0,.4);margin-bottom:12px}
+.wz{background:#fff;border:0;border-radius:18px;overflow:hidden;margin-bottom:12px;
+  box-shadow:0 1px 2px rgba(90,64,0,.10),
+             0 8px 20px -8px rgba(90,64,0,.22),
+             0 26px 48px -26px rgba(90,64,0,.42)}
 
 /* shop identity, on the orange above the card */
 /* Bigger across the board. This was sized for a phone held close; the real use
    is somebody at a desk, and at that distance it was all too small to read
    without leaning in. */
 .wz__hat{display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:0 4px 18px}
+  padding:0 4px 26px}
 .wz__hat img{height:38px;width:auto;display:block}
 .wz__home img{display:block;height:62px;width:auto}
 .wz__home{flex:none;display:block;border-radius:7px;padding:3px;margin:-3px;
@@ -550,6 +543,7 @@ body{background:#FFCC00 !important}
 /* the day's list, behind a toggle */
 .wz__fits{display:-webkit-box;display:flex;margin:10px -4px 14px}
 .wz__fit{flex:1 1 0;margin:0 4px;background:#fff;
+  box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20);
   border:1px solid rgba(23,25,27,.10);border-radius:12px;padding:11px 12px;
   position:relative;text-align:center}
 .wz__fit svg{width:26px;height:26px;display:block;margin:0 auto 6px;fill:none;
@@ -588,6 +582,7 @@ body{background:#FFCC00 !important}
 .wz__fit.is-no em.wz__fitp{color:#A32D2D}
 .wz__fit.is-no svg{stroke:#9a9c90;opacity:.8}
 .wz__list{width:100%;background:#fff;border:1px solid rgba(23,25,27,.10);
+  box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20);
   border-radius:13px;padding:14px 16px;margin-bottom:8px;font:inherit;display:flex;align-items:center;gap:10px;
   cursor:pointer;margin-bottom:12px;text-align:left;transition:background .18s ease}
 .wz__list:hover{background:#17191b;border-color:#17191b}
@@ -2817,15 +2812,13 @@ $("rweight").value = WEIGHT_DEFAULT;
       '<img src="' + markSrc + '" alt="hop"></a>' +
     '<div class="wz__who"><b id="wzShop"></b><span id="wzAddr"></span></div>';
 
-  var rail = document.createElement('div');
-  rail.className = 'wz__rail';
-  rail.innerHTML = '<i id="wzFill"></i>';
+  /* No rail and no step count. The bar was too thin to read, and "Step 1 of 5"
+     told people the form was long when it is four fields and two taps. */
 
   var head = document.createElement('div');
   head.className = 'wz__head';
   head.innerHTML =
-    '<button type="button" class="wz__back" id="wzBack" hidden>&larr;</button>' +
-    '<span class="wz__count" id="wzCount"></span>';
+    '<button type="button" class="wz__back" id="wzBack" hidden>&larr;</button>';
 
   var body = document.createElement('div');
   body.className = 'wz__body';
@@ -2834,7 +2827,6 @@ $("rweight").value = WEIGHT_DEFAULT;
      white and plain like the panels on the website. */
   wrap.insertBefore(hat, addrPanel);
   if (practice) shell.appendChild(practice);
-  shell.appendChild(rail);
   shell.appendChild(head);
   shell.appendChild(body);
   wrap.insertBefore(shell, addrPanel);
@@ -3018,9 +3010,8 @@ $("rweight").value = WEIGHT_DEFAULT;
       if (el) el.classList.toggle('is-on', n === at);
     });
     $('wzBack').hidden = (at === 0 || at === order.length - 1);
-    $('wzCount').textContent = at < order.length - 1
-      ? 'Step ' + (at + 1) + ' of ' + (order.length - 1) : '';
-    $('wzFill').style.width = Math.round((at / (order.length - 1)) * 100) + '%';
+
+
     /* order is zero-indexed, so the confirm screen is 4. It read 5 before,
        which is the "Booked" screen - the recap was being drawn after the
        booking had already gone, where nobody would ever see it. Found by
