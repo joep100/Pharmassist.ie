@@ -461,8 +461,9 @@ body{background:#FFCC00 !important}
 /* A yellow band rather than a grey aside. This is the line that stops somebody
    abandoning a correct address because the name on it is three years old, so it
    has to be seen. */
-.wz__stale{font-size:14px;line-height:1.5;color:#17191b;background:#FFF3C4;
+.wz__stale{font-size:14px;line-height:1.55;color:#17191b;background:#FFF3C4;
   border:1px solid #F0DC8A;border-radius:12px;padding:12px 15px;margin:14px 0 16px}
+.wz__stale b{font-weight:800}
 .wz__hint{font-size:14px;color:#5b6167;margin:0 0 20px;line-height:1.5}
 
 .wz .f{margin:0 0 16px;max-width:none}
@@ -2894,9 +2895,9 @@ $("rweight").value = WEIGHT_DEFAULT;
   stale.className = 'wz__stale';
   stale.id = 'addrStale';
   stale.hidden = true;
-  stale.innerHTML = 'The business name on an Eircode can be out of date &mdash; ' +
-    'the street address is still right. Put the shop or company name in the notes ' +
-    'if it will help the rider find the door.';
+  stale.innerHTML = '<b>If the business name does not match, it is just out of date.</b> ' +
+    'Not a problem &mdash; the street address is still right. Put the correct name ' +
+    'in the notes below.';
   /* Straight under the Eircode field, before the verdict and the flat-or-unit
      box. Somebody doubting the address needs this at the moment they doubt it,
      not further down the screen. */
