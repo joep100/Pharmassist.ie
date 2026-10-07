@@ -34,7 +34,7 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
    became vertical strips, which is what happened the first time. */
 .wz__cols{display:block}
 @media(min-width:980px){
-  .wrap{max-width:1160px}
+  .wrap{max-width:560px}
   .wz__home img{height:76px}
   .wz__who{font-size:15px}
   .wz__who b{font-size:23px}
@@ -588,6 +588,8 @@ body{background:#FFCC00 !important}
 .wz__past i{font-size:17px}
 .wz__pastpanel{background:#fff;border:1px solid rgba(23,25,27,.14);border-radius:14px;
   padding:4px 16px 10px;margin-top:8px}
+/* under the one button, so they read as one thing */
+.panel--list{margin-top:8px}
 .wz__chips{display:-webkit-box;display:flex;flex-wrap:wrap;padding:12px 0 2px;margin:0 -3px}
 .wz__chip{flex:0 0 auto;margin:0 3px 6px;background:#fff;border:1px solid rgba(23,25,27,.16);
   border-radius:100px;padding:6px 13px;font:inherit;font-size:13px;font-weight:700;
@@ -3212,12 +3214,12 @@ $("rweight").value = WEIGHT_DEFAULT;
      are already signed in here, so there is nothing to type: the shop and code
      are in hand and go straight to the sheet, which checks them and returns only
      this shop's rows. */
-  var pastOpen = false, pastRows = null, pastBusy = false, pastDays = 7, pastShown = 20;
+  var pastOpen = false, pastRows = null, pastBusy = false, pastDays = -1, pastShown = 20;
 
   var past = document.createElement('button');
   past.type = 'button';
   past.className = 'wz__list wz__past';
-  past.innerHTML = '<span>Your bookings</span><em>last 7 days</em><i>+</i>';
+  past.innerHTML = '<span>Your bookings</span><em>today</em><i>+</i>';
 
   var pastPanel = document.createElement('div');
   pastPanel.className = 'wz__pastpanel';
@@ -3235,21 +3237,28 @@ $("rweight").value = WEIGHT_DEFAULT;
   var side = document.createElement('aside');
   side.className = 'wz__side';
 
-  [shell, fits, ask].forEach(function (el) { if (el) main.appendChild(el); });
-  [listBtn, listpanel, past, pastPanel].forEach(function (el) { if (el) side.appendChild(el); });
-
-  var cols = document.createElement('div');
-  cols.className = 'wz__cols';
-  cols.appendChild(main);
-  cols.appendChild(side);
-  wrap.appendChild(cols);
+  /* One place to answer "what have I booked". Today comes from this browser, so
+     it keeps the print labels and the live status; anything older comes from the
+     sheet. Two buttons for the same question read as two different things. */
+  if (listBtn) listBtn.hidden = true;
+  if (listpanel) pastPanel.parentNode.insertBefore(listpanel, pastPanel);
 
   past.addEventListener('click', function(){
     pastOpen = !pastOpen;
-    pastPanel.style.display = pastOpen ? '' : 'none';
+    showPast();
     past.querySelector('i').innerHTML = pastOpen ? '&#8211;' : '+';
-    if (pastOpen && pastRows === null && !pastBusy) fetchPast();
+    if (pastOpen && pastDays !== -1 && pastRows === null && !pastBusy) fetchPast();
   });
+
+  /* Today is this browser's own list - it has the print labels and the live
+     status, which the sheet cannot give us. Everything older comes from the
+     sheet. One button, one question, two sources behind it. */
+  function showPast(){
+    var today = (pastDays === -1);
+    pastPanel.style.display = pastOpen ? '' : 'none';
+    if (listpanel) listpanel.style.display = (pastOpen && today) ? '' : 'none';
+    if (pastOpen && today) paintPast();
+  }
 
   function fetchPast(){
     if (!NOTIFY_URL) return;
@@ -3305,10 +3314,13 @@ $("rweight").value = WEIGHT_DEFAULT;
         b.addEventListener('click', function(){
           pastDays = parseInt(b.dataset.d, 10);
           pastShown = PAGE;
+          if (pastDays !== -1 && pastRows === null && !pastBusy) { fetchPast(); }
+          showPast();
           var lbl = PERIODS.filter(function(x){ return x[0] === pastDays; })[0][1];
           past.querySelector('em').textContent =
             pastDays === -1 ? 'today' : pastDays === -2 ? 'yesterday'
             : pastDays ? 'last ' + lbl.toLowerCase() : 'everything';
+          if (pastDays === -1 && typeof paintList === 'function') paintList();
           paintPast();
         });
       var more = pastPanel.querySelector('.wz__more');
@@ -3316,6 +3328,13 @@ $("rweight").value = WEIGHT_DEFAULT;
         pastShown += PAGE; paintPast();
       });
       });
+    }
+
+    /* On Today the chips are all this panel holds; the list itself is the
+       browser's own, sitting just above. */
+    if (pastDays === -1) {
+      pastPanel.innerHTML = chips;
+      wire(); return;
     }
 
     if (!pastRows.length) {
