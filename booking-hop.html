@@ -1934,6 +1934,12 @@ function paintFits(){
      taken as read and the tile shows selected. */
   const mustPick = !bigOff && !sizePicked;
 
+  /* "Select" only while the choice is outstanding. Left on a chosen tile it
+     reads as an instruction to do something already done. */
+  const bagN = $("fitBagN"), bigN = $("fitBigN");
+  if (bagN) bagN.textContent = mustPick ? "Select standard bag" : "Standard bag";
+  if (bigN) bigN.textContent = mustPick ? "Select jumbo bag" : "Jumbo bag";
+
   bag.className = "wz__fit " + (mustPick ? "is-ask" : (isBig ? "is-yes" : "is-on"));
   if (bagP) bagP.innerHTML = near;
 
@@ -3287,12 +3293,12 @@ $("rweight").value = WEIGHT_DEFAULT;
   fits.innerHTML =
     '<button type="button" class="wz__fit is-wait" id="fitBag" onclick="hopSize(false)">' +
       '<svg viewBox="0 0 24 24"><path d="M6 8h12v12.5H6Z"/><path d="M9.3 8V6.6a2.7 2.7 0 0 1 5.4 0V8"/></svg>' +
-      '<b>Standard bag</b><i>a dress, a jumper, shoes in tissue, a bottle, books</i>' +
+      '<b id="fitBagN">Standard bag</b><i>a dress, a jumper, shoes in tissue, a bottle, books</i>' +
       '<em class="wz__fitp" id="fitBagP">from &euro;9.95</em>' +
     '</button>' +
     '<button type="button" class="wz__fit is-wait" id="fitBig" onclick="hopSize(true)">' +
       '<svg viewBox="0 0 24 24"><path d="M3.4 7h17.2v14H3.4Z"/><path d="M8 7V5.4a4 4 0 0 1 8 0V7"/></svg>' +
-      '<b>Jumbo bag</b><i>a coat, a pair of boots, anything in your longer bag</i>' +
+      '<b id="fitBigN">Jumbo bag</b><i>a coat, a pair of boots, anything in your longer bag</i>' +
       '<em class="wz__fitp" id="fitBigP">&euro;12.95 &middot; city only</em>' +
     '</button>';
 
