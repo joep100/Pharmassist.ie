@@ -400,6 +400,10 @@ body{background:#FFCC00 !important}
 .wrap{max-width:430px;margin-left:auto !important;margin-right:auto !important;
   padding:18px 14px 70px}
 @media(min-width:980px){
+  /* it sat tight to the top of the window at desk width */
+  .wrap{padding-top:40px}
+}
+@media(min-width:980px){
   .wrap{max-width:1160px}
 }
 .top{display:none}
@@ -547,7 +551,12 @@ body{background:#FFCC00 !important}
 .wz__fit span{position:absolute;top:7px;right:9px;font-size:13px;font-weight:800;color:#17191b}
 /* Three states: waiting on an address, available, not available here. */
 .wz__fit{transition:background .18s ease, border-color .18s ease, opacity .18s ease}
-.wz__fit.is-wait{opacity:.6}
+/* White, with the contents muted. Opacity made the card itself translucent and
+   the yellow page came through as a washed-out cream. */
+.wz__fit.is-wait{background:#fff;border-color:rgba(23,25,27,.08)}
+.wz__fit.is-wait b{color:#6b6d5f}
+.wz__fit.is-wait i,.wz__fit.is-wait em.wz__fitp{color:#9a9c90}
+.wz__fit.is-wait svg{stroke:#b4b2ab}
 .wz__fit{cursor:pointer;font:inherit;text-align:center}
 .wz__fit.is-yes{background:#fff;border-color:rgba(23,25,27,.1)}
 .wz__fit.is-ask{background:#fff;border-color:rgba(23,25,27,.28);border-style:dashed}
@@ -563,7 +572,7 @@ body{background:#FFCC00 !important}
 .f .size{display:none}
 .f .size + .size__note{display:none}
 .wz__fit.is-yes em.wz__fitp{color:#1C6E45}
-.wz__fit.is-no{background:#FBFAF7;border-color:rgba(23,25,27,.07);opacity:.72}
+.wz__fit.is-no{background:#fff;border-color:rgba(23,25,27,.07)}
 .wz__fit.is-no b,.wz__fit.is-no i{color:#9a9c90}
 .wz__fit.is-no em.wz__fitp{color:#A32D2D}
 .wz__fit.is-no svg{stroke:#9a9c90;opacity:.8}
@@ -3008,6 +3017,13 @@ $("rweight").value = WEIGHT_DEFAULT;
       var w = $('wzWhyOff'), ab = $('add');
       if (w) w.hidden = !(ab && ab.disabled);
     }
+
+    /* The size tiles belong to the question, not to the whole booking. They
+       appear with the Eircode screen and go once the booking is made - a choice
+       on the Booked screen is a choice about nothing. */
+    var onAsk = (order[at] !== 'bag');
+    if (fits) fits.hidden = !onAsk;
+    if (ask)  ask.hidden  = !onAsk || !$('add') || !$('add').disabled;
     /* The list is never on screen during a booking, including the first
        screen. It shows on the bag screen, and otherwise only when asked for. */
     if (listpanel) {
