@@ -456,6 +456,10 @@ body{background:#FFCC00 !important}
 .wz__body{padding:6px 18px 22px}
 .wz__s{display:none}
 .wz__s.is-on{display:block}
+.wz__qn{font-style:normal;display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;background:#17191b;color:#FFCC00;
+  font-size:15px;font-weight:800;margin-right:11px;vertical-align:2px;
+  font-family:"Nunito",system-ui,sans-serif}
 .wz__q{font-size:25px;font-weight:800;letter-spacing:-.035em;margin:6px 0 5px;color:#17191b;
   line-height:1.18}
 /* A yellow band rather than a grey aside. This is the line that stops somebody
@@ -2886,10 +2890,15 @@ $("rweight").value = WEIGHT_DEFAULT;
     body.appendChild(d);
     return d;
   }
+  /* Numbered questions. Not a progress bar - "Step 1 of 5" told people the form
+     was long - but a number on the question itself helps somebody coming back to
+     a half-finished booking see where they are. */
+  var askN = 0;
   function ask(el, text, hint) {
     var h = document.createElement('h2');
     h.className = 'wz__q';
-    h.textContent = text;
+    askN += 1;
+    h.innerHTML = '<i class="wz__qn">' + askN + '</i>' + text;
     el.appendChild(h);
     if (hint) {
       var p = document.createElement('p');
