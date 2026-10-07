@@ -1835,9 +1835,14 @@ function inRing(x, y, ring){
 function rateNow(){
   if (isBig) return RATE_BIG;
   /* The zone decides, with the routing key only as a fallback for an address we
-     could not place. */
-  const z = priceAt(foundLat, foundLng);
-  if (z) return z.price;
+     could not place.
+
+     In a try because this runs once at setup, before foundLat exists - and a
+     let cannot even be tested with typeof before its declaration. */
+  try {
+    const z = priceAt(foundLat, foundLng);
+    if (z) return z.price;
+  } catch (e) { /* no address yet */ }
   return isFar(currentKey) ? RATE_FAR : RATE;
 }
 /* Ask where each booked job has got to. The shop's real question during the
@@ -1996,7 +2001,9 @@ function paintFits(){
   }
 
   /* The same answer the booking will use, so the tile and the invoice agree. */
-  const z = (typeof priceAt === "function") ? priceAt(foundLat, foundLng) : null;
+  let z = null;
+  try { z = (typeof priceAt === "function") ? priceAt(foundLat, foundLng) : null; }
+  catch (e) { z = null; }
   const far = z ? (z.price > PRICE) : (FAR_KEYS.indexOf(currentKey) !== -1);
   const near = euro(z ? z.price : (far ? PRICE_FAR : PRICE));
 
