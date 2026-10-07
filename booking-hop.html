@@ -565,8 +565,6 @@ body{background:#FFCC00 !important}
   box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20);
   border:1px solid rgba(23,25,27,.10);border-radius:12px;padding:11px 12px;
   position:relative;text-align:center}
-.wz__fit svg{width:26px;height:26px;display:block;margin:0 auto 6px;fill:none;
-  stroke:#17191b;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 /* The whole tile in Nunito. The heading had it; the description and the price
    were falling through to Inter, so the three lines did not look related. And a
    size up throughout - this was set for a phone. */
@@ -582,24 +580,21 @@ body{background:#FFCC00 !important}
    the yellow page came through as a washed-out cream. */
 .wz__fit.is-wait{background:#fff;border-color:rgba(23,25,27,.08)}
 .wz__fit.is-wait b{color:#6b6d5f}
-.wz__fit.is-wait svg{stroke:#b4b2ab}
 .wz__fit{cursor:pointer;font:inherit;text-align:center}
 .wz__fit.is-yes{background:#fff;border-color:rgba(23,25,27,.1)}
 .wz__fit.is-ask{background:#fff;border-color:rgba(23,25,27,.28);border-style:dashed}
 .wz__fit.is-on{background:#17191b;border-color:#17191b}
 .wz__fit.is-on b{color:#fff}
 .wz__fit.is-on i{color:rgba(255,255,255,.72)}
-.wz__fit.is-on svg{stroke:#FFCC00}
 .wz__fit.is-no{cursor:default}
 /* superseded by the tiles above */
 .f .size{display:none}
 .f .size + .size__note{display:none}
 .wz__fit.is-no{background:#fff;border-color:rgba(23,25,27,.07)}
 .wz__fit.is-no b,.wz__fit.is-no i{color:#9a9c90}
-.wz__fit.is-no svg{stroke:#9a9c90;opacity:.8}
 .wz__list{width:100%;background:#fff;border:1px solid rgba(23,25,27,.10);
   box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20);
-  border-radius:13px;padding:14px 16px;margin-bottom:8px;font:inherit;display:flex;align-items:center;gap:10px;
+  border-radius:14px;padding:16px 18px;margin-bottom:8px;font:inherit;display:flex;align-items:center;gap:10px;
   cursor:pointer;margin-bottom:12px;text-align:left;transition:background .18s ease}
 .wz__list:hover{background:#17191b;border-color:#17191b}
 .wz__list:hover span,.wz__list:hover em,.wz__list:hover i{color:#FFCC00}
@@ -644,11 +639,15 @@ body{background:#FFCC00 !important}
   font:inherit;font-size:14.5px;font-weight:800;color:#17191b;cursor:pointer}
 .wz__more:hover{background:#17191b;color:#FFCC00;border-color:#17191b}
 /* superseded: the row inverts, so the text goes yellow with it */
-.wz__list span{font-size:15px;font-weight:700;color:#17191b}
-.wz__list em{font-style:normal;font-family:var(--mono);font-size:11.5px;
-  color:#6b6d5f;letter-spacing:.06em;margin-left:auto}
-.wz__list i{font-style:normal;font-size:17px;color:#17191b;line-height:1;width:14px;
-  text-align:center}
+/* The same voice as the bag tiles: Nunito, the same weight, the same size, so
+   the three white cards read as one family rather than three decisions. */
+.wz__list span{font-size:15px;font-weight:800;color:#17191b;letter-spacing:-.01em;
+  font-family:"Nunito",system-ui,sans-serif}
+.wz__list em{font-style:normal;font-family:"Nunito",system-ui,sans-serif;
+  font-size:12px;color:#6b6d5f;letter-spacing:0;margin-left:auto}
+.wz__list i{font-style:normal;font-size:18px;font-weight:800;color:#17191b;
+  line-height:1;width:16px;text-align:center;margin-left:10px;
+  font-family:"Nunito",system-ui,sans-serif}
 .panel--list{margin-top:0;border-radius:14px}
 
 @media (prefers-reduced-motion: reduce){
@@ -693,13 +692,11 @@ h1,h2,h3,h4,b,strong,.wz__q,.wz__list span,.wz__fit b,.wz__pastrow b,.wz__pastfe
    without competing with the figure. */
 .wz__fit{display:flex;flex-direction:column;text-align:left;position:relative;
   padding:18px 18px 16px}
-.wz__fit svg{position:absolute;top:16px;right:16px;width:26px;height:26px;
-  margin:0;opacity:.45}
 .wz__fit em.wz__fitp{order:-1;display:block;font-style:normal;margin:0 0 5px;
   padding:0;border:0;font-size:26px;font-weight:800;letter-spacing:-.02em;
   line-height:1.1;color:#17191b;font-family:"Nunito",system-ui,sans-serif}
 .wz__fit b{font-size:15px;font-weight:800;color:#17191b;line-height:1.25;
-  margin:0 0 3px;font-family:"Nunito",system-ui,sans-serif;padding-right:30px}
+  margin:0 0 3px;font-family:"Nunito",system-ui,sans-serif}
 .wz__fit i{font-style:normal;display:block;font-size:12px;line-height:1.45;
   color:#6b6d5f;margin:0;font-family:"Nunito",system-ui,sans-serif}
 
@@ -3397,12 +3394,10 @@ $("rweight").value = WEIGHT_DEFAULT;
   fits.className = 'wz__fits';
   fits.innerHTML =
     '<button type="button" class="wz__fit is-wait" id="fitBag" onclick="hopSize(false)">' +
-      '<svg viewBox="0 0 24 24"><path d="M6 8h12v12.5H6Z"/><path d="M9.3 8V6.6a2.7 2.7 0 0 1 5.4 0V8"/></svg>' +
       '<b id="fitBagN">Standard bag</b><i>a dress, a jumper, shoes in tissue, a bottle, books</i>' +
       '<em class="wz__fitp" id="fitBagP">from &euro;9.95</em>' +
     '</button>' +
     '<button type="button" class="wz__fit is-wait" id="fitBig" onclick="hopSize(true)">' +
-      '<svg viewBox="0 0 24 24"><path d="M3.4 7h17.2v14H3.4Z"/><path d="M8 7V5.4a4 4 0 0 1 8 0V7"/></svg>' +
       '<b id="fitBigN">Jumbo bag</b><i>a coat, a pair of boots, anything in your longer bag</i>' +
       '<em class="wz__fitp" id="fitBigP">&euro;12.95 &middot; city only</em>' +
     '</button>';
