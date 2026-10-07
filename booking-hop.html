@@ -3208,8 +3208,13 @@ $("rweight").value = WEIGHT_DEFAULT;
   function drawRecap() {
     function v(id) { var e = $(id); return e ? e.value.trim() : ''; }
     var found = $('chk-found');
-    var to = [v('runit'), found ? found.textContent.trim() : '', v('eircode')]
-      .filter(Boolean).join(', ');
+    /* The resolved address already ends with the Eircode, so only add it when it
+       is not in there - otherwise the line reads "... D08 CTX3, D08 CTX3". */
+    var addr = found ? found.textContent.trim() : '';
+    var eir = v('eircode').trim();
+    var hasEir = eir && addr.toUpperCase().replace(/\s+/g, '')
+                   .indexOf(eir.toUpperCase().replace(/\s+/g, '')) !== -1;
+    var to = [v('runit'), addr, hasEir ? '' : eir].filter(Boolean).join(', ');
     var rows = [['Customer', v('rname')], ['Mobile', v('rmobile')], ['To', to]];
     /* The size is part of what they are confirming, and the tiles are a long way
        up the page by now. */
@@ -3290,6 +3295,8 @@ $("rweight").value = WEIGHT_DEFAULT;
       '<b>Jumbo bag</b><i>a coat, a pair of boots, anything in your longer bag</i>' +
       '<em class="wz__fitp" id="fitBigP">&euro;12.95 &middot; city only</em>' +
     '</button>';
+
+  wrap.appendChild(fits);
 
 
 
