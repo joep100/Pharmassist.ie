@@ -686,18 +686,31 @@ h1,h2,h3,h4,b,strong,.wz__q,.wz__list span,.wz__fit b,.wz__pastrow b,.wz__pastfe
 
 
 
-/* ---- the two bag tiles: the price line, and each state ---- */
-.wz__fit em.wz__fitp{display:block;font-style:normal;font-size:15px;font-weight:800;
-  color:#17191b;font-family:"Nunito",system-ui,sans-serif;
-  margin-top:7px;padding-top:7px;border-top:1px solid rgba(23,25,27,.1)}
+/* ---- the two bag tiles ----
+   The price leads, because the decision is a comparison of two prices and
+   everything else on the tile is there to say what each one buys. The icon sits
+   faint in the corner rather than on top: it identifies the tile at a glance
+   without competing with the figure. */
+.wz__fit{display:flex;flex-direction:column;text-align:left;position:relative;
+  padding:18px 18px 16px}
+.wz__fit svg{position:absolute;top:16px;right:16px;width:26px;height:26px;
+  margin:0;opacity:.45}
+.wz__fit em.wz__fitp{order:-1;display:block;font-style:normal;margin:0 0 5px;
+  padding:0;border:0;font-size:26px;font-weight:800;letter-spacing:-.02em;
+  line-height:1.1;color:#17191b;font-family:"Nunito",system-ui,sans-serif}
+.wz__fit b{font-size:15px;font-weight:800;color:#17191b;line-height:1.25;
+  margin:0 0 3px;font-family:"Nunito",system-ui,sans-serif;padding-right:30px}
+.wz__fit i{font-style:normal;display:block;font-size:12px;line-height:1.45;
+  color:#6b6d5f;margin:0;font-family:"Nunito",system-ui,sans-serif}
+
 .wz__fit.is-wait em.wz__fitp{color:#9a9c90}
 .wz__fit.is-ask  em.wz__fitp{color:#17191b}
-.wz__fit.is-on   em.wz__fitp{color:#FFCC00;border-top-color:rgba(255,255,255,.2)}
+.wz__fit.is-on   em.wz__fitp{color:#FFCC00}
 .wz__fit.is-yes  em.wz__fitp{color:#1C6E45}
-.wz__fit.is-no   em.wz__fitp{color:#A32D2D}
+.wz__fit.is-no   em.wz__fitp{color:#A32D2D;font-size:17px}
 
 /* ---- the delivery map: a text link, and the overlay it opens ---- */
-.wz__maplink{display:block;margin:2px auto 22px;background:#17191b;color:#fff;
+.wz__maplink{display:block;margin:18px auto 0;background:#17191b;color:#fff;
   border:0;-webkit-appearance:none;appearance:none;border-radius:11px;
   font-family:"Nunito",system-ui,sans-serif;font-size:14.5px;font-weight:800;
   padding:11px 24px;cursor:pointer;text-decoration:none;
@@ -3404,7 +3417,8 @@ $("rweight").value = WEIGHT_DEFAULT;
   mapLink.id = 'wzMapLink';
   mapLink.hidden = true;
   mapLink.innerHTML = 'See map';
-  wrap.appendChild(mapLink);
+  /* Appended last, below Your bookings, so the white cards stay together and the
+     black button closes the column rather than splitting it. */
 
   var mapWrap = document.createElement('div');
   mapWrap.className = 'wz__mapwrap';
@@ -3477,6 +3491,7 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   wrap.appendChild(past);
   wrap.appendChild(pastPanel);
+  wrap.appendChild(mapLink);
 
   /* Two columns on a wide screen. The job is somebody at a desk working through
      last night's orders, so the record of what they have done belongs beside
