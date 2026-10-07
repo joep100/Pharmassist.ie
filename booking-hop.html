@@ -3514,7 +3514,10 @@ $("rweight").value = WEIGHT_DEFAULT;
     var today = (pastDays === -1);
     pastPanel.style.display = pastOpen ? '' : 'none';
     if (listpanel) listpanel.style.display = (pastOpen && today) ? '' : 'none';
-    if (pastOpen && today) paintPast();
+    /* Repaint whenever the panel is open. It used to repaint only on Today,
+       so switching to Yesterday with the rows already fetched changed nothing
+       on screen - the chip moved and the list did not. */
+    if (pastOpen && (today || pastRows !== null)) paintPast();
   }
 
   function fetchPast(){
