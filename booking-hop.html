@@ -3432,13 +3432,18 @@ $("rweight").value = WEIGHT_DEFAULT;
         'goes anywhere we cover. Ring 01 425 5722 if you are not sure.</p>' +
     '</div>';
 
-  /* If the image is missing the box would collapse to a sliver around the alt
-     text, so the words stand in and the box keeps a usable size. */
-  $('wzMapImg').addEventListener('error', function(){
-    this.hidden = true;
-    $('wzMapFail').hidden = false;
-  });
   document.body.appendChild(mapWrap);
+
+  /* After the append, not before: getElementById finds nothing until the node is
+     in the document, and the throw took the rest of the setup with it. */
+  var mapImg = mapWrap.querySelector('#wzMapImg');
+  var mapFail = mapWrap.querySelector('#wzMapFail');
+  if (mapImg) {
+    mapImg.addEventListener('error', function(){
+      this.hidden = true;
+      if (mapFail) mapFail.hidden = false;
+    });
+  }
 
   function mapOpen(on){
     mapWrap.hidden = !on;
