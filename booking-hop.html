@@ -590,7 +590,6 @@ body{background:#FFCC00 !important}
 .wz__fit.is-yes{background:#fff;border-color:rgba(23,25,27,.1)}
 .wz__fit.is-ask{background:#fff;border-color:rgba(23,25,27,.28);border-style:dashed}
 .wz__fit.is-ask em.wz__fitp{color:#17191b}
-.wz__ask{font-size:13.5px;line-height:1.5;color:#6b6d5f;margin:8px 2px 0;text-align:center}
 .wz__fit.is-on{background:#17191b;border-color:#17191b}
 .wz__fit.is-on b{color:#fff}
 .wz__fit.is-on i{color:rgba(255,255,255,.72)}
@@ -1946,8 +1945,6 @@ function paintFits(){
     if (bigP) bigP.innerHTML = euro(PRICE_BIG);
   }
 
-  const ask = $("fitAsk");
-  if (ask) ask.hidden = !mustPick;
   const add = $("add");
   if (add) add.disabled = mustPick;
   const why = $("wzWhyOff");
@@ -3130,7 +3127,7 @@ $("rweight").value = WEIGHT_DEFAULT;
        on the Booked screen is a choice about nothing. */
     var onAsk = (order[at] !== 'bag');
     if (fits) fits.hidden = !onAsk;
-    if (ask)  ask.hidden  = !onAsk || !$('add') || !$('add').disabled;
+  
     /* The list is never on screen during a booking, including the first
        screen. It shows on the bag screen, and otherwise only when asked for. */
     if (listpanel) {
@@ -3293,14 +3290,7 @@ $("rweight").value = WEIGHT_DEFAULT;
       '<b>Jumbo bag</b><i>a coat, a pair of boots, anything in your longer bag</i>' +
       '<em class="wz__fitp" id="fitBigP">&euro;12.95 &middot; city only</em>' +
     '</button>';
-  var ask = document.createElement('p');
-  ask.className = 'wz__ask';
-  ask.id = 'fitAsk';
-  ask.hidden = true;
-  ask.textContent = 'Which one is it? A bike cannot take a big bag, so we need to know before we send somebody.';
 
-  wrap.appendChild(fits);
-  wrap.appendChild(ask);
 
 
   var listBtn = null;
