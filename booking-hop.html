@@ -393,18 +393,29 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
    white working area, black header. Delete this block and the
    WIZARD-SCRIPT block at the foot to restore the original.
    ============================================================ */
+/* Depth without a second colour: the yellow is lit from above and falls away at
+   the edges, so the card sits in light rather than on a flat wall. Fixed, so it
+   does not slide as the page scrolls. */
 body{background:#FFCC00 !important}
+@media(min-width:720px){
+  body{
+    background:
+      radial-gradient(90% 60% at 50% -8%, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 62%),
+      radial-gradient(120% 90% at 50% 110%, rgba(140,98,0,.20) 0%, rgba(140,98,0,0) 55%),
+      #FFCC00 !important;
+    background-attachment:fixed !important;
+  }
+}
 /* 430px was right when this was a phone-only tool. At a desk it squeezed the
    two columns into a strip down the middle, so the cap now lifts once there is
    room for them. */
 .wrap{max-width:430px;margin-left:auto !important;margin-right:auto !important;
   padding:18px 14px 70px}
+
 @media(min-width:980px){
-  /* it sat tight to the top of the window at desk width */
-  .wrap{padding-top:40px}
-}
-@media(min-width:980px){
-  .wrap{max-width:1160px}
+  /* one column, a little wider than a phone and no wider. 1160 was left over
+     from the two-column attempt and was overriding the real figure. */
+  .wrap{max-width:560px;padding-top:40px}
 }
 .top{display:none}
 
@@ -3232,15 +3243,12 @@ $("rweight").value = WEIGHT_DEFAULT;
      last night's orders, so the record of what they have done belongs beside
      the form rather than behind a button. Below 980px this does nothing and the
      page stacks exactly as it does on a phone. */
-  var main = document.createElement('div');
-  main.className = 'wz__main';
-  var side = document.createElement('aside');
-  side.className = 'wz__side';
-
   /* One place to answer "what have I booked". Today comes from this browser, so
      it keeps the print labels and the live status; anything older comes from the
-     sheet. Two buttons for the same question read as two different things. */
-  if (listBtn) listBtn.hidden = true;
+     sheet. Two buttons for the same question read as two different things, so
+     the old one is taken out rather than hidden - hidden it kept coming back
+     when the list repainted. */
+  if (listBtn && listBtn.parentNode) listBtn.parentNode.removeChild(listBtn);
   if (listpanel) pastPanel.parentNode.insertBefore(listpanel, pastPanel);
 
   past.addEventListener('click', function(){
@@ -3395,10 +3403,10 @@ $("rweight").value = WEIGHT_DEFAULT;
     return document.querySelectorAll('#list .bagref').length;
   }
   function paintList() {
-    if (!listpanel || !listBtn) return;
+    if (!listpanel) return;
     listpanel.style.display = listOpen ? '' : 'none';
     var n = countToday();
-    listBtn.innerHTML = '<span>Today\u2019s collections</span><em>' +
+    if (listBtn) listBtn.innerHTML = '<span>Today\u2019s collections</span><em>' +
       (n ? n + (n === 1 ? ' booking' : ' bookings') : 'none yet') +
       '</em><i>' + (listOpen ? '\u2013' : '+') + '</i>';
   }
