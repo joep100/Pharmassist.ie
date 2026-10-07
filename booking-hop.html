@@ -29,14 +29,7 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
   font-size:18px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:980px;margin:0 auto;padding:26px 22px 90px}
 
-/* One column throughout, a little wider at a desk than on a phone. */
-@media(min-width:980px){
-  .wrap{max-width:560px}
-  .wz__hat{padding-bottom:38px}
-  .wz__home img{height:76px}
-  .wz__who{font-size:15px}
-  .wz__who b{font-size:23px}
-}
+
 
 
 .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
@@ -657,6 +650,16 @@ h1,h2,h3,h4,b,strong,.wz__q,.wz__list span,.wz__fit b,.wz__pastrow b,.wz__pastfe
 .btn,.wz__next,.gate h1,.gate h2{font-family:"Nunito",system-ui,sans-serif}
 #eir,#code,.bagref,.wz__price b,.mono,[class*="mono"]{
   font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+/* Last in the sheet on purpose: these override the phone sizes above, and a rule
+   that comes first loses however specific it is. */
+@media(min-width:980px){
+  .wrap{max-width:560px;padding-top:40px}
+  .wz__hat{padding-bottom:38px}
+  .wz__hat img,.wz__home img{height:76px;width:auto}
+  .wz__who{font-size:15px}
+  .wz__who b{font-size:23px}
+}
 </style>
 </head>
 <body>
@@ -3173,7 +3176,7 @@ $("rweight").value = WEIGHT_DEFAULT;
   }
 
   /* ---------- the day's list, behind a toggle ---------- */
-  var listOpen = window.matchMedia('(min-width:980px)').matches;
+  var listOpen = false;
 
   /* What fits, in two tiles. The size question is gone from the flow, so this
      is the only place staff are told. Quiet, permanent, out of the way. */
@@ -3407,12 +3410,7 @@ $("rweight").value = WEIGHT_DEFAULT;
      paintList runs once at setup, so this is the point the default takes hold. */
   paintList();
 
-  if (window.matchMedia('(min-width:980px)').matches && pastOpen === false) {
-    pastOpen = true;
-    pastPanel.style.display = '';
-    past.querySelector('i').innerHTML = '&#8211;';
-    if (pastRows === null && !pastBusy) fetchPast();
-  }
+
 
   show(0);
 })();
