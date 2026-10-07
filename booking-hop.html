@@ -394,8 +394,14 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
    WIZARD-SCRIPT block at the foot to restore the original.
    ============================================================ */
 body{background:#FFCC00 !important}
-.wrap{max-width:430px !important;margin-left:auto !important;margin-right:auto !important;
+/* 430px was right when this was a phone-only tool. At a desk it squeezed the
+   two columns into a strip down the middle, so the cap now lifts once there is
+   room for them. */
+.wrap{max-width:430px;margin-left:auto !important;margin-right:auto !important;
   padding:18px 14px 70px}
+@media(min-width:980px){
+  .wrap{max-width:1160px}
+}
 .top{display:none}
 
 .wz{background:#fff;border:0;border-radius:18px;overflow:hidden;
