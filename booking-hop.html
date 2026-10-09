@@ -846,10 +846,10 @@ h1,h2,h3,h4,b,strong,.wz__q,.wz__list span,.wz__fit b,.wz__pastrow b,.wz__pastfe
       <div class="auth">
         <label>
           <input type="checkbox" id="rleave">
-          <span>The customer has asked us to leave it if nobody answers, and has said where.</span>
+          <span>The customer has given us permission to leave the item.</span>
         </label>
-        <p class="auth__note">Only tick this if the customer asked themselves. Say exactly where in
-          the notes.</p>
+        <p class="auth__note">Only tick this if they said so themselves. Put the details in the
+          notes below.</p>
       </div>
       <div class="f">
         <label for="rpkgs">Bags</label>
@@ -3197,13 +3197,17 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   /* 4 — Anything else */
   var sMore = screen('more');
-  ask(sMore, 'Anything else?', 'All optional. Leave blank and carry on.');
-  move(fieldOf('rnotes'), sMore);
-  move(fieldOf('rref'), sMore);
+  ask(sMore, 'Anything else?', 'Both optional. Leave blank and carry on.');
+  /* Just the permission and the notes. Your reference, number of bags and total
+     weight were three more things to read past on every booking, and one order
+     is one bag - if that stops being true they come back. The fields stay in
+     the form, hidden, so nothing downstream has to change. */
   var auth = document.querySelector('.auth');
   move(auth, sMore);
-  move(fieldOf('rpkgs'), sMore);
-  move(fieldOf('rweight'), sMore);
+  move(fieldOf('rnotes'), sMore);
+  [fieldOf('rref'), fieldOf('rpkgs'), fieldOf('rweight')].forEach(function(el){
+    if (el) el.hidden = true;
+  });
   var goMore = nav(sMore, 'Next', 'wzGoMore');
 
   /* 5 — Confirm */
