@@ -617,6 +617,10 @@ body{background:#FFCC00 !important}
 .wz__pastsum{font-size:14px;color:#4a4a4a;padding:12px 0 10px;
   border-bottom:1px solid rgba(23,25,27,.1)}
 .wz__pastsum b{color:#17191b;font-weight:800}
+.wz__csv{float:right;background:#fff;border:1px solid rgba(23,25,27,.22);border-radius:9px;
+  padding:5px 12px;font-family:"Nunito",system-ui,sans-serif;font-size:12.5px;
+  font-weight:800;color:#17191b;cursor:pointer;margin-top:-3px}
+.wz__csv:hover{background:#17191b;border-color:#17191b;color:#FFCC00}
 .wz__pastrow{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
   padding:11px 0;border-bottom:1px solid rgba(23,25,27,.07)}
 .wz__pastrow:last-child{border-bottom:0}
@@ -3667,6 +3671,45 @@ $("rweight").value = WEIGHT_DEFAULT;
     return d >= Date.now() - pastDays * 86400000;
   }
 
+  /* The period on screen, not everything. Somebody checking an invoice has
+     already chosen the month they are checking; handing them the lot would mean
+     filtering it again at the other end. */
+  function downloadCsv(){
+    var rows = (pastRows || []).filter(inPeriod);
+    if (!rows.length) return;
+
+    function cell(v){
+      var s = String(v == null ? '' : v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    var out = [['Booked', 'Reference', 'Job', 'Customer', 'Address',
+                'Fee ex VAT', 'Status', 'Status at'].join(',')];
+    rows.forEach(function(r){
+      var d = new Date(r.bookedAt);
+      out.push([
+        cell(isNaN(d) ? r.bookedAt : d.toISOString().slice(0, 16).replace('T', ' ')),
+        cell(r.reference), cell(r.tracking), cell(r.customer), cell(r.address),
+        cell(String(r.fee).replace(/[^0-9.]/g, '')),
+        cell(r.status), cell(r.statusAt)
+      ].join(','));
+    });
+
+    var lbl = PERIODS.filter(function(x){ return x[0] === pastDays; })[0][1]
+                .toLowerCase().replace(/\s+/g, '-');
+    var name = (SHOP.slug || 'bookings') + '-' + lbl + '-' +
+               new Date().toISOString().slice(0, 10) + '.csv';
+
+    /* The BOM keeps Excel from mangling accented names. */
+    var blob = new Blob(['\ufeff' + out.join('\r\n')],
+                        { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
   function rowHtml(r){
       var d = new Date(r.bookedAt);
       var when = isNaN(d) ? '' :
@@ -3708,6 +3751,9 @@ $("rweight").value = WEIGHT_DEFAULT;
           if (pastDays === -1 && typeof paintList === 'function') paintList();
           paintPast();
         });
+      var csv = pastPanel.querySelector('.wz__csv');
+      if (csv) csv.addEventListener('click', function(){ downloadCsv(); });
+
       var more = pastPanel.querySelector('.wz__more');
       if (more) more.addEventListener('click', function(){
         pastShown += PAGE; paintPast();
@@ -3752,7 +3798,8 @@ $("rweight").value = WEIGHT_DEFAULT;
 
     var head = '<div class="wz__pastsum"><b>' + real.length + '</b> ' +
       (real.length === 1 ? 'delivery' : 'deliveries') +
-      ' &middot; <b>\u20ac' + total.toFixed(2) + '</b> before VAT</div>';
+      ' &middot; <b>\u20ac' + total.toFixed(2) + '</b> before VAT' +
+      '<button type="button" class="wz__csv">Download</button></div>';
 
     var body = show.slice(0, pastShown).map(rowHtml).join('');
     /* One renderer, used by the period lists and by the "also booked today"
