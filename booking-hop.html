@@ -1851,7 +1851,7 @@ function priceAt(lat, lng){
   let best = null, zone = null;
   for (const z of PZONES){
     for (const ring of z.p){
-      if (inRing(lng, lat, ring)){
+      if (inRingPairs(lng, lat, ring)){
         if (best === null || z.e > best){ best = z.e; zone = z.n; }
         break;
       }
@@ -1860,7 +1860,13 @@ function priceAt(lat, lng){
   return best === null ? null : { price: best, zone: zone };
 }
 
-function inRing(x, y, ring){
+/* Named apart from inRing above on purpose. That one takes a flat list of
+   alternating lng,lat, which is how CARGO_ZONES stores its rings; this one takes
+   pairs, which is how the priced zones store theirs. Two functions of the same
+   name meant the second quietly replaced the first, and every cargo-zone test
+   started failing - the jumbo tile vanished on addresses that should have had
+   it. */
+function inRingPairs(x, y, ring){
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++){
     const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
