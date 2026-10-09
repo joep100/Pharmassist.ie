@@ -3610,10 +3610,13 @@ $("rweight").value = WEIGHT_DEFAULT;
   function showPast(){
     var today = (pastDays === -1);
     pastPanel.style.display = pastOpen ? '' : 'none';
+    /* The browser's own list sits above on Today, because it has the print
+       labels and the live status. But it only knows what was booked on THIS
+       machine - a job booked at the back office is simply absent. So the sheet
+       is fetched for Today as well, and anything it has that the browser does
+       not is shown underneath. */
     if (listpanel) listpanel.style.display = (pastOpen && today) ? '' : 'none';
-    /* Repaint whenever the panel is open. It used to repaint only on Today,
-       so switching to Yesterday with the rows already fetched changed nothing
-       on screen - the chip moved and the list did not. */
+    if (pastOpen && pastRows === null && !pastBusy) fetchPast();
     if (pastOpen && (today || pastRows !== null)) paintPast();
   }
 
@@ -3660,6 +3663,27 @@ $("rweight").value = WEIGHT_DEFAULT;
     return d >= Date.now() - pastDays * 86400000;
   }
 
+  function rowHtml(r){
+      var d = new Date(r.bookedAt);
+      var when = isNaN(d) ? '' :
+        d.toLocaleDateString('en-IE', { day:'numeric', month:'short' });
+      var fee = parseFloat(String(r.fee).replace(/[^0-9.]/g, ''));
+      var ref = [r.reference, r.tracking ? 'job ' + r.tracking : ''].filter(Boolean).join(' \u00b7 ');
+      return '<div class="wz__pastrow">' +
+        '<div class="wz__pastm">' +
+          (ref ? '<u>' + esc(ref) + '</u>' : '') +
+          '<b>' + esc(r.customer || '\u2014') + '</b>' +
+          (r.practice === 'practice' ? ' <em>practice</em>' : '') +
+          '<span>' + esc(r.address || '') + '</span></div>' +
+        '<div class="wz__pastfee">' + (isFinite(fee) ? '\u20ac' + fee.toFixed(2) : '') +
+          '<span>' + when + '</span>' +
+          (r.status ? '<b class="wz__pastst">' + esc(r.status) +
+             (r.statusAt ? ' <span>' + esc(atTime(r.statusAt)) + '</span>' : '') +
+           '</b>' : '') +
+        '</div>' +
+      '</div>';
+      }
+
   function paintPast(){
     var chips = '<div class="wz__chips">' + PERIODS.map(function(pr){
       return '<button type="button" class="wz__chip' +
@@ -3687,10 +3711,21 @@ $("rweight").value = WEIGHT_DEFAULT;
       });
     }
 
-    /* On Today the chips are all this panel holds; the list itself is the
-       browser's own, sitting just above. */
+    /* On Today the browser's own list is above, so this shows only what the
+       sheet has that the browser does not - a job booked somewhere else. */
     if (pastDays === -1) {
-      pastPanel.innerHTML = chips;
+      var mine = {};
+      document.querySelectorAll('#list .bagref').forEach(function(el){
+        mine[(el.textContent || '').trim()] = true;
+      });
+      var elsewhere = (pastRows || []).filter(function(r){
+        if (!inPeriod(r)) return false;
+        return !mine[String(r.reference || '').trim()];
+      });
+      if (!elsewhere.length) { pastPanel.innerHTML = chips; wire(); return; }
+      pastPanel.innerHTML = chips +
+        '<p class="wz__pastnote">Also booked today, from another device:</p>' +
+        elsewhere.map(rowHtml).join('');
       wire(); return;
     }
 
@@ -3715,26 +3750,10 @@ $("rweight").value = WEIGHT_DEFAULT;
       (real.length === 1 ? 'delivery' : 'deliveries') +
       ' &middot; <b>\u20ac' + total.toFixed(2) + '</b> before VAT</div>';
 
-    var body = show.slice(0, pastShown).map(function(r){
-      var d = new Date(r.bookedAt);
-      var when = isNaN(d) ? '' :
-        d.toLocaleDateString('en-IE', { day:'numeric', month:'short' });
-      var fee = parseFloat(String(r.fee).replace(/[^0-9.]/g, ''));
-      var ref = [r.reference, r.tracking ? 'job ' + r.tracking : ''].filter(Boolean).join(' \u00b7 ');
-      return '<div class="wz__pastrow">' +
-        '<div class="wz__pastm">' +
-          (ref ? '<u>' + esc(ref) + '</u>' : '') +
-          '<b>' + esc(r.customer || '\u2014') + '</b>' +
-          (r.practice === 'practice' ? ' <em>practice</em>' : '') +
-          '<span>' + esc(r.address || '') + '</span></div>' +
-        '<div class="wz__pastfee">' + (isFinite(fee) ? '\u20ac' + fee.toFixed(2) : '') +
-          '<span>' + when + '</span>' +
-          (r.status ? '<b class="wz__pastst">' + esc(r.status) +
-             (r.statusAt ? ' <span>' + esc(atTime(r.statusAt)) + '</span>' : '') +
-           '</b>' : '') +
-        '</div>' +
-      '</div>';
-    }).join('');
+    var body = show.slice(0, pastShown).map(rowHtml).join('');
+    /* One renderer, used by the period lists and by the "also booked today"
+       rows, so the two cannot drift apart. */
+
 
     /* Twenty at a time. The totals above are the whole period either way, so a
        shop checking an invoice never has to load three hundred rows to read a
