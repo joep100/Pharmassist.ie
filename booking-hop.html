@@ -3639,6 +3639,7 @@ $("rweight").value = WEIGHT_DEFAULT;
         pastBusy = false;
         pastRows = (d && d.ok && d.rows) ? d.rows : [];
         paintPast();
+        fillBlanks();
       })
       .catch(function(){
         pastBusy = false;
@@ -3708,6 +3709,49 @@ $("rweight").value = WEIGHT_DEFAULT;
     document.body.appendChild(a); a.click();
     document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* A job only writes its status back if the tab happened to be open when it
+     settled - which it usually is not, so most rows are blank. This asks about
+     the ones that are still unanswered, writes what it learns to the sheet, and
+     repaints.
+
+     Capped, because each one is a call to Clickacourier: the twenty most recent
+     unanswered jobs, which is a morning's work rather than three months of it. */
+  var fillRan = false;
+  function fillBlanks(){
+    if (fillRan || !pastRows || !STATUS_URL) return;
+    fillRan = true;
+
+    var todo = pastRows
+      .filter(function(r){ return r.tracking && !r.status && r.practice !== 'practice'; })
+      .slice(0, 20);
+    if (!todo.length) return;
+
+    var left = todo.length;
+    todo.forEach(function(r){
+      fetch(STATUS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackingNumber: r.tracking, shop: SHOP.slug || slug })
+      })
+      .then(function(res){ return res.json(); })
+      .then(function(d){
+        if (d && d.ok && d.description) {
+          r.status = d.description;
+          r.statusAt = d.at || '';
+          /* back to the sheet, so the next person to look does not ask again */
+          fetch(NOTIFY_URL + '?update=1', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            keepalive: true,
+            body: JSON.stringify({ tracking: r.tracking, status: r.status, statusAt: r.statusAt })
+          }).catch(function(){});
+        }
+      })
+      .catch(function(){})
+      .then(function(){ if (--left === 0) paintPast(); });
+    });
   }
 
   function rowHtml(r){
