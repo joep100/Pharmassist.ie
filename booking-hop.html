@@ -2495,6 +2495,10 @@ $("add").onclick = () => {
     justBooked.tracking = null;
     draw();            /* the row was drawn a moment ago, before this was set */
     save();
+    /* Recorded too, tagged as practice. A shop trying the tool for the first
+       time is exactly the thing worth knowing about, and without this it leaves
+       no trace anywhere. It never reaches Clickacourier either way. */
+    notify(justBooked);
   } else if(CREATE_BOOKING){
     sendBooking(justBooked);
   }
