@@ -1,0 +1,118 @@
+/* api/track.js — the public version of the status lookup.
+ *
+ * The same call to Clickacourier as api/status.js, and the same reading of the
+ * event descriptions, but it answers with a stage and nothing else.
+ *
+ * Nothing it returns identifies anybody. Not the driver, not the signer, not
+ * the address, not the shop. That is what lets this sit on a page with no sign
+ * in and no second factor: somebody guessing a reference learns that a parcel
+ * somewhere is on a van, which tells them nothing about anyone.
+ *
+ * Do not add detail to this endpoint without thinking that through again. Every
+ * extra field is a field a stranger can read.
+ */
+
+/* The same base as api/status.js. An earlier version of this file had an
+   invented address, so every call failed and every answer was "not found". If
+   this ever stops working, check it still matches status.js. */
+const API = "https://booking-api.cyclonegroup.ie/click_ext";
+
+/* Keyed by slug, same variable the shop status lookup uses. Any one of them can
+ * be asked about any of its own jobs; the account is inferred from the number
+ * rather than supplied, so a caller cannot choose which account to search. */
+function accounts() {
+  try { return JSON.parse(process.env.CYCLONE_STATUS_UUIDS || "{}"); }
+  catch { return {}; }
+}
+
+const STAGE = { none: 0, onway: 1, collected: 2, atbase: 3, outfor: 4, done: 5, bad: 6 };
+
+/* Read the descriptions, not the event types - the types proved unreliable. */
+function readEvents(events) {
+  let stage = STAGE.none, at = null, seenBase = false;
+  for (const e of events || []) {
+    const s = String(e.description || "").toLowerCase();
+    let reached = null;
+
+    if (/cancel|fail|unable|refus/.test(s))                      { reached = STAGE.bad; }
+    else if (/deliver(ed)?|signed by/.test(s))                   { reached = STAGE.done; }
+    else if (/returned to base|back to base/.test(s))            { reached = STAGE.atbase; seenBase = true; }
+    else if (/collect(ed)?|picked up/.test(s))                   { reached = seenBase ? STAGE.outfor : STAGE.collected; }
+    else if (/despatch|dispatch|assigned|accepted|on the way/.test(s)) { reached = STAGE.onway; }
+
+    /* Only ever forward: a late event for an earlier leg cannot drag a
+       delivered parcel back to collected. */
+    if (reached !== null && reached > stage) { stage = reached; at = e.at || null; }
+    else if (reached === stage) { at = e.at || at; }
+  }
+  return { stage, at };
+}
+
+/* Four words, and no names. The shop-facing version says "James has it" and
+   "Signed by Joe"; neither belongs on a page anyone can open. */
+function wordFor(stage) {
+  switch (stage) {
+    case STAGE.done:      return "Delivered";
+    case STAGE.outfor:    return "Out for delivery";
+    case STAGE.atbase:    return "On the way";
+    case STAGE.collected: return "Collected";
+    case STAGE.onway:     return "On the way";
+    case STAGE.bad:       return "Could not be delivered";
+    default:              return "Booked";
+  }
+}
+
+export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+
+  const ref = String((req.query && req.query.ref) || "").replace(/[^0-9]/g, "").slice(0, 12);
+  if (!ref) return res.status(400).json({ ok: false, error: "no reference" });
+
+  const uuids = Object.values(accounts());
+  if (!uuids.length) return res.status(500).json({ ok: false, error: "not configured" });
+
+  const key = process.env.CYCLONE_API_KEY;
+  if (!key) return res.status(500).json({ ok: false, error: "not configured" });
+
+  /* Try each account until one recognises the number. A caller cannot say which
+     account to look in, so they cannot use this to probe a particular shop. */
+  for (const uuid of uuids) {
+    try {
+      /* GET with both in the path, the same as api/status.js. An earlier
+         version of this file posted them as JSON and every call failed
+         silently, which looked exactly like a job that did not exist. */
+      const url = API + "/BookingStatus/" +
+        encodeURIComponent(ref) + "/" + encodeURIComponent(uuid);
+      const r = await fetch(url, {
+        method: "GET",
+        headers: { "X-API-Key": key, "Accept": "application/json" }
+      });
+      if (!r.ok) continue;                      /* 404 here means this account does not have it */
+      const text = await r.text();
+      let d = null;
+      try { d = text ? JSON.parse(text) : null; } catch { continue; }
+      if (!d) continue;
+
+      /* A job with no events is one that is booked and waiting, which is most
+         of them between the shop booking it and the 2pm collection. Saying
+         "nothing on that number" there would be wrong and would worry the very
+         customer most likely to be checking.
+
+         This does mean a caller can tell an existing number from a made-up one,
+         which the earlier version hid. The trade is worth it: knowing a job
+         exists reveals nothing about anybody, and the alternative tells a
+         waiting customer their delivery does not exist. */
+      const st = readEvents(d.events || []);
+      return res.status(200).json({
+        ok: true,
+        status: wordFor(st.stage),
+        at: st.at || null
+        /* and nothing else */
+      });
+    } catch { /* try the next account */ }
+  }
+
+  /* The same answer whether the number is wrong or simply has no events yet.
+     Telling the two apart would let somebody map which numbers exist. */
+  return res.status(200).json({ ok: false, status: "Not found" });
+}
