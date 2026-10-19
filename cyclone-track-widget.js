@@ -22,7 +22,7 @@
 
   var script = document.currentScript;
   var API    = (script && script.getAttribute('data-api')) || '/api/track';
-  var PHONE  = (script && script.getAttribute('data-phone')) || '01 425 5722';
+  var PHONE  = (script && script.getAttribute('data-phone')) || '01 475 7000';
   var NOBTN  = script && script.hasAttribute('data-no-button');
 
   /* A font inside a shadow root still has to be loaded by the page: the shadow
