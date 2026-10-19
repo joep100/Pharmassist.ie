@@ -25,6 +25,20 @@
   var PHONE  = (script && script.getAttribute('data-phone')) || '01 425 5722';
   var NOBTN  = script && script.hasAttribute('data-no-button');
 
+  /* A font inside a shadow root still has to be loaded by the page: the shadow
+     keeps styles out, not fonts in. Without this the widget silently takes
+     whatever the host site uses, which on somebody else's shop is anything at
+     all. Skipped if the page already has it. */
+  if (!document.querySelector('link[href*="Inter+Tight"]')) {
+    var pre = document.createElement('link');
+    pre.rel = 'preconnect'; pre.href = 'https://fonts.gstatic.com'; pre.crossOrigin = '';
+    document.head.appendChild(pre);
+    var fl = document.createElement('link');
+    fl.rel = 'stylesheet';
+    fl.href = 'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap';
+    document.head.appendChild(fl);
+  }
+
   var host = document.createElement('div');
   host.style.cssText = 'all:initial;position:fixed;z-index:2147483000';
   document.body.appendChild(host);
@@ -33,7 +47,7 @@
   root.innerHTML = [
     '<style>',
     ':host{all:initial}',
-    '*{box-sizing:border-box;font-family:"Nunito",system-ui,-apple-system,sans-serif}',
+    '*{box-sizing:border-box;font-family:"Inter Tight",system-ui,-apple-system,sans-serif}',
 
     '.launch{position:fixed;right:18px;bottom:18px;background:#17191b;color:#fff;',
     '  border:0;border-radius:13px;padding:13px 20px;font-size:15px;font-weight:800;',
@@ -68,14 +82,12 @@
     '.out[hidden]{display:none}',
     '.out b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em;',
     '  color:#FFCC00;margin-bottom:3px}',
-    '.out span{display:block;font-size:14px;color:rgba(255,255,255,.8);',
-    '  font-family:system-ui,sans-serif}',
+    '.out span{display:block;font-size:14px;color:rgba(255,255,255,.8)}',
     '.out.miss{background:#FFF3C4;color:#17191b}',
     '.out.miss b{color:#17191b;font-size:18px}',
     '.out.miss span{color:#6b5a2a}',
 
-    '.foot{margin:16px 0 0;font-size:13px;color:#8a6a2a;text-align:center;',
-    '  font-family:system-ui,sans-serif}',
+    '.foot{margin:16px 0 0;font-size:13px;color:#8a6a2a;text-align:center}',
     '.foot a{color:inherit;font-weight:700}',
     '</style>',
 
