@@ -353,6 +353,10 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
 .b-print{background:#fff;border:1px solid var(--line-dk);color:var(--head);border-radius:8px;
   padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;margin-left:auto}
 .b-print:hover{border-color:var(--brand);color:var(--brand)}
+.b-zpl{background:#fff;border:1px solid var(--line-dk);color:var(--head);border-radius:8px;
+  font-family:var(--sans);font-size:12.5px;font-weight:700;padding:6px 12px;cursor:pointer;
+  margin-left:6px}
+.b-zpl:hover{border-color:var(--brand);color:var(--brand)}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,18px);background:var(--ink);
   color:#fff;padding:12px 22px;border-radius:11px;font-size:14px;font-weight:500;opacity:0;
@@ -2710,6 +2714,9 @@ function draw(){
         '<span class="job__name">'+esc(b.name)+'</span>' +
         '<span class="job__mob">'+esc(b.mobile)+'</span>' +
         '<button class="b-print" data-p="'+i+'" title="Print a label for this bag">Print label</button>' +
+      /* Only for shops with a Zebra: everyone else prints the page. Set
+         zpl:true in the shop sheet to turn it on. */
+      (SHOP.zpl ? '<button class="b-zpl" data-z="'+i+'" title="Download a ZPL file for a Zebra printer">ZPL</button>' : '') +
         /* No X on a job that went. It exists at Clickacourier and in our own
            record, so an X there promises a cancellation we cannot do - and a
            shop would reasonably read it as one. Something that failed or was
@@ -2734,6 +2741,9 @@ function draw(){
   $("list").querySelectorAll(".b-print").forEach(b => {
     b.onclick = () => printLabel(bookings[+b.dataset.p]);
   });
+  $("list").querySelectorAll(".b-zpl").forEach(b => {
+    b.onclick = () => downloadZpl(bookings[+b.dataset.z]);
+  });
   /* A failed booking is already on the list with everything it needs, so a
      retry costs nothing and saves retyping a customer's details. */
   $("list").querySelectorAll(".b-retry").forEach(b => {
@@ -2744,6 +2754,125 @@ function draw(){
 
 /* One label, one bag. The reference is set largest because it is the only thing
    that ties this label to the bag it belongs to on a run of twenty. */
+
+/* ---------- the label as ZPL ----------
+   For shops with a Zebra label printer, which wants its own command language
+   rather than a printed page. ZPL is plain text: ^XA opens, ^XZ closes, and
+   everything between places text at a position in dots.
+
+   Built for a 4x6 inch label at 203 dpi, which is what most desktop Zebras are.
+   At 300 dpi every coordinate below wants multiplying by 1.5, and for a smaller
+   label the width and the wrap counts come down. Both are one-line changes but
+   neither can be guessed - ask the shop what printer and what label.
+
+   The file downloads rather than printing directly: a browser cannot talk to a
+   printer, so the shop sends the .zpl to it the way they send any other file. */
+const ZPL_DPI   = 203;
+const ZPL_W     = 4 * ZPL_DPI;      /* 4 inch across */
+const ZPL_H     = 6 * ZPL_DPI;      /* 6 inch down   */
+
+function zplEsc(s){
+  /* ^ and ~ are ZPL's own control characters, and a caret in an address would
+     otherwise be read as a command. */
+  return String(s == null ? '' : s).replace(/[\^~]/g, ' ');
+}
+
+/* ZPL has no word wrap of its own worth using, so lines are broken here. */
+function zplWrap(s, width){
+  const words = String(s || '').split(/\s+/).filter(Boolean);
+  const out = []; let line = '';
+  for (const w of words){
+    if (!line) { line = w; }
+    else if ((line + ' ' + w).length <= width) { line += ' ' + w; }
+    else { out.push(line); line = w; }
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+function labelZpl(b){
+  if (!b) return '';
+  const L = [];
+  let y = 40;
+
+  L.push('^XA');
+  L.push('^PW' + ZPL_W);
+  L.push('^LL' + ZPL_H);
+  L.push('^LH0,0');
+  L.push('^CI28');                 /* UTF-8, so Dun Laoghaire prints properly */
+
+  /* the bag reference, big */
+  L.push('^FO30,' + y + '^A0N,70,70^FD' + zplEsc(b.bag) + '^FS');
+  y += 86;
+
+  if (b.tracking){
+    L.push('^FO30,' + y + '^A0N,34,34^FDJob ' + zplEsc(b.tracking) + '^FS');
+    y += 46;
+    /* a Code 128 of the job number, so a rider can scan rather than read */
+    L.push('^FO30,' + y + '^BY2^BCN,70,N,N,N^FD' + zplEsc(b.tracking) + '^FS');
+    y += 86;
+  }
+
+  L.push('^FO30,' + y + '^GB' + (ZPL_W - 60) + ',3,3^FS');
+  y += 26;
+
+  L.push('^FO30,' + y + '^A0N,52,52^FD' + zplEsc(b.name) + '^FS');
+  y += 64;
+
+  const line1 = [b.unit, b.addr1].filter(Boolean).join(', ');
+  for (const ln of zplWrap(line1, 30)){
+    L.push('^FO30,' + y + '^A0N,38,38^FD' + zplEsc(ln) + '^FS');
+    y += 46;
+  }
+
+  const tail = zplEsc(b.eircode) + (b.area ? '  ' + zplEsc(b.area) : '');
+  L.push('^FO30,' + y + '^A0N,42,42^FD' + tail + '^FS');
+  y += 58;
+
+  if (b.mobile){
+    L.push('^FO30,' + y + '^A0N,38,38^FD' + zplEsc(b.mobile) + '^FS');
+    y += 52;
+  }
+
+  if (b.notes){
+    y += 10;
+    for (const ln of zplWrap(b.notes, 34)){
+      L.push('^FO30,' + y + '^A0N,32,32^FD' + zplEsc(ln) + '^FS');
+      y += 40;
+    }
+  }
+
+  if (b.leave){
+    y += 6;
+    for (const ln of zplWrap('Customer has authorised leaving it. See note above.', 34)){
+      L.push('^FO30,' + y + '^A0N,32,32^FD' + zplEsc(ln) + '^FS');
+      y += 40;
+    }
+  }
+
+  /* the foot, pinned to the bottom rather than following the content */
+  const foot = zplEsc(SHOP.name) + '  ' +
+    new Date().toLocaleDateString('en-IE', { day:'numeric', month:'short', year:'numeric' }) +
+    '  Cyclone';
+  L.push('^FO30,' + (ZPL_H - 70) + '^A0N,28,28^FD' + foot + '^FS');
+
+  L.push('^XZ');
+  return L.join('\n');
+}
+
+function downloadZpl(b){
+  const text = labelZpl(b);
+  if (!text) return;
+  const blob = new Blob([text], { type: 'application/octet-stream' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = (b.bag || 'label') + '.zpl';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+window.hopZpl = downloadZpl;
+
 function printLabel(b){
   if(!b) return;
   const line = [b.unit, b.addr1].filter(Boolean).join(", ");
