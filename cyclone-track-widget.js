@@ -11,7 +11,10 @@
  * whatever you like:
  *
  *   <script src="..." data-no-button><\/script>
- *   <a href="#" onclick="cycloneTrack(); return false;">Track a delivery</a>
+ *   <a href="#" onclick="cycloneTrack(); return false;">Track Delivery</a>
+ *
+ * The "Talk to our team" link at the foot of the pop-up opens Intercom if it is
+ * on the page. If Intercom is not there it falls back to ringing the office.
  *
  * Everything lives in a shadow root, so the host page's CSS cannot reach in and
  * this cannot leak out. Dropping it onto a site built by somebody else should
@@ -88,18 +91,18 @@
     '.out.miss span{color:#6b5a2a}',
 
     '.foot{margin:16px 0 0;font-size:13px;color:#8a6a2a;text-align:center}',
-    '.foot a{color:inherit;font-weight:700}',
+    '.foot a{color:inherit;font-weight:700;cursor:pointer}',
     '</style>',
 
-    '<button class="launch" part="launch">Track a delivery</button>',
-    '<div class="veil"><div class="box" role="dialog" aria-modal="true" aria-label="Track a delivery">',
+    '<button class="launch" part="launch">Track Delivery</button>',
+    '<div class="veil"><div class="box" role="dialog" aria-modal="true" aria-label="Track Delivery">',
     '  <button class="x" aria-label="Close">&times;</button>',
-    '  <h2>Track a delivery</h2>',
-    '  <label for="r">Job number</label>',
+    '  <h2>Track Delivery</h2>',
+    '  <label for="r">Booking Number</label>',
     '  <input id="r" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="11097627">',
-    '  <button class="go">Check</button>',
+    '  <button class="go">Track</button>',
     '  <div class="out" hidden></div>',
-    '  <p class="foot">Something not right? Ring <a href="tel:' + PHONE.replace(/\s/g, '') + '">' + PHONE + '</a>.</p>',
+    '  <p class="foot">Something not right? <a class="chat" href="#">Talk to our team</a>.</p>',
     '</div></div>'
   ].join('');
 
@@ -147,7 +150,7 @@
       })
       .catch(function () {
         go.disabled = false;
-        show('miss', 'Could not check just now', 'Try again in a moment, or ring ' + PHONE + '.');
+        show('miss', 'Could not check just now', 'Try again in a moment, or talk to our team.');
       });
   }
 
@@ -159,8 +162,18 @@
   }
   function close() { veil.classList.remove('on'); }
 
+  /* "Talk to our team": close the pop-up and open Intercom. If Intercom is not
+     on the page, ring the office instead so the link always does something. */
+  function chat(e) {
+    e.preventDefault();
+    close();
+    if (typeof window.Intercom === 'function') window.Intercom('show');
+    else location.href = 'tel:' + PHONE.replace(/\s/g, '');
+  }
+
   launch.addEventListener('click', function () { open(); });
   root.querySelector('.x').addEventListener('click', close);
+  root.querySelector('.chat').addEventListener('click', chat);
   veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
   box.addEventListener('click', function (e) { e.stopPropagation(); });
   document.addEventListener('keydown', function (e) {
