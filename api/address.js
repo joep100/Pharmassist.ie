@@ -90,6 +90,11 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "An Eircode is seven characters." });
   }
 
+  /* Let other pages call this, including a file opened from a desktop. The
+     lookup only reads a public Eircode and never exposes the key, so there is
+     nothing here worth guarding against. */
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
   const key = process.env.CYCLONE_API_KEY;
   if (!key) {
     return res.status(500).json({ error: "CYCLONE_API_KEY is not set in Vercel." });
