@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eircode lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14181C; --head:#20262B; --body:#5C656D; --faint:#929BA2;
+  --line:#E4E7EA; --paper:#F6F7F8; --brand:#E34C2F; --go:#1E7B45; --bad:#A83232;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 22px 80px}
+
+h1{font-size:24px;font-weight:600;color:var(--head);letter-spacing:-.02em;margin:0 0 5px}
+.lede{margin:0 0 24px;font-size:15.5px;max-width:70ch}
+
+.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px 24px;
+  margin-bottom:16px}
+label{display:block;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:8px}
+textarea{width:100%;min-height:150px;font-family:var(--mono);font-size:15px;line-height:1.7;
+  color:var(--head);border:1.5px solid var(--line);border-radius:6px;padding:13px 15px;
+  resize:vertical}
+textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(227,76,47,.15)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+button{font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;border-radius:6px;
+  padding:12px 22px;border:1.5px solid transparent}
+.b-go{background:var(--ink);color:#fff}
+.b-go:disabled{opacity:.5;cursor:default}
+.b-ghost{background:#fff;border-color:var(--line);color:var(--head)}
+.count{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--faint)}
+
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);padding:0 12px 9px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 12px 11px 0;border-bottom:1px solid var(--paper);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.eir{font-family:var(--mono);font-weight:500;color:var(--head);white-space:nowrap}
+.pid{font-family:var(--mono);font-size:12.5px;color:var(--body);word-break:break-all}
+.addr{color:var(--head)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;
+  white-space:nowrap}
+.p-ok{background:#E6F4EA;color:var(--go)}
+.p-no{background:#FBEFEF;color:var(--bad)}
+.p-wait{background:var(--paper);color:var(--faint)}
+.empty{text-align:center;color:var(--faint);padding:30px 0;font-size:15px}
+.note{font-size:13.5px;color:var(--faint);margin-top:16px;line-height:1.6}
+@media (max-width:720px){ .pid{font-size:11.5px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Eircode lookup</h1>
+  <p class="lede">Paste a list of Eircodes, one per line. Each is resolved to its full address and
+    its Cyclone placeId, which is what a shop's entry in the booking tool needs.</p>
+
+  <div class="panel">
+    <label for="codes">Eircodes</label>
+    <textarea id="codes" spellcheck="false"
+placeholder="D01 A9C7
+D02 XC78
+D02 KP04"></textarea>
+    <div class="row">
+      <button class="b-go" id="go">Look them up</button>
+      <button class="b-ghost" id="clear">Clear</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div id="out"><p class="empty">Results will appear here.</p></div>
+    <div class="row" id="actions" hidden>
+      <button class="b-ghost" id="copy">Copy as a table</button>
+      <button class="b-ghost" id="copycfg">Copy as booking tool entries</button>
+    </div>
+    <p class="note" id="note" hidden></p>
+  </div>
+
+</div>
+
+<script>
+/* The full address of the lookup, so this file works from your desktop as well
+   as from the site. Calling a live site from a local file needs the API to
+   allow it, which is the one line added to api/address.js. */
+const LOOKUP = "https://cyclonelastmile.ie/api/address";
+
+/* One at a time with a small gap, rather than fifty at once. Kinder to the API
+   and it means a long list shows progress instead of hanging. */
+const GAP_MS = 180;
+
+const $ = id => document.getElementById(id);
+let rows = [];
+
+const tidy = s => String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const pretty = c => c.length === 7 ? c.slice(0,3)+" "+c.slice(3) : c;
+const esc = s => String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function parse(){
+  return $("codes").value.split(/[\n,;]+/)
+    .map(tidy).filter(c => c.length > 0);
+}
+
+$("codes").addEventListener("input", () => {
+  const n = parse().length;
+  $("count").textContent = n ? n + (n===1 ? " Eircode" : " Eircodes") : "";
+});
+
+function draw(){
+  if(!rows.length){ $("out").innerHTML = '<p class="empty">Results will appear here.</p>'; return; }
+  $("out").innerHTML =
+    '<table><thead><tr><th>Eircode</th><th>Address</th><th>placeId</th><th></th>' +
+    '</tr></thead><tbody>' +
+    rows.map(r =>
+      '<tr>' +
+        '<td class="eir">'+esc(r.pretty)+'</td>' +
+        '<td class="addr">'+esc(r.address || "")+'</td>' +
+        '<td class="pid">'+esc(r.placeId || "")+'</td>' +
+        '<td><span class="pill '+(r.state==="ok"?"p-ok":r.state==="wait"?"p-wait":"p-no")+'">' +
+          esc(r.label)+'</span></td>' +
+      '</tr>').join("") +
+    '</tbody></table>';
+  $("actions").hidden = !rows.some(r => r.state === "ok");
+}
+
+async function lookup(code){
+  const res = await fetch(LOOKUP + "?eircode=" + encodeURIComponent(code));
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+
+$("go").onclick = async () => {
+  const codes = parse();
+  if(!codes.length){ return; }
+
+  rows = codes.map(c => ({ code:c, pretty:pretty(c), state:"wait", label:"waiting" }));
+  draw();
+
+  $("go").disabled = true;
+  $("go").textContent = "Looking up\u2026";
+
+  for(let i = 0; i < rows.length; i++){
+    const r = rows[i];
+    if(r.code.length !== 7){
+      r.state = "bad"; r.label = "not 7 characters"; draw(); continue;
+    }
+    try{
+      const d = await lookup(r.code);
+      if(d.found){
+        r.state = "ok"; r.label = "found";
+        r.address = d.address; r.placeId = d.placeId;
+        r.lat = d.latitude; r.lng = d.longitude;
+      }else{
+        r.state = "bad"; r.label = "no match";
+      }
+    }catch(e){
+      /* A blocked cross origin call arrives as a bare "Failed to fetch", which
+         tells nobody anything, so name the likely cause. */
+      const m = String(e.message || e);
+      r.state = "bad";
+      r.label = /fetch/i.test(m) ? "blocked, see note below" : m.slice(0,40);
+    }
+    draw();
+    if(i < rows.length - 1) await new Promise(s => setTimeout(s, GAP_MS));
+  }
+
+  $("go").disabled = false;
+  $("go").textContent = "Look them up";
+  const ok = rows.filter(r => r.state === "ok").length;
+  $("note").hidden = false;
+  const blocked = rows.some(r => r.label === "blocked, see note below");
+  $("note").textContent = ok + " of " + rows.length + " resolved." + (blocked
+    ? "  Blocked means the browser would not let this page call the site. The"
+      + " api/address.js file needs the Access-Control-Allow-Origin line added,"
+      + " or put this file on the site instead of running it from your computer."
+    : "");
+};
+
+$("clear").onclick = () => {
+  $("codes").value = ""; rows = []; draw();
+  $("count").textContent = ""; $("note").hidden = true;
+};
+
+async function put(text, btn, done){
+  try{
+    await navigator.clipboard.writeText(text);
+    const was = btn.textContent; btn.textContent = done;
+    setTimeout(() => btn.textContent = was, 1600);
+  }catch(e){
+    $("note").hidden = false;
+    $("note").textContent = "Copy was blocked. Select the table and copy it by hand.";
+  }
+}
+
+$("copy").onclick = () => put(
+  rows.filter(r => r.state==="ok")
+      .map(r => [r.pretty, r.address, r.placeId].join("\t")).join("\n"),
+  $("copy"), "Copied");
+
+/* The shape a shop's entry takes in the booking tool, so a new one can be
+   pasted in rather than retyped. */
+$("copycfg").onclick = () => put(
+  rows.filter(r => r.state==="ok").map(r =>
+    '  slug: {\n' +
+    '    tag:"XXX",\n' +
+    '    placeId:"' + r.placeId + '",\n' +
+    '    name:"",\n' +
+    '    address:"' + (r.address || "") + '",\n' +
+    '    eircode:"' + r.pretty + '",\n' +
+    '    phone:""\n' +
+    '  },').join("\n"),
+  $("copycfg"), "Copied");
+
+draw();
+</script>
+</body>
+</html>
