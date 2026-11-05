@@ -2293,6 +2293,13 @@ async function lookupAddress(code){
        painted before that - so they are repainted here, now that we know
        whether a cargo bike can reach it. */
     if (typeof paintFits === "function") paintFits();
+
+    /* And the "This delivery" line with them. It was last drawn when the routing
+       key arrived, before this lookup returned any coordinates, so it fell back
+       to the key and quoted 9.95 for a K78 address the zone prices at 12.95 -
+       the tile beside it right and the line above it wrong. */
+    if (typeof window.showRate === "function") window.showRate();
+    if (typeof window.hopRecap === "function") window.hopRecap();
   }catch(e){
     addrFailed("We couldn\u2019t reach the address system",
       "This is our end, not yours. Ring us on " + PHONE + " and we will take the " +
