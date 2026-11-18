@@ -1847,6 +1847,25 @@ if(SHOP_MODE === "practice"){
   document.title = "PRACTICE " + document.title;
 }
 const CUTOFF = (typeof SHOP.sameDayUntil === "number") ? SHOP.sameDayUntil : SAME_DAY_UNTIL;
+
+/* A second, earlier cutoff for the outer zones. A round trip to Malahide takes
+   most of the afternoon; one to Rathmines does not. Set sameDayUntilFar in the
+   sheet to give a shop two cutoffs; leave it out and there is one, as before.
+
+   The banner at the top of the page cannot know where the parcel is going, so
+   it states the inner cutoff. The confirm screen knows the address and uses
+   whichever applies - that is the line a shop reads before committing. */
+const CUTOFF_FAR = (typeof SHOP.sameDayUntilFar === "number")
+  ? SHOP.sameDayUntilFar : CUTOFF;
+
+function cutoffFor(lat, lng){
+  if (CUTOFF_FAR === CUTOFF) return CUTOFF;
+  try {
+    const z = (typeof priceAt === "function") ? priceAt(lat, lng) : null;
+    if (z && z.price > PRICE) return CUTOFF_FAR;   /* outer tier */
+  } catch (e) {}
+  return CUTOFF;
+}
 const READY = SHOP.readyBy || READY_BY;
 
 /* Clickacourier is told when the bag is actually ready. It was hardcoded to 13,
@@ -2442,14 +2461,22 @@ function check(){
      resolve the address, the import does, and saying otherwise would be a claim
      we can't show. */
   /* what to tell the customer, based on the time right now */
-  const beforeCutoff = new Date().getHours() < CUTOFF;
+  const beforeCutoff = new Date().getHours() < cutoffFor(foundLat, foundLng);
   $("chk-when").textContent = beforeCutoff
     ? "You can say: it will be with you today"
     : "You can say: it will be with you tomorrow";
+  /* Name the cutoff that actually applied. With two of them, a shop booking to
+     Malahide at noon would otherwise be told it has missed a two o'clock
+     deadline it has not reached. */
+  const cutHere  = cutoffFor(foundLat, foundLng);
+  const cutWords = cutoffWords(cutHere);
+  const outerCut = (cutHere !== CUTOFF);
   $("chk-when-sub").textContent = beforeCutoff
-    ? "Ordered before " + CUTOFF_WORDS + ", so it goes on today's run."
-    : "It's past " + CUTOFF_WORDS + ", so this goes on tomorrow's run. Still a day ahead " +
-      "of the post.";
+    ? "Ordered before " + cutWords + ", so it goes on today's run." +
+      (outerCut ? " That address is further out, so the cutoff is earlier." : "")
+    : "It's past " + cutWords + ", so this goes on tomorrow's run." +
+      (outerCut ? " That address is further out, so the cutoff is earlier."
+                : " Still a day ahead of the post.");
   $("checks").hidden = false;
   $("unitwrap").hidden = false;
   lookupAddress(code);
@@ -2638,7 +2665,7 @@ const COLLECTION_TIME_UTC = true;
 
 function collectionTimeISO(){
   const d = new Date();
-  if (d.getHours() >= CUTOFF) d.setDate(d.getDate() + 1);
+  if (d.getHours() >= cutoffFor(foundLat, foundLng)) d.setDate(d.getDate() + 1);
   d.setHours(READY_HOUR, 0, 0, 0);
   if (COLLECTION_TIME_UTC){
     return d.toISOString().slice(0, 19).replace("T", " ");
