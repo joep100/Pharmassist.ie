@@ -3263,8 +3263,9 @@ $("rweight").value = WEIGHT_DEFAULT;
      was long - but a number on the question itself helps somebody coming back to
      a half-finished booking see where they are. */
   var askN = 0;
-  function ask(el, text, hint) {
+  function ask(el, text, hint, id) {
     var h = document.createElement('h2');
+    if (id) h.id = id;
     h.className = 'wz__q';
     askN += 1;
     h.innerHTML = '<i class="wz__qn">' + askN + '</i>' + text;
@@ -3272,6 +3273,7 @@ $("rweight").value = WEIGHT_DEFAULT;
     if (hint) {
       var p = document.createElement('p');
       p.className = 'wz__hint';
+      if (id) p.id = id + 'Hint';
       p.textContent = hint;
       el.appendChild(p);
     }
@@ -3291,7 +3293,7 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   /* 1 — Eircode */
   var sEir = screen('eir');
-  ask(sEir, "Where's it going?", 'The customer\u2019s Eircode.');
+  ask(sEir, "Where's it going?", 'The customer\u2019s Eircode.', 'qEir');
   move(fieldOf('eircode'), sEir);
   var statusBox = document.createElement('div');
   statusBox.className = 'wz__status';
@@ -3423,7 +3425,7 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   /* 2 — Name */
   var sName = screen('name');
-  ask(sName, 'Who is it for?', 'Their name, as they would like it on the message.');
+  ask(sName, 'Who is it for?', 'Their name, as they would like it on the message.', 'qName');
   move(fieldOf('rname'), sName);
   var goName = nav(sName, 'Next', 'wzGoName');
 
@@ -3731,6 +3733,24 @@ $("rweight").value = WEIGHT_DEFAULT;
           if (n) n.textContent = (x.dataset.d === "out")
             ? "Out to the customer" : "In from the customer";
         });
+
+        /* On a collection the customer is where the journey starts, not where
+           it ends, so "Where's it going?" and "Who is it for?" read backwards.
+           The questions are the same; only the direction they describe changes. */
+        (function(){
+          var inward = (dirNow === "in");
+          var q1 = document.getElementById('qEir'),  h1 = document.getElementById('qEirHint');
+          var q2 = document.getElementById('qName'), h2 = document.getElementById('qNameHint');
+          if (q1) q1.innerHTML = '<i class="wz__qn">1</i>' +
+            (inward ? "Where are we collecting from?" : "Where\u2019s it going?");
+          if (h1) h1.textContent = inward
+            ? "The customer\u2019s Eircode." : "The customer\u2019s Eircode.";
+          if (q2) q2.innerHTML = '<i class="wz__qn">2</i>' +
+            (inward ? "Who are we collecting from?" : "Who is it for?");
+          if (h2) h2.textContent = inward
+            ? "Their name, as they would like it on the message."
+            : "Their name, as they would like it on the message.";
+        })();
         /* The bag tiles describe what the shop is sending. On a collection the
            shop has not packed anything, so the wording would be wrong. */
         fits.hidden = (dirNow === "in");
