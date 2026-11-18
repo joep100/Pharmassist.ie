@@ -1140,7 +1140,12 @@ function parseCsv(text){
   return rows.filter(r => r.some(v => String(v).trim() !== ""));
 }
 
-const NUMERIC = ["sameDayUntil", "price", "priceFar", "priceBig"];
+/* Any column whose name begins with price or sameDayUntil is a number. A fixed
+   list meant every new column arrived as a string and silently did nothing -
+   priceIn was set to 16.95 in the sheet, came through as "16.95", failed a
+   typeof check and fell back to the default. This way the next one works
+   without anyone remembering to add it here. */
+  const NUMERIC = h => /^(price|sameDayUntil)/.test(h);
 
 function shopsFromCsv(text){
   const rows = parseCsv(text);
@@ -1152,7 +1157,7 @@ function shopsFromCsv(text){
     head.forEach((h, j) => {
       const v = (rows[i][j] || "").trim();
       if (!v) return;
-      r[h] = NUMERIC.indexOf(h) !== -1 ? parseFloat(v) : v;
+      r[h] = NUMERIC(h) ? parseFloat(v) : v;
     });
     if (!r.slug || !r.name || !r.tag || !r.code) continue;   /* skip half-filled rows */
 
