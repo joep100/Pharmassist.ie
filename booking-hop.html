@@ -358,7 +358,7 @@ h2 .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand)
   margin-left:6px}
 .b-zpl:hover{border-color:var(--brand);color:var(--brand)}
 
-.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,18px);background:var(--ink);
+.toast{position:fixed;left:50%;bottom:24px;max-width:calc(100vw - 110px);transform:translate(-50%,18px);background:var(--ink);
   color:#fff;padding:12px 22px;border-radius:11px;font-size:14px;font-weight:500;opacity:0;
   pointer-events:none;transition:.22s;z-index:50;
   box-shadow:0 10px 30px -12px rgba(18,22,26,.5)}
@@ -3721,6 +3721,16 @@ $("rweight").value = WEIGHT_DEFAULT;
   function mapOpen(on){
     mapWrap.hidden = !on;
     document.body.style.overflow = on ? 'hidden' : '';
+
+    /* Intercom's launcher sits at a z-index far above this overlay, so without
+       this the chat bubble floats on top of the map. Tuck it away while the map
+       is up and bring it back after. */
+    try {
+      if (typeof window.Intercom === "function") {
+        window.Intercom('update', { hide_default_launcher: !!on });
+      }
+    } catch (e) {}
+
     if (!on) mapWrap.dispatchEvent(new Event('mapclose'));
   }
   mapLink.addEventListener('click', function(){ mapOpen(true); });
@@ -4057,6 +4067,33 @@ $("rweight").value = WEIGHT_DEFAULT;
 })();
 
 /* WIZARD-SCRIPT-END */
+</script>
+
+<!-- Intercom live chat. Loads after everything else and talks to nothing in the
+     page except SHOP, so it cannot interfere with a booking in progress. -->
+<script>
+  window.intercomSettings = {
+    api_base: "https://api-iam.intercom.io",
+    app_id: "vjtxxt2p"
+  };
+
+  /* Tell Intercom which shop is on the other end, so whoever answers is not
+     asking "who am I speaking to" every time. SHOP is set during sign-in; on
+     the sign-in screen itself there is nobody to name yet. */
+  try {
+    if (typeof SHOP !== "undefined" && SHOP && SHOP.name) {
+      window.intercomSettings.company = {
+        id: SHOP.slug || SHOP.code || SHOP.name,
+        name: SHOP.name
+      };
+      window.intercomSettings.name = SHOP.name;
+      if (SHOP.phone) window.intercomSettings.phone = SHOP.phone;
+    }
+  } catch (e) { /* no shop yet, so Intercom just sees a visitor */ }
+</script>
+
+<script>
+  (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/vjtxxt2p';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();
 </script>
 </body>
 </html>
