@@ -2160,7 +2160,7 @@ function paintFits(){
        the tiles that need a tap, beats a button that is simply dead. */
     if (!dirOk) {
       why.innerHTML = 'Pick which way this one is going \u2014 ' +
-        '<button type="button" class="asklink" id="wzGoDir">the two boxes below</button>.';
+        '<button type="button" class="asklink" id="wzGoDir">the two boxes at the top</button>.';
       why.hidden = false;
       var g = document.getElementById("wzGoDir");
       if (g) g.addEventListener("click", function(){ window.hopFlashDir && window.hopFlashDir(); });
@@ -3710,12 +3710,22 @@ $("rweight").value = WEIGHT_DEFAULT;
         '<b>Out to the customer</b><i>we collect here and deliver to them</i></button>' +
       '<button type="button" class="wz__dirb is-ask" data-d="in">' +
         '<b>In from the customer</b><i>we collect from them and bring it here</i></button>';
-    wrap.appendChild(dirBox);
-
+    /* Above the card, not below it. Which way the job goes is the first thing
+       to decide - before the address, because the address means a different end
+       of the journey depending on the answer. Below the card it was something
+       to be discovered after filling the form in. */
+    var card = wrap.querySelector('.wz');
     var dirWhy = document.createElement('p');
     dirWhy.className = 'wz__dirwhy';
-    dirWhy.textContent = 'Which way is this one going? Pick one before you add it.';
-    wrap.appendChild(dirWhy);
+    dirWhy.textContent = 'Which way is this one going? Pick one to start.';
+
+    if (card) {
+      wrap.insertBefore(dirBox, card);
+      wrap.insertBefore(dirWhy, card);
+    } else {
+      wrap.appendChild(dirBox);
+      wrap.appendChild(dirWhy);
+    }
 
     dirBox.querySelectorAll('.wz__dirb').forEach(function(b){
       b.addEventListener('click', function(){
