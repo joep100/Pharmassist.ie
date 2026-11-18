@@ -96,6 +96,12 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
                                 0 12px 28px -20px rgba(18,22,26,.22)}
 .panel[hidden]{display:none}
 h2{font-size:24px;font-weight:600;color:var(--head);margin:0 0 16px;letter-spacing:-.022em}
+.wz__ask{font-size:13.5px;line-height:1.6;color:#8a6a2a;background:#FFF8E1;
+  border:1px solid #F3E2A9;border-radius:12px;padding:12px 16px;margin:0 0 12px;
+  font-family:"Nunito",system-ui,sans-serif}
+.asklink{background:none;border:0;padding:0;font:inherit;font-weight:700;color:#17191b;
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.asklink:hover{color:#8a6a2a}
 .panel__hint{font-size:15px;color:var(--label);margin:0 0 18px}
 
 .more{margin:14px 0 0}
@@ -3623,6 +3629,19 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   wrap.appendChild(fits);
 
+  /* The limits on this page - the bag sizes, the area, the collection time -
+     read as rules, and a shop that does not fit one of them assumes the answer
+     is no and does not book. Most of the time there is an answer. This is here
+     rather than on the confirmation because by then they have either booked or
+     given up. */
+  var ask = document.createElement('p');
+  ask.className = 'wz__ask';
+  ask.innerHTML = 'Something that does not fit the rules above \u2014 a bigger item, a ' +
+    'later collection, a delivery after six? <button type="button" class="asklink" ' +
+    'id="asklink">Ask us first</button>. We cannot always do it, but we would far ' +
+    'rather you asked than decided against it.';
+  wrap.appendChild(ask);
+
   /* "Where do these go?" - the map lives on the hop site rather than in this
      page, so the tool does not carry 200KB a shop may never open. */
   var mapLink = document.createElement('button');
@@ -4062,6 +4081,23 @@ $("rweight").value = WEIGHT_DEFAULT;
   paintList();
 
 
+
+  /* The ask-us line. Opening the messenger directly beats telling somebody to
+     find the bubble themselves. If Intercom has not loaded, fall back to the
+     phone rather than doing nothing. */
+  (function(){
+    var a = document.getElementById("asklink");
+    if (!a) return;
+    a.addEventListener("click", function(){
+      try {
+        if (typeof window.Intercom === "function") {
+          window.Intercom("showNewMessage", "Hello, I need to change a booking: ");
+          return;
+        }
+      } catch (e) {}
+      window.location.href = "tel:" + String(PHONE).replace(/\s/g, "");
+    });
+  })();
 
   show(0);
 })();
