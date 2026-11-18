@@ -97,17 +97,13 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
 .panel[hidden]{display:none}
 h2{font-size:24px;font-weight:600;color:var(--head);margin:0 0 16px;letter-spacing:-.022em}
 .wz__dir{display:flex;gap:10px;margin:0 0 8px}
-.wz__dirb.is-ask{border-style:dashed;border-color:rgba(23,25,27,.3)}
+.wz__dirb.is-ask{border-color:rgba(23,25,27,.26)}
 .wz__dir.is-flash .wz__dirb.is-ask{animation:dirflash 1.5s ease-out 2}
 @keyframes dirflash{
   0%,100%{border-color:rgba(23,25,27,.3);box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20)}
   35%{border-color:#17191b;box-shadow:0 0 0 4px rgba(255,204,0,.55), 0 6px 14px -8px rgba(90,64,0,.30)}
 }
 @media (prefers-reduced-motion: reduce){.wz__dir.is-flash .wz__dirb.is-ask{animation:none;border-color:#17191b}}
-.wz__dirwhy{font-size:13px;color:#8a6a2a;background:#FFF8E1;border:1px solid #F3E2A9;
-  border-radius:10px;padding:9px 13px;margin:0 0 12px;
-  font-family:"Nunito",system-ui,sans-serif;font-weight:700}
-.wz__dirwhy[hidden]{display:none}
 .wz__dirb{flex:1;background:#fff;border:1.5px solid rgba(23,25,27,.14);border-radius:14px;
   padding:14px 16px;text-align:left;cursor:pointer;font-family:"Nunito",system-ui,sans-serif;
   box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20)}
@@ -614,7 +610,7 @@ body{background:#FFCC00 !important}
 .wz__fit.is-wait b{color:#6b6d5f}
 .wz__fit{cursor:pointer;font:inherit;text-align:center}
 .wz__fit.is-yes{background:#fff;border-color:rgba(23,25,27,.1)}
-.wz__fit.is-ask{background:#fff;border-color:rgba(23,25,27,.28);border-style:dashed}
+.wz__fit.is-ask{background:#fff;border-color:rgba(23,25,27,.26)}
 .wz__fit.is-on{background:#17191b;border-color:#17191b}
 .wz__fit.is-on b{color:#fff}
 .wz__fit.is-on i{color:rgba(255,255,255,.72)}
@@ -3707,25 +3703,20 @@ $("rweight").value = WEIGHT_DEFAULT;
     dirBox.className = 'wz__dir';
     dirBox.innerHTML =
       '<button type="button" class="wz__dirb is-ask" data-d="out">' +
-        '<b>Out to the customer</b><i>we collect here and deliver to them</i></button>' +
+        '<b>Select out to the customer</b><i>we collect here and deliver to them</i></button>' +
       '<button type="button" class="wz__dirb is-ask" data-d="in">' +
-        '<b>In from the customer</b><i>we collect from them and bring it here</i></button>';
+        '<b>Select in from the customer</b><i>we collect from them and bring it here</i></button>';
     /* Above the card, not below it. Which way the job goes is the first thing
        to decide - before the address, because the address means a different end
        of the journey depending on the answer. Below the card it was something
        to be discovered after filling the form in. */
+    /* No standing prompt beneath them. Neither tile is selected and both say
+       "Select", which is the instruction - a line repeating it is a line of
+       space on a screen that has none to spare. The notice in the card still
+       appears if somebody reaches the end without choosing. */
     var card = wrap.querySelector('.wz');
-    var dirWhy = document.createElement('p');
-    dirWhy.className = 'wz__dirwhy';
-    dirWhy.textContent = 'Which way is this one going? Pick one to start.';
-
-    if (card) {
-      wrap.insertBefore(dirBox, card);
-      wrap.insertBefore(dirWhy, card);
-    } else {
-      wrap.appendChild(dirBox);
-      wrap.appendChild(dirWhy);
-    }
+    if (card) wrap.insertBefore(dirBox, card);
+    else wrap.appendChild(dirBox);
 
     dirBox.querySelectorAll('.wz__dirb').forEach(function(b){
       b.addEventListener('click', function(){
@@ -3733,8 +3724,13 @@ $("rweight").value = WEIGHT_DEFAULT;
         dirBox.querySelectorAll('.wz__dirb').forEach(function(x){
           x.classList.remove('is-ask');
           x.classList.toggle('is-on', x === b);
+          /* "Select" only while the choice is outstanding, as on the bag
+             tiles. Left on a chosen tile it reads as an instruction to do
+             something already done. */
+          var n = x.querySelector('b');
+          if (n) n.textContent = (x.dataset.d === "out")
+            ? "Out to the customer" : "In from the customer";
         });
-        dirWhy.hidden = true;
         /* The bag tiles describe what the shop is sending. On a collection the
            shop has not packed anything, so the wording would be wrong. */
         fits.hidden = (dirNow === "in");
@@ -3752,7 +3748,6 @@ $("rweight").value = WEIGHT_DEFAULT;
       dirBox.classList.remove("is-flash");
       void dirBox.offsetWidth;            /* restart the animation */
       dirBox.classList.add("is-flash");
-      dirWhy.hidden = false;
     };
 
     /* The tiles start hidden too: until we know the direction we do not know
