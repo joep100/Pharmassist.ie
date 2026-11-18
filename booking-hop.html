@@ -1953,10 +1953,24 @@ function inRingPairs(x, y, ring){
    to 16.95 was still quoted 9.95, because the zone answered first. */
 const OWN_PRICE = (typeof SHOP.price === "number");
 
+/* Collections cost more than deliveries, and not because of distance. A
+   delivery rides the collection sweep that is going out anyway; a collection
+   from a customer is a dedicated trip for one parcel, wherever it is. So a shop
+   that does both can set priceIn and priceInFar for the inbound leg. Left out,
+   a collection costs the same as a delivery. */
+const RATE_IN     = (typeof SHOP.priceIn    === "number") ? SHOP.priceIn    : RATE;
+const RATE_IN_FAR = (typeof SHOP.priceInFar === "number") ? SHOP.priceInFar : RATE_FAR;
+
+function goingIn(){
+  return (typeof window.hopDir === "function") && window.hopDir() === "in";
+}
+
 function tierPrice(z){
   /* z is what priceAt returned: a zone and the rate we are billed for it. */
+  const far = (z.price > PRICE);
+  if (goingIn()) return far ? RATE_IN_FAR : RATE_IN;
   if (!OWN_PRICE) return z.price;
-  return (z.price > PRICE) ? RATE_FAR : RATE;
+  return far ? RATE_FAR : RATE;
 }
 
 function rateNow(){
@@ -3781,7 +3795,10 @@ $("rweight").value = WEIGHT_DEFAULT;
         /* The bag tiles describe what the shop is sending. On a collection the
            shop has not packed anything, so the wording would be wrong. */
         fits.hidden = (dirNow === "in");
+        /* The price turns on the direction as well as the zone, so both the
+           tiles and the "This delivery" line have to be redrawn. */
         if (typeof paintFits === "function") paintFits();
+        if (typeof window.showRate === "function") window.showRate();
         if (typeof window.hopRecap === "function") window.hopRecap();
       });
     });
