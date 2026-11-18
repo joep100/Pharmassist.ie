@@ -98,6 +98,12 @@ body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
 h2{font-size:24px;font-weight:600;color:var(--head);margin:0 0 16px;letter-spacing:-.022em}
 .wz__dir{display:flex;gap:10px;margin:0 0 8px}
 .wz__dirb.is-ask{border-style:dashed;border-color:rgba(23,25,27,.3)}
+.wz__dir.is-flash .wz__dirb.is-ask{animation:dirflash 1.5s ease-out 2}
+@keyframes dirflash{
+  0%,100%{border-color:rgba(23,25,27,.3);box-shadow:0 1px 2px rgba(90,64,0,.08), 0 6px 14px -8px rgba(90,64,0,.20)}
+  35%{border-color:#17191b;box-shadow:0 0 0 4px rgba(255,204,0,.55), 0 6px 14px -8px rgba(90,64,0,.30)}
+}
+@media (prefers-reduced-motion: reduce){.wz__dir.is-flash .wz__dirb.is-ask{animation:none;border-color:#17191b}}
 .wz__dirwhy{font-size:13px;color:#8a6a2a;background:#FFF8E1;border:1px solid #F3E2A9;
   border-radius:10px;padding:9px 13px;margin:0 0 12px;
   font-family:"Nunito",system-ui,sans-serif;font-weight:700}
@@ -2149,7 +2155,22 @@ function paintFits(){
   const dirOk = (typeof window.hopDirPicked !== "function") || window.hopDirPicked();
   if (add) add.disabled = mustPick || !dirOk;
   const why = $("wzWhyOff");
-  if (why) why.hidden = !mustPick;
+  if (why) {
+    /* Two reasons the add button can be off. Saying which one, and pointing at
+       the tiles that need a tap, beats a button that is simply dead. */
+    if (!dirOk) {
+      why.innerHTML = 'Pick which way this one is going \u2014 ' +
+        '<button type="button" class="asklink" id="wzGoDir">the two boxes below</button>.';
+      why.hidden = false;
+      var g = document.getElementById("wzGoDir");
+      if (g) g.addEventListener("click", function(){ window.hopFlashDir && window.hopFlashDir(); });
+    } else if (mustPick) {
+      why.textContent = "Pick a size first \u2014 the two boxes below.";
+      why.hidden = false;
+    } else {
+      why.hidden = true;
+    }
+  }
   if (typeof window.hopRecap === "function") window.hopRecap();
 }
 
@@ -3712,6 +3733,18 @@ $("rweight").value = WEIGHT_DEFAULT;
       });
     });
 
+    /* The direction tiles sit below the booking card, so somebody who works
+       through the form and finds the add button dead has no idea where to look.
+       Scroll them into view and flash them rather than leaving them to hunt. */
+    window.hopFlashDir = function(){
+      if (dirNow !== null) return;
+      try { dirBox.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+      dirBox.classList.remove("is-flash");
+      void dirBox.offsetWidth;            /* restart the animation */
+      dirBox.classList.add("is-flash");
+      dirWhy.hidden = false;
+    };
+
     /* The tiles start hidden too: until we know the direction we do not know
        whether the shop is packing anything. */
     fits.hidden = true;
@@ -3724,6 +3757,22 @@ $("rweight").value = WEIGHT_DEFAULT;
      is no and does not book. Most of the time there is an answer. This is here
      rather than on the confirmation because by then they have either booked or
      given up. */
+  /* A disabled button does not fire a click, so the shop taps it, nothing
+     happens, and there is no clue why. Listening on the container catches the
+     tap anyway and points them at the tiles. */
+  (function(){
+    var card = document.querySelector('.wz') || document.body;
+    card.addEventListener('click', function(e){
+      var a = document.getElementById('add');
+      if (!a || !a.disabled) return;
+      var onBtn = e.target === a || (e.target.closest && e.target.closest('#add'));
+      if (!onBtn) return;
+      if (typeof window.hopDirPicked === "function" && !window.hopDirPicked()) {
+        if (window.hopFlashDir) window.hopFlashDir();
+      }
+    }, true);
+  })();
+
   var ask = document.createElement('p');
   ask.className = 'wz__ask';
   ask.innerHTML = 'Something that does not fit the rules above \u2014 a bigger item, a ' +
