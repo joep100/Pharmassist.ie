@@ -1445,10 +1445,16 @@ const MARK = '<svg viewBox="0 0 64 64" aria-hidden="true">' +
     const s = PHARMACIES[k];
     const cut = (typeof s.sameDayUntil === "number") ? s.sameDayUntil : SAME_DAY_UNTIL;
     const ready = s.readyBy || READY_BY;
-    const m = String(ready).match(/^(\d{1,2})\s*(am|pm)$/i);
+    /* Accepts 2pm, 2 pm, 2:00 PM and 14:00. The sheet uses "2:00 PM" and the old
+       pattern only matched "2pm", so this check quietly skipped every shop and
+       would never have caught the contradiction it exists to catch. */
+    const m = String(ready).trim()
+      .match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
     if(!m) return;
-    let hr = parseInt(m[1], 10) % 12;
-    if(m[2].toLowerCase() === "pm") hr += 12;
+    let hr = parseInt(m[1], 10);
+    const ampm = m[3] ? m[3].toLowerCase() : null;
+    if (ampm) { hr = hr % 12; if (ampm === "pm") hr += 12; }   /* 12-hour */
+    /* no am or pm means it is already a 24-hour time */
     if(hr < cut) console.error("Config problem: " + k + " has a " + cutoffWords(cut) +
       " cutoff but the rider is shown as calling at " + ready);
   });
@@ -1914,6 +1920,19 @@ function inRingPairs(x, y, ring){
   return inside;
 }
 
+/* Does this shop have a rate of its own? The zone prices below match what
+   Clickacourier bill us, which is right for a shop on the standard card. A shop
+   with a negotiated rate is different: the zone still decides whether the
+   address is near or far, but the amounts are theirs. Without this a shop set
+   to 16.95 was still quoted 9.95, because the zone answered first. */
+const OWN_PRICE = (typeof SHOP.price === "number");
+
+function tierPrice(z){
+  /* z is what priceAt returned: a zone and the rate we are billed for it. */
+  if (!OWN_PRICE) return z.price;
+  return (z.price > PRICE) ? RATE_FAR : RATE;
+}
+
 function rateNow(){
   if (isBig) return RATE_BIG;
   /* The zone decides, with the routing key only as a fallback for an address we
@@ -1923,7 +1942,7 @@ function rateNow(){
      let cannot even be tested with typeof before its declaration. */
   try {
     const z = priceAt(foundLat, foundLng);
-    if (z) return z.price;
+    if (z) return tierPrice(z);
   } catch (e) { /* no address yet */ }
   return isFar(currentKey) ? RATE_FAR : RATE;
 }
@@ -2091,7 +2110,7 @@ function paintFits(){
   try { z = (typeof priceAt === "function") ? priceAt(foundLat, foundLng) : null; }
   catch (e) { z = null; }
   const far = z ? (z.price > PRICE) : (FAR_KEYS.indexOf(currentKey) !== -1);
-  const near = euro(z ? z.price : (far ? PRICE_FAR : PRICE));
+  const near = euro(z ? tierPrice(z) : (far ? RATE_FAR : RATE));
 
   const bigOff = far || ($("sz-big") && $("sz-big").disabled);
   if (bigOff && isBig) { isBig = false; if (typeof drawSize === "function") drawSize(); }
