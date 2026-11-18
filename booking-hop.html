@@ -2137,7 +2137,7 @@ function paintFits(){
     if (bigP) bigP.innerHTML = far ? "not out this far" : "not on this round";
   } else {
     big.className = "wz__fit " + (mustPick ? "is-ask" : (isBig ? "is-on" : "is-yes"));
-    if (bigP) bigP.innerHTML = euro(PRICE_BIG);
+    if (bigP) bigP.innerHTML = euro(RATE_BIG);
   }
 
   const add = $("add");
@@ -3588,7 +3588,7 @@ $("rweight").value = WEIGHT_DEFAULT;
        up the page by now. */
     var bigOff = $('sz-big') && $('sz-big').disabled;
     if (!bigOff) {
-      rows.push(['Bag', sizePicked ? (isBig ? 'Jumbo bag \u00b7 ' + euro(PRICE_BIG)
+      rows.push(['Bag', sizePicked ? (isBig ? 'Jumbo bag \u00b7 ' + euro(RATE_BIG)
                                             : 'Standard bag \u00b7 ' + euro(rateNow()))
                                    : 'Not chosen yet']);
     }
