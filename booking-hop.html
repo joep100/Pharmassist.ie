@@ -4136,8 +4136,20 @@ $("rweight").value = WEIGHT_DEFAULT;
     if (fillRan || !pastRows || !STATUS_URL) return;
     fillRan = true;
 
+    /* Not just the empty ones. A status written while the job was still moving -
+       "Stephen has it" at two o'clock - is stale the moment the parcel is
+       delivered, and filling only blanks left it frozen for ever. So anything
+       that has not reached a settled state gets asked about again.
+
+       Settled means delivered or failed: nothing happens after those, so there
+       is nothing to re-ask. */
+    var settled = /^(delivered|signed by|could not|not delivered)/i;
     var todo = pastRows
-      .filter(function(r){ return r.tracking && !r.status && r.practice !== 'practice'; })
+      .filter(function(r){
+        return r.tracking &&
+               r.practice !== 'practice' &&
+               !(r.status && settled.test(String(r.status).trim()));
+      })
       .slice(0, 20);
     if (!todo.length) return;
 
