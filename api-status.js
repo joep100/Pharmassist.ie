@@ -40,53 +40,95 @@ const WORDS = {
   failed:           "Could not deliver"
 };
 
-/* Their event types are not reliable on their own: a collection arrives as
-   "complete", which would read as the job being finished. So the words decide,
-   and the type is only a fallback.
+/* Their event types are all "complete", so the words carry the meaning. And the
+   clock cannot be trusted either: on a split job the second leg's collection is
+   recorded after the delivery it followed, so the latest event by time can read
+   "collected" on a parcel that has already arrived.
 
-   The rider's name turns up in the first event and not in later ones, so it is
-   carried forward: "James has it" beats "Collected", and a shop ringing about a
-   parcel would rather hear a name. */
-function driverName(events) {
-  for (const e of events) {
-    const s = String(e.description || "");
-    const m = /\bdriver\s+([A-Z][a-zA-Z'\-]{1,20})/.exec(s) ||
-              /\bby\s+([A-Z][a-zA-Z'\-]{1,20})/.exec(s);
-    if (m) return m[1];
+   So the events are walked in order and the furthest point reached decides.
+   A split job runs: accepted, collected, returned to base, collected again,
+   delivered. A direct job skips the middle two. */
+const STAGE = { none:0, onway:1, collected:2, atbase:3, outfor:4, done:5, bad:6 };
+
+function readEvents(events) {
+  const sorted = events.slice().sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  let stage = STAGE.none, driver = null, signer = null, at = null, seenBase = false, failed = false;
+
+  const lift = s => {
+    const m = /\bdriver\s+([A-Z][a-zA-Z'\-]{1,20})/.exec(s);
+    return m ? m[1] : null;
+  };
+
+  for (const e of sorted) {
+    const raw = String(e.description || "");
+    const s = raw.toLowerCase();
+    const name = lift(raw);
+    if (name) driver = name;
+
+    let reached = null;
+    const sig = /signed\s+by\s+([A-Za-z][A-Za-z'\-\. ]{0,23})/i.exec(raw);
+
+    /* A failed collection is not a failed job - another rider goes. The real
+       wording is "The collection failed, [Driver note] no room in backbox", and
+       reading it as a failure marked the whole job failed while the parcel was
+       still in the shop waiting. */
+    if (/collection\s+(failed|unsuccessful)|failed\s+to\s+collect/.test(s)) { continue; }
+
+    if (/cancel/.test(s))                                { reached = STAGE.bad; }
+    else if (/fail|unable|could not|no answer/.test(s))  { reached = STAGE.bad; }
+    else if (sig || /deliver(ed|y complete)/.test(s))    { reached = STAGE.done;
+                                                           if (sig) signer = sig[1]; }
+    else if (/return(ed)? to base|back at (the )?base|at (the )?depot/.test(s)) {
+      reached = STAGE.atbase; seenBase = true;
+    }
+    else if (/collect(ed)?|picked up/.test(s))           { reached = seenBase ? STAGE.outfor
+                                                                              : STAGE.collected; }
+    else if (/despatch|dispatch|assigned|accepted|on the way/.test(s)) { reached = STAGE.onway; }
+
+    /* Only ever forward. A late-arriving event for an earlier leg cannot drag a
+       delivered parcel back to collected.
+
+       A failure is kept apart from the ladder rather than sitting at the top of
+       it. A rider can try at two, find nobody in, and deliver at five; with
+       failure as the furthest point the later delivery could never overtake it
+       and a parcel that arrived was reported as failed. */
+    if (reached === STAGE.bad) { failed = true; at = e.at || at; continue; }
+
+    if (reached !== null && reached > stage) {
+      stage = reached; at = e.at || null;
+      failed = false;          /* something happened after it, so it carried on */
+    } else if (reached === stage) { at = e.at || at; }
   }
-  return null;
+
+  /* Still failed only if nothing came after it. */
+  if (failed && stage < STAGE.done) return { stage: STAGE.bad, driver, signer, at };
+  return { stage, driver, signer, at };
 }
 
 /* "joe" as typed by a rider on a doorstep becomes "Joe" on the screen. */
 function tidyName(s) {
-  /* Capitalises after spaces, apostrophes and hyphens, so O'BRIEN becomes
-     O'Brien rather than O'brien, and mary-kate becomes Mary-Kate. */
   return String(s || "").trim().replace(/\s+/g, " ").toLowerCase()
     .replace(/(^|[\s'\-])([a-z])/g, (m, pre, ch) => pre + ch.toUpperCase())
     .slice(0, 24);
 }
 
-function phrase(code, description, name) {
-  const raw = String(description || "");
-  const s = raw.toLowerCase();
-  const who = name || "Rider";
-
-  /* Who signed for it beats who delivered it: a shop fielding "are you sure it
-     arrived?" wants the name on the doorstep, not the name on the bike. */
-  const sig = /signed\s+by\s+([A-Za-z][A-Za-z'\-\. ]{0,23})/i.exec(raw);
-  if (sig) return "Signed by " + tidyName(sig[1]);
-
-  if (/deliver(ed|y complete)/.test(s))        return name ? "Delivered by " + name : "Delivered";
-  if (/collect(ed)?/.test(s))                  return who + " has it";
-  if (/on the way to|out for delivery/.test(s)) return who + " is delivering";
-  if (/despatch|dispatch|assigned|accepted|on the way/.test(s)) return who + " on the way";
-  if (/cancel/.test(s))                        return "Cancelled";
-  if (/fail|unable|could not/.test(s))         return "Could not deliver";
-
-  return WORDS[code] || null;
+function wordFor(st) {
+  const who = st.driver || "Rider";
+  switch (st.stage) {
+    case STAGE.done:
+      return st.signer ? "Signed by " + tidyName(st.signer)
+                       : (st.driver ? "Delivered by " + st.driver : "Delivered");
+    /* The parcel is with us and moving, which is what a shop wants to know.
+       "Returned to base" would read as if it had come back to them. */
+    case STAGE.outfor:    return "Out for delivery";
+    case STAGE.atbase:    return "At our depot";
+    case STAGE.collected: return who + " has it";
+    case STAGE.onway:     return who + " on the way";
+    case STAGE.bad:       return "Could not deliver";
+    default:              return null;
+  }
 }
 
-const ORDER = ["confirmed", "in_progress", "out_for_delivery", "delivered", "cancelled", "failed"];
 
 async function readBody(req) {
   if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) return req.body;
@@ -215,17 +257,8 @@ async function status(req, res) {
   }
   events.sort((a, b2) => (a.timestamp || 0) - (b2.timestamp || 0));
 
-  /* The latest event by time is usually the current state, but not always: a
-     couple can share a timestamp. Fall back to whichever is furthest along the
-     documented sequence. */
-  let latest = events[events.length - 1] || null;
-  for (const e of events) {
-    const a = ORDER.indexOf(String(e.type || "").toLowerCase());
-    const b3 = ORDER.indexOf(String(latest && latest.type || "").toLowerCase());
-    if (a > -1 && a > b3) latest = e;
-  }
-
-  const code = String(latest && latest.type || "").toLowerCase();
+  const st = readEvents(events);
+  const latest = events[events.length - 1] || null;
 
   /* No events means Clickacourier has the job but nothing has happened to it
      yet. Saying "In progress" there would be a guess wearing a status's clothes,
@@ -234,14 +267,11 @@ async function status(req, res) {
     ok: true,
     trackingNumber: tracking,
     reference: (jobs[0] && jobs[0].booking && jobs[0].booking.reference) || null,
-    status: code || null,
-    description: events.length
-      ? (phrase(code, latest && latest.description, driverName(events)) ||
-         (latest && latest.description) || null)
-      : null,
+    status: Object.keys(STAGE).find(k => STAGE[k] === st.stage) || null,
+    description: events.length ? wordFor(st) : null,
     /* the full sentence too, for anywhere with room for it */
     detail: (latest && latest.description) || null,
-    at: latest && latest.at,
+    at: st.at || (latest && latest.at) || null,
     events: events
   });
 }
