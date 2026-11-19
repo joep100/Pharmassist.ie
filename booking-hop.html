@@ -665,6 +665,8 @@ body{background:#FFCC00 !important}
 .wz__pastst{display:block;font-size:11px;font-weight:800;letter-spacing:.03em;
   color:#1C6E45;margin-top:3px}
 .wz__pastst span{font-weight:400;color:#6e6e6e;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.wz__pastbusy{color:#8a6a2a;background:#FFF8E1;border:1px solid #F3E2A9;
+  border-radius:10px;padding:9px 13px;margin:10px 0 0;font-weight:700}
 .wz__pastnote{font-size:13.5px;color:#6e6e6e;padding:8px 0 12px;margin:0;text-align:center}
 .wz__more{display:block;width:100%;margin:12px 0 0;background:#fff;
   border:1px solid rgba(23,25,27,.2);border-radius:11px;padding:11px;
@@ -4044,7 +4046,10 @@ $("rweight").value = WEIGHT_DEFAULT;
   function fetchPast(){
     if (!NOTIFY_URL) return;
     pastBusy = true;
-    pastPanel.innerHTML = '<p class="wz__pastnote">Fetching\u2026</p>';
+    /* Draw the chips with the busy line rather than blanking the panel: the
+       chips are what a shop taps, and taking them away mid-fetch is what made
+       it feel dead. */
+    paintPast();
     fetch(NOTIFY_URL + '?shop=' + encodeURIComponent(SHOP.name || '') +
           '&code=' + encodeURIComponent(SHOP.code || ''))
       .then(function(r){ return r.json(); })
@@ -4230,6 +4235,13 @@ $("rweight").value = WEIGHT_DEFAULT;
       });
     }
 
+    /* The fetch sets a "Fetching..." line and this function used to wipe it a
+       millisecond later, so nothing ever appeared and a shop pressed buttons
+       into what looked like a dead panel. The line is drawn here instead, under
+       the chips, where the repaint cannot remove it. */
+    var busyLine = pastBusy
+      ? '<p class="wz__pastnote wz__pastbusy">Fetching your bookings\u2026</p>' : '';
+
     /* On Today the browser's own list is above, so this shows only what the
        sheet has that the browser does not - a job booked somewhere else. */
     if (pastDays === -1) {
@@ -4241,21 +4253,21 @@ $("rweight").value = WEIGHT_DEFAULT;
         if (!inPeriod(r)) return false;
         return !mine[String(r.reference || '').trim()];
       });
-      if (!elsewhere.length) { pastPanel.innerHTML = chips; wire(); return; }
-      pastPanel.innerHTML = chips +
+      if (!elsewhere.length) { pastPanel.innerHTML = chips + busyLine; wire(); return; }
+      pastPanel.innerHTML = chips + busyLine +
         '<p class="wz__pastnote">Also booked today, from another device:</p>' +
         elsewhere.map(rowHtml).join('');
       wire(); return;
     }
 
     if (!pastRows.length) {
-      pastPanel.innerHTML = chips + '<p class="wz__pastnote">Nothing yet.</p>';
+      pastPanel.innerHTML = chips + busyLine + (pastBusy ? '' : '<p class="wz__pastnote">Nothing yet.</p>');
       wire(); return;
     }
 
     var show = pastRows.filter(inPeriod);
     if (!show.length) {
-      pastPanel.innerHTML = chips + '<p class="wz__pastnote">Nothing in this period.</p>';
+      pastPanel.innerHTML = chips + busyLine + (pastBusy ? '' : '<p class="wz__pastnote">Nothing in this period.</p>');
       wire(); return;
     }
 
@@ -4283,7 +4295,7 @@ $("rweight").value = WEIGHT_DEFAULT;
           Math.min(PAGE, show.length - pastShown) + ' more</button>' +
         '<p class="wz__pastnote">' + pastShown + ' of ' + show.length + ' shown</p>'
       : '';
-    pastPanel.innerHTML = chips + head + body + more;
+    pastPanel.innerHTML = chips + busyLine + head + body + more;
     wire();
   }
 
