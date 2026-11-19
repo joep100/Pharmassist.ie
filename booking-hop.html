@@ -1022,7 +1022,15 @@ const UUID    = "46cd6c17-e266-40ea-9b9f-15d5f48efa53";
 
    A box goes on a cargo bike: 20kg, 65x40x40cm, and only to the zones the
    cargo riders cover. Same price. */
-const VEHICLE_BAG   = "BIKE";
+/* TOP-BOX-BIKE, the 8kg service, not BIKE which is the bare 3kg documents one.
+   A retail bag is not a document wallet, and every job was having to be changed
+   by hand at the Clickacourier end afterwards.
+
+   This was refused once - "vehicle TOP-BOX-BIKE does not match with id ..." -
+   because the accounts were not enabled for it. They are now. If it starts
+   failing again that error is the thing to look for, and the fix is at their
+   end rather than here. */
+const VEHICLE_BAG   = "TOP-BOX-BIKE";
 const VEHICLE_CARGO = "CARGO-BIKE";
 const VEHICLE = VEHICLE_BAG;            /* per shop with vehicle: in their entry */
 const SERVICE_LEVEL = "STANDARD";     /* not SERVICE: that name is taken by the
