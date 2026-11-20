@@ -567,10 +567,6 @@ body{background:#FFCC00 !important}
 .wz__recap span{color:#767c82;flex:none}
 .wz__recap em{font-style:normal;text-align:right;color:#17191b}
 
-.wz #chk-when-row{border:1px solid #e7e4df;border-radius:12px;padding:13px 14px;
-  margin:0 0 16px;background:#faf8f5}
-.wz #chk-when-row .check__tick{display:none}
-.wz #chk-when-row b{display:block;font-size:15px;margin-bottom:2px}
 .wz .row{display:block;padding:0}
 .wz .b-go{width:100%}
 .wz #clear,.wz #rate{display:none}
@@ -838,10 +834,10 @@ h1,h2,h3,h4,b,strong,.wz__q,.wz__list span,.wz__fit b,.wz__pastrow b,.wz__pastfe
         <span class="check__tick" aria-hidden="true">&#10003;</span>
         <div><b>Delivering to</b><span id="chk-found"></span></div>
       </div>
-      <div class="check" id="chk-when-row">
-        <span class="check__tick" aria-hidden="true">&#10003;</span>
-        <div><b id="chk-when"></b><span id="chk-when-sub"></span></div>
-      </div>
+      <!-- The "it will be with you today" line used to sit here. It quoted one
+             cutoff while every shop has its own, so a shop told to say one
+             o'clock read three on its own screen. A promise the page cannot get
+             right for everybody is worse than no promise. -->
     </div>
   </div>
 
@@ -2490,32 +2486,10 @@ function check(){
      resolve the address, the import does, and saying otherwise would be a claim
      we can't show. */
   /* what to tell the customer, based on the time right now */
-  const beforeCutoff = new Date().getHours() < cutoffFor(foundLat, foundLng);
-  $("chk-when").textContent = beforeCutoff
-    ? "You can say: it will be with you today"
-    : "You can say: it will be with you tomorrow";
-  /* On a collection the shop is not promising the customer anything - the
-     customer is handing something over. "You can say: it will be with you
-     today" is the shop's line to its own customer, and it has no place on a job
-     going the other way. */
-  var whenRow = document.getElementById("chk-when-row");
-  var inward  = (typeof window.hopDir === "function" && window.hopDir() === "in");
-  if (whenRow) whenRow.hidden = inward;
 
   /* Name the cutoff that actually applied. With two of them, a shop booking to
      Malahide at noon would otherwise be told it has missed a two o'clock
      deadline it has not reached. */
-  if (!inward) {
-    const cutHere  = cutoffFor(foundLat, foundLng);
-    const cutWords = cutoffWords(cutHere);
-    const outerCut = (cutHere !== CUTOFF);
-    $("chk-when-sub").textContent = beforeCutoff
-      ? "Ordered before " + cutWords + ", so it goes on today's run." +
-        (outerCut ? " That address is further out, so the cutoff is earlier." : "")
-      : "It's past " + cutWords + ", so this goes on tomorrow's run." +
-        (outerCut ? " That address is further out, so the cutoff is earlier."
-                  : " Still a day ahead of the post.");
-  }
   $("checks").hidden = false;
   $("unitwrap").hidden = false;
   lookupAddress(code);
@@ -3526,8 +3500,7 @@ $("rweight").value = WEIGHT_DEFAULT;
   var recap = document.createElement('div');
   recap.className = 'wz__recap';
   sOk.appendChild(recap);
-  move($('chk-when-row'), sOk);
-  move($('err2'), sOk);
+    move($('err2'), sOk);
   /* The tiles explain themselves where they sit, but by this screen they are
      scrolled away. A disabled button with no reason beside it is the kind of
      thing somebody rings about. */
@@ -3707,8 +3680,7 @@ $("rweight").value = WEIGHT_DEFAULT;
           if (n > high) { high = n; best = r.textContent.trim(); }
         });
         $('wzTag').textContent = best || '\u2014';
-        var w = $('chk-when');
-        $('wzWhen').textContent = w ? (w.textContent || '').trim() : '';
+        $('wzWhen').textContent = '';
         show(order.length - 1);
       }, 60);
     };
