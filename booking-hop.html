@@ -832,7 +832,7 @@ h1,h2,h3,h4,b,strong,.wz__q,.wz__list span,.wz__fit b,.wz__pastrow b,.wz__pastfe
     <div class="checks" id="checks" hidden>
       <div class="check" id="chk-addr-row" hidden>
         <span class="check__tick" aria-hidden="true">&#10003;</span>
-        <div><b>Delivering to</b><span id="chk-found"></span></div>
+        <div><b id="chk-addr-lbl">Delivering to</b><span id="chk-found"></span></div>
       </div>
       <!-- The "it will be with you today" line used to sit here. It quoted one
              cutoff while every shop has its own, so a shop told to say one
@@ -2490,6 +2490,14 @@ function check(){
   /* Name the cutoff that actually applied. With two of them, a shop booking to
      Malahide at noon would otherwise be told it has missed a two o'clock
      deadline it has not reached. */
+  /* "Delivering to" is wrong on a collection for the same reason "To" was. */
+  var addrLbl = document.getElementById("chk-addr-lbl");
+  if (addrLbl) {
+    addrLbl.textContent =
+      (typeof window.hopDir === "function" && window.hopDir() === "in")
+        ? "Collecting from" : "Delivering to";
+  }
+
   $("checks").hidden = false;
   $("unitwrap").hidden = false;
   lookupAddress(code);
@@ -3647,7 +3655,11 @@ $("rweight").value = WEIGHT_DEFAULT;
     var hasEir = eir && addr.toUpperCase().replace(/\s+/g, '')
                    .indexOf(eir.toUpperCase().replace(/\s+/g, '')) !== -1;
     var to = [v('runit'), addr, hasEir ? '' : eir].filter(Boolean).join(', ');
-    var rows = [['Customer', v('rname')], ['Mobile', v('rmobile')], ['To', to]];
+    /* "To" reads as the destination, which it is not on a collection - the rider
+         is going there to take something away. */
+      var addrLabel = (typeof window.hopDir === "function" && window.hopDir() === "in")
+        ? 'Collect from' : 'To';
+      var rows = [['Customer', v('rname')], ['Mobile', v('rmobile')], [addrLabel, to]];
     /* The size is part of what they are confirming, and the tiles are a long way
        up the page by now. */
     var bigOff = $('sz-big') && $('sz-big').disabled;
