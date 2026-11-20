@@ -2494,18 +2494,28 @@ function check(){
   $("chk-when").textContent = beforeCutoff
     ? "You can say: it will be with you today"
     : "You can say: it will be with you tomorrow";
+  /* On a collection the shop is not promising the customer anything - the
+     customer is handing something over. "You can say: it will be with you
+     today" is the shop's line to its own customer, and it has no place on a job
+     going the other way. */
+  var whenRow = document.getElementById("chk-when-row");
+  var inward  = (typeof window.hopDir === "function" && window.hopDir() === "in");
+  if (whenRow) whenRow.hidden = inward;
+
   /* Name the cutoff that actually applied. With two of them, a shop booking to
      Malahide at noon would otherwise be told it has missed a two o'clock
      deadline it has not reached. */
-  const cutHere  = cutoffFor(foundLat, foundLng);
-  const cutWords = cutoffWords(cutHere);
-  const outerCut = (cutHere !== CUTOFF);
-  $("chk-when-sub").textContent = beforeCutoff
-    ? "Ordered before " + cutWords + ", so it goes on today's run." +
-      (outerCut ? " That address is further out, so the cutoff is earlier." : "")
-    : "It's past " + cutWords + ", so this goes on tomorrow's run." +
-      (outerCut ? " That address is further out, so the cutoff is earlier."
-                : " Still a day ahead of the post.");
+  if (!inward) {
+    const cutHere  = cutoffFor(foundLat, foundLng);
+    const cutWords = cutoffWords(cutHere);
+    const outerCut = (cutHere !== CUTOFF);
+    $("chk-when-sub").textContent = beforeCutoff
+      ? "Ordered before " + cutWords + ", so it goes on today's run." +
+        (outerCut ? " That address is further out, so the cutoff is earlier." : "")
+      : "It's past " + cutWords + ", so this goes on tomorrow's run." +
+        (outerCut ? " That address is further out, so the cutoff is earlier."
+                  : " Still a day ahead of the post.");
+  }
   $("checks").hidden = false;
   $("unitwrap").hidden = false;
   lookupAddress(code);
