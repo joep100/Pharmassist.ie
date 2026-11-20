@@ -3810,6 +3810,21 @@ $("rweight").value = WEIGHT_DEFAULT;
         /* The bag tiles describe what the shop is sending. On a collection the
            shop has not packed anything, so the wording would be wrong. */
         fits.hidden = (dirNow === "in");
+
+        /* Nothing is being left anywhere on a collection - the rider is taking
+           something away from the customer, not handing it over. The permission
+           tick is meaningless there, and a question that cannot apply is worse
+           than no question. The notes field stays: where to find them, which
+           buzzer, that sort of thing still matters. */
+        var authBox = document.querySelector('.auth');
+        if (authBox) {
+          authBox.hidden = (dirNow === "in");
+          if (dirNow === "in") {
+            var lv = document.getElementById('rleave');
+            if (lv) lv.checked = false;      /* so a stale tick cannot ride along */
+          }
+        }
+
         /* The price turns on the direction as well as the zone, so both the
            tiles and the "This delivery" line have to be redrawn. */
         if (typeof paintFits === "function") paintFits();
