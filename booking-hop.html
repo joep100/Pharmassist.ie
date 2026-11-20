@@ -3758,6 +3758,15 @@ $("rweight").value = WEIGHT_DEFAULT;
     if (card) wrap.insertBefore(dirBox, card);
     else wrap.appendChild(dirBox);
 
+    /* The form stays away until the direction is chosen. A shop opens this
+       twenty times a morning and goes straight for the Eircode out of habit -
+       leaving the field there to be typed into means the tiles above it get
+       looked past, and a job goes the wrong way round. No field, no habit.
+
+       Hidden rather than disabled: a greyed-out form invites a shop to try to
+       use it and wonder what is broken. */
+    if (card) card.hidden = true;
+
     dirBox.querySelectorAll('.wz__dirb').forEach(function(b){
       b.addEventListener('click', function(){
         dirNow = b.dataset.d;
@@ -3792,6 +3801,7 @@ $("rweight").value = WEIGHT_DEFAULT;
         /* The bag tiles describe what the shop is sending. On a collection the
            shop has not packed anything, so the wording would be wrong. */
         fits.hidden = (dirNow === "in");
+        if (card) card.hidden = false;      /* the form arrives with the answer */
 
         /* Nothing is being left anywhere on a collection - the rider is taking
            something away from the customer, not handing it over. The permission
