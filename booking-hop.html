@@ -4369,12 +4369,28 @@ $("rweight").value = WEIGHT_DEFAULT;
      the sign-in screen itself there is nobody to name yet. */
   try {
     if (typeof SHOP !== "undefined" && SHOP && SHOP.name) {
-      window.intercomSettings.company = {
-        id: SHOP.slug || SHOP.code || SHOP.name,
-        name: SHOP.name
-      };
-      window.intercomSettings.name = SHOP.name;
+      var who = SHOP.slug || SHOP.code || SHOP.name;
+
+      /* user_id is what makes Intercom treat this as the same shop every time
+         rather than a fresh anonymous visitor. Without it there is no Last Seen
+         to look at, which is the whole point of this: knowing whether a shop we
+         set up in practice mode has actually opened it. */
+      window.intercomSettings.user_id = who;
+      window.intercomSettings.name    = SHOP.name;
       if (SHOP.phone) window.intercomSettings.phone = SHOP.phone;
+
+      window.intercomSettings.company = { id: who, name: SHOP.name };
+
+      /* Custom attributes, so the people list can be read at a glance:
+         who is a prospect still trying it, and who is live. */
+      window.intercomSettings.shop_mode =
+        (String(SHOP.mode || "").trim().toLowerCase() === "practice") ? "practice" : "live";
+      window.intercomSettings.shop_slug = SHOP.slug || "";
+
+      /* A plain label to filter on. Intercom sees visitors from every Cyclone
+         site, and "product is booking tool" is an easier thing to find in their
+         people list than a slug that happens to be set. */
+      window.intercomSettings.product = "booking tool";
     }
   } catch (e) { /* no shop yet, so Intercom just sees a visitor */ }
 </script>
