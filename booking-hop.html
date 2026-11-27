@@ -2159,6 +2159,11 @@ function paintFits(){
   const bag = $("fitBag"), big = $("fitBig");
   if (!bag || !big) return;
 
+  /* Before the early return below, not after it. A shop with no jumbo was
+     still seeing the tile until an address resolved, because the no-address
+     branch returns before anything else runs. */
+  if (NO_JUMBO) { big.hidden = true; isBig = false; }
+
 
 
   const bagP = $("fitBagP"), bigP = $("fitBigP");
