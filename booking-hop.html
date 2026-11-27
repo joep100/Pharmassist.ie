@@ -1178,7 +1178,13 @@ function shopsFromCsv(text){
       if (clean.length === 36) r.uuid = clean;
       else { console.warn('hop: the uuid for ' + r.slug + ' does not look right, ignoring it'); delete r.uuid; }
     }
-    const slug = String(r.slug).toLowerCase();
+    /* The same cleaning the uuid gets, and for the same reason. A slug pasted
+       from an email can carry a zero-width character or a non-breaking space
+       that trim() leaves behind and nothing on screen shows. The code lookup
+       still worked, so the shop could sign in by hand while their own link
+       returned the sign-in page - which is a confusing way to find out. */
+    const slug = String(r.slug).toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (!slug) continue;
     /* Kept on the record rather than deleted. The status lookup needs to know
        which shop it is asking about, and reading that back off the URL breaks
        the moment anyone opens the file by its own name instead of /hop/<slug>. */
