@@ -9,9 +9,7 @@
     { "source": "/stockdesign", "destination": "/booking.html" },
     { "source": "/cyclonetest", "destination": "/booking.html" },
 
-    { "source": "/hop/susanhunter",     "destination": "/booking-hop.html" },
-    { "source": "/hop/irishdesignshop", "destination": "/booking-hop.html" },
-    { "source": "/hop/cyclonetest",     "destination": "/booking-hop.html" },
-    { "source": "/hop/foleys",          "destination": "/booking-hop.html" }
+    { "source": "/hop",       "destination": "/booking-hop.html" },
+    { "source": "/hop/:shop", "destination": "/booking-hop.html" }
   ]
 }
