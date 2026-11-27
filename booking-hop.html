@@ -3879,6 +3879,12 @@ $("rweight").value = WEIGHT_DEFAULT;
 
   wrap.appendChild(fits);
 
+  /* Paint them once now. The tiles come from the markup above with both sizes
+     in it, and nothing repainted them until an address resolved - so a shop
+     with no jumbo saw the tile anyway for as long as the Eircode box was
+     empty, which is the whole of the first screen. */
+  if (typeof paintFits === "function") paintFits();
+
   /* The limits on this page - the bag sizes, the area, the collection time -
      read as rules, and a shop that does not fit one of them assumes the answer
      is no and does not book. Most of the time there is an answer. This is here
