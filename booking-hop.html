@@ -2149,9 +2149,17 @@ function chooseSize(wantBig){
    can always find it. */
 window.hopSize = chooseSize;
 
+/* Some shops only ever send one size. A jumbo tile they will never use is a
+   choice to get wrong, and on a trial account it invites a booking we are not
+   set up to carry. Set jumbo to FALSE in the sheet and the tile goes entirely;
+   leave it blank and both sizes show as before. */
+const NO_JUMBO = /^(false|no|0)$/i.test(String(SHOP.jumbo || "").trim());
+
 function paintFits(){
   const bag = $("fitBag"), big = $("fitBig");
   if (!bag || !big) return;
+
+
 
   const bagP = $("fitBagP"), bigP = $("fitBigP");
 
@@ -2169,7 +2177,12 @@ function paintFits(){
   const far = z ? (z.price > PRICE) : (FAR_KEYS.indexOf(currentKey) !== -1);
   const near = euro(z ? tierPrice(z) : (far ? RATE_FAR : RATE));
 
-  const bigOff = far || ($("sz-big") && $("sz-big").disabled);
+  /* NO_JUMBO folds into the same switch the cargo zones already use, so there
+     is one rule for "there is no second size" rather than two that can
+     disagree. The tile is hidden outright for a shop that never has one,
+     rather than shown as unavailable. */
+  const bigOff = NO_JUMBO || far || ($("sz-big") && $("sz-big").disabled);
+  if (NO_JUMBO) big.hidden = true;
   if (bigOff && isBig) { isBig = false; if (typeof drawSize === "function") drawSize(); }
 
   /* Where there is no cargo bike there is no choice to make, so the bag is
